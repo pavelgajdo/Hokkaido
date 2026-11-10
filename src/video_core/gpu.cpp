@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -114,9 +115,30 @@ struct GPU::Impl {
         std::function<void(PAddr, size_t)> callback_writes(
             [&writes](PAddr address, size_t size) { writes.emplace_back(address, size); });
         system.GatherGPUDirtyMemory(callback_writes);
-        if (!writes.empty()) {
-            renderer->ReadRasterizer()->OnCacheInvalidations(writes);
+        if (writes.empty()) {
+            return;
         }
+        // Touching and overlapping writes to one 4 KiB page become one range (from
+        // xDarkWindx/eden-fefw 0923d60dac): Fortune's Weave's batches had ~400 ranges that joined
+        // to ~38, and each range went through the texture, buffer and shader caches on its own.
+        // The union is exact, and it stays within a page, so a range never spans two buffer cache
+        // buffers (created on page boundaries).
+        if (writes.size() > 1) {
+            std::ranges::sort(writes);
+            size_t out = 0;
+            for (size_t in = 1; in < writes.size(); ++in) {
+                auto& last = writes[out];
+                const auto& [address, size] = writes[in];
+                const u64 last_end = last.first + last.second;
+                if ((address >> 12) == (last.first >> 12) && address <= last_end) {
+                    last.second = (std::max)(last_end, address + size) - last.first;
+                } else {
+                    writes[++out] = writes[in];
+                }
+            }
+            writes.resize(out + 1);
+        }
+        renderer->ReadRasterizer()->OnCacheInvalidations(writes);
     }
 
     void ForEachPendingCpuWrite(const std::function<void(DAddr, size_t)>& callback) {
