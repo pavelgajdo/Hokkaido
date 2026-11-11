@@ -465,10 +465,11 @@ bool GraphicsPipelineCacheKey::operator==(const GraphicsPipelineCacheKey& rhs) c
 
 namespace {
 // Ocarina of Time's task/mesh draws stall Xclipse's GPU (Device::HasHangingMeshDraws): build its
-// task/mesh pipelines for the compute emulation, which draws them, instead of skipping them.
-bool ForceMeshEmulation(const Device& device) {
+// task/mesh pipelines for the compute emulation, which draws them, instead of skipping them. On
+// every device, so the game draws the same way everywhere.
+bool ForceMeshEmulation([[maybe_unused]] const Device& device) {
     static constexpr u64 OcarinaOfTime = 0x0400486024DEC000ULL;
-    return device.HasHangingMeshDraws() && Settings::GetCurrentProgramID() == OcarinaOfTime;
+    return Settings::GetCurrentProgramID() == OcarinaOfTime;
 }
 } // Anonymous namespace
 
