@@ -3096,7 +3096,12 @@ private:
     // (m_mutex held). Returns true when the only frame left is late and more input is queued:
     // decode on before filling an image.
     bool DropOvertakenFrames() {
-        if (m_decoded.empty()) {
+        // Test switch (test/oot-movie-end only): never drop, every decoded frame goes out.
+        static const bool no_drop = [] {
+            const char* value = std::getenv("EDEN_NX2_VDEC_NO_DROP");
+            return value != nullptr && value[0] != '0';
+        }();
+        if (no_drop || m_decoded.empty()) {
             return false;
         }
         const auto due = m_clock.Due(HostTimeUs(), PauseEndUs());
