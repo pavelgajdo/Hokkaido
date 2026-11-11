@@ -12,6 +12,7 @@ Tested on a Samsung Galaxy S26 (Exynos 2600, Xclipse 960, 12 GB) and a Galaxy S2
   - Its mesh-shader geometry is drawn through compute on every device, not only on Xclipse.
   - The guard house freeze is patched in (upstream).
   - The ocarina's crackle is fixed (upstream).
+- **Orbitals** boots into gameplay.
 - **Memory and stability** (upstream)
   - GPU memory the game destroys is released, and reused memory is refreshed.
   - A buffer that doesn't fit the memory budget is allocated anyway instead of closing the game.
@@ -22,10 +23,9 @@ Tested on a Samsung Galaxy S26 (Exynos 2600, Xclipse 960, 12 GB) and a Galaxy S2
 
 ## Known issues
 
-- Orbitals shows a black screen after its logos.
 - Fast Fusion launches but does not get further.
 - Ocarina of Time sometimes starts with graphical glitches; restarting the game helps. On a 12 GB phone it can still be closed for low memory, most often on the first start while shaders compile. Use **0.5x**.
-- Pokopia's sky is black on Xclipse phones.
+- Pokopia's sky is black.
 - Microphone input is not supported on Android.
 - The phone heats up during long sessions and slows down until it cools.
 
