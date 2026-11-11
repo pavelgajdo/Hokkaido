@@ -116,3 +116,21 @@ jobs:
           make_latest: false
           body: Automatic test build from ${{ github.sha }}. Experimental.
           files: artifacts/*.apk
+
+      # A test/<name> branch publishes its APK as the pre-release android-test-<name>, for testers
+      # to try one fix without a push to nx2.
+      - name: Read test branch name
+        if: startsWith(github.ref, 'refs/heads/test/')
+        run: echo "TEST_NAME=${GITHUB_REF_NAME#test/}" | tr '/' '-' >> "$GITHUB_ENV"
+
+      - name: Publish branch test release
+        if: startsWith(github.ref, 'refs/heads/test/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-test-${{ env.TEST_NAME }}
+          target_commitish: ${{ github.sha }}
+          name: "Hokkaido test: ${{ env.TEST_NAME }}"
+          prerelease: true
+          make_latest: false
+          body: Test build of branch ${{ github.ref_name }} at ${{ github.sha }}. For testing one fix; not a release.
+          files: artifacts/*.apk
