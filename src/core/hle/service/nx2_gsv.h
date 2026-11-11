@@ -2930,8 +2930,7 @@ private:
                 const char* env_value = std::getenv("EDEN_NX2_VDEC_EOS_RELEASE_NOW");
                 return env_value != nullptr && env_value[0] != '0';
             }();
-            const bool drain_eos =
-                system.GetApplicationProcessProgramID() == Settings::MarioKartWorldProgramId;
+            const bool drain_eos = DrainsEndOfStream();
             if ((drain_eos || release_now) && release_fence && m_stream_ended && m_inputs.Empty() &&
                 m_decoded.empty()) {
                 const u32 reached =
@@ -3113,6 +3112,7 @@ private:
             }
             m_decoded.pop_front();
             ++m_frames_dropped;
+            ++m_stream_frames_dropped;
             ++m_dropped_in_a_row;
         }
         const Decoded& front = m_decoded.front();
@@ -3250,14 +3250,14 @@ private:
                 system.Host1x().GetSyncpointManager().IncrementGuest(m_syncpoint);
                 m_ready->SignalOutput(system.Kernel());
                 m_last_output = m_outputs.back();
-                if (frame.end && m_inputs.Empty() && m_decoded.empty() &&
-                    system.GetApplicationProcessProgramID() == Settings::MarioKartWorldProgramId) {
+                if (frame.end && m_inputs.Empty() && m_decoded.empty() && DrainsEndOfStream()) {
                     DrainFreeAsEndOfStream();
                 }
                 ++m_frames_out;
                 const s64 written_us = HostTimeUs();
                 if (!m_stream_start) {
                     m_stream_start = {written_us, frame.pts};
+                    m_stream_frames_dropped = 0;
                 }
                 if (m_frames_out == 1 || (m_frames_out % 600) == 0 || frame.end) {
                     // How far the frames written lag their timestamps since the stream's first.
@@ -3335,6 +3335,15 @@ private:
                 }
             }
         }
+    }
+
+    // Mario Kart World waits on the free images after the last frame. So does any game whose movie
+    // lost frames to DropOvertakenFrames: it handed out an image per frame of the movie, and the
+    // dropped frames leave that many unfilled. Ocarina of Time then stayed on a black screen after
+    // its intro on Snapdragon phones, whose decoder fell behind by a few of its 9254 frames.
+    bool DrainsEndOfStream() const {
+        return system.GetApplicationProcessProgramID() == Settings::MarioKartWorldProgramId ||
+               m_stream_frames_dropped != 0;
     }
 
     u32 DrainFreeAsEndOfStream() {
@@ -3531,6 +3540,7 @@ private:
     u64 m_frames_out{};
     u64 m_decoded_frames{};
     u64 m_frames_dropped{};
+    u64 m_stream_frames_dropped{}; ///< Since the current stream's first frame went out
     Nx2MovieClock m_clock;
     u64 m_frame_interval{16667}; ///< us, from consecutive decoded frames
     u64 m_last_decoded_pts{};
