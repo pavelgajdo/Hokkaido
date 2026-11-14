@@ -1,28 +1,27 @@
-# Hokkaido 0.6.3
+# Hokkaido 0.6.4
 
 Tested on a Samsung Galaxy S26 (Exynos 2600, Xclipse 960, 12 GB) and a Galaxy S24 (Exynos 2400, Xclipse 940, 8 GB), both on Android 17.
 
 ## Highlights
 
-- **Less work per frame for the GPU threads** (upstream):
-  - A run of uploads goes to the GPU as one command with one pair of barriers, and later transfers are ordered after earlier copies to the same memory.
-  - Each compute dispatch records its barrier in its own command, instead of a separate one.
-  - Empty submissions to the GPU are skipped.
-- **The Legend of Zelda: Ocarina of Time**
-  - Its mesh-shader geometry is drawn through compute on every device, not only on Xclipse.
-  - The guard house freeze is patched in (upstream).
-  - The ocarina's crackle is fixed (upstream).
-- **Orbitals** boots into gameplay.
-- **Memory and stability** (upstream)
-  - GPU memory the game destroys is released, and reused memory is refreshed.
-  - A buffer that doesn't fit the memory budget is allocated anyway instead of closing the game.
-  - Threads waiting for the GPU are released when a game stops.
-- **Rendering fixes** (upstream): texture gathers with a register handle, clears of colour targets with more layers than the framebuffer, and 2D-engine copies between 3D surfaces.
-- **Game files** (upstream): damaged pieces of NUP dumps get a stand-in, game paths are read as UTF-8, and file parsers are hardened against malformed dumps. Shader compiling does less work.
-- **Version number:** the app now reports the same version as the release (`0.6.3`), so updaters such as EmuHub no longer see an update that isn't there.
+- **Game compatibility** (upstream)
+  - A texture slot that is still empty when a shader is built now compiles as a 2D texture. Upstream this fixed Pokémon Legends Z-A's blank screen.
+  - Shader translation no longer runs out of stack on Kirby Air Riders' loops.
+  - More shaders translate: shifts with a uniform shift amount (SHF), and more texture gather and call forms.
+  - Ocarina of Time 1.0 (without the update) works with the "No Sharpening" anti-aliasing setting.
+- **Snapdragon:** Adreno's early depth test (LRZ) is turned off where it drew wrong, on Qualcomm's own driver (upstream).
+- **Memory** (upstream)
+  - ASTC textures with uneven mip levels stay compressed on phones and other GPUs with shared or small memory.
+  - A new buffer no longer joins a large buffer it only shares a page with. Upstream this caused slowdowns and a crash on Yoshi's book pages.
+  - Memory hints skip placeholder addresses.
+- **Stability** (upstream)
+  - Closing a game while its shaders load no longer hangs, and the next launch works.
+  - Short reads from game files and failed install copies are reported instead of passing silently.
+- **For contributors:** `test/<name>` branches now publish their APK as a pre-release, so a single fix can be tried before a release.
 
 ## Known issues
 
+- Ocarina of Time can stay on a black screen after its intro movie on Snapdragon phones (issue #12, under investigation).
 - Fast Fusion launches but does not get further.
 - Ocarina of Time sometimes starts with graphical glitches; restarting the game helps. On a 12 GB phone it can still be closed for low memory, most often on the first start while shaders compile. Use **0.5x**.
 - Pokopia's sky is black.
