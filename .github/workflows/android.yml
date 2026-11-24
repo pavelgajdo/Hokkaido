@@ -1,8 +1,9 @@
 # Builds the Hokkaido Android app (arm64 APK) on every push and on demand.
-name: android
+name: Fusion Android
 
 on:
   push:
+    branches: [fusion-0.3.52]
   workflow_dispatch:
 
 concurrency:
@@ -42,7 +43,7 @@ jobs:
         run: |
           SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses > /dev/null || true
-          "$SDKM" "ndk;28.2.13676358" "cmake;3.22.1" "platforms;android-36" "build-tools;36.0.0"
+          "$SDKM" "ndk;28.2.13676358" "cmake;3.31.5" "platforms;android-36" "build-tools;36.0.0"
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
 
@@ -72,6 +73,15 @@ jobs:
           key: android-cpm-${{ hashFiles('cpmfile.json', 'externals/cpmfile.json', 'src/**/cpmfile.json') }}
           restore-keys: android-cpm-
 
+      - name: Sync Banana Native preview
+        run: |
+          URL=https://git.eden-emu.dev/moceure/BananaNative/releases/download/v0.3.52-preview/banana-native-v0.3.52-preview.apk
+          curl --fail --location --retry 3 "$URL" -o /tmp/banana.apk
+          echo 'cf5fef4d6fb5529aceef769c4e8877df728c5822077f5e6c422601def69a0e4a  /tmp/banana.apk' | sha256sum -c -
+          git clone --depth 1 --branch v0.3.52-preview https://git.eden-emu.dev/moceure/BananaNative.git /tmp/banana-source
+          bash tools/android/sync_bananative.sh /tmp/banana-source v0.3.52-preview /tmp/banana.apk "$URL"
+          sed -i 's/applicationId = "dev.lichii.android"/applicationId = "dev.lichii.fusion"/; s/"appNameBase" to "Hokkaido"/"appNameBase" to "Hokkaido Fusion"/' src/android/app/build.gradle.kts
+
       - name: Build APK
         env:
           CCACHE: "true"
@@ -91,46 +101,3 @@ jobs:
           path: artifacts/*.apk
           if-no-files-found: error
 
-      - name: Read release version
-        if: startsWith(github.ref, 'refs/tags/android-') && github.ref != 'refs/tags/android-latest'
-        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME#android-}" >> "$GITHUB_ENV"
-
-      - name: Publish versioned release
-        if: startsWith(github.ref, 'refs/tags/android-') && github.ref != 'refs/tags/android-latest'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Hokkaido ${{ env.RELEASE_VERSION }}
-          prerelease: false
-          make_latest: true
-          body_path: docs/android/RELEASE_NOTES.md
-          files: artifacts/*.apk
-
-      - name: Publish test release for phone download
-        if: github.ref == 'refs/heads/nx2'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: android-latest
-          name: Hokkaido test build
-          prerelease: true
-          make_latest: false
-          body: Automatic test build from ${{ github.sha }}. Experimental.
-          files: artifacts/*.apk
-
-      # A test/<name> branch publishes its APK as the pre-release android-test-<name>, for testers
-      # to try one fix without a push to nx2.
-      - name: Read test branch name
-        if: startsWith(github.ref, 'refs/heads/test/')
-        run: echo "TEST_NAME=${GITHUB_REF_NAME#test/}" | tr '/' '-' >> "$GITHUB_ENV"
-
-      - name: Publish branch test release
-        if: startsWith(github.ref, 'refs/heads/test/')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: android-test-${{ env.TEST_NAME }}
-          target_commitish: ${{ github.sha }}
-          name: "Hokkaido test: ${{ env.TEST_NAME }}"
-          prerelease: true
-          make_latest: false
-          body: Test build of branch ${{ github.ref_name }} at ${{ github.sha }}. For testing one fix; not a release.
-          files: artifacts/*.apk
