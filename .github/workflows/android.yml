@@ -29,7 +29,7 @@ jobs:
       CPM_SOURCE_CACHE: ${{ github.workspace }}/.cache/cpm
       BANANA_EXPECTED_COMMIT: a15d676bab584acc1f139af78a7efb16bc361454
       BANANA_EXPECTED_APK_SHA256: cf5fef4d6fb5529aceef769c4e8877df728c5822077f5e6c422601def69a0e4a
-      GIT_TAG_NAME: 0.7.1-fusion.0.3.52-preview.2
+      GIT_TAG_NAME: 0.7.1-fusion.0.3.52-preview.3
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -171,13 +171,13 @@ jobs:
         run: |
           built=src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$built" > artifacts/apk-signature.txt
-          cp "$built" artifacts/Hokkaido-Fusion-0.3.52-preview.2.apk
-          (cd artifacts && sha256sum Hokkaido-Fusion-0.3.52-preview.2.apk > SHA256SUMS.txt)
+          cp "$built" artifacts/Hokkaido-Fusion-0.3.52-preview.3.apk
+          (cd artifacts && sha256sum Hokkaido-Fusion-0.3.52-preview.3.apk > SHA256SUMS.txt)
 
       - name: Verify APK identity and native libraries
         id: payload
         run: |
-          built=artifacts/Hokkaido-Fusion-0.3.52-preview.2.apk
+          built=artifacts/Hokkaido-Fusion-0.3.52-preview.3.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$built" > artifacts/apk-badging.txt
           python3 tools/android/verify_fusion_apk.py "$built" "$BANANA_APK" artifacts/apk-badging.txt | tee artifacts/apk-payload-verification.txt
           echo '### Fusion APK built and verified' >> "$GITHUB_STEP_SUMMARY"
@@ -189,7 +189,7 @@ jobs:
         with:
           name: Hokkaido-Fusion-SIGNED-CANDIDATE-NOT-FULLY-VERIFIED-${{ github.run_number }}
           path: |
-            artifacts/Hokkaido-Fusion-0.3.52-preview.2.apk
+            artifacts/Hokkaido-Fusion-0.3.52-preview.3.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 7
@@ -199,7 +199,7 @@ jobs:
         with:
           name: Hokkaido-Fusion-APK-${{ github.run_number }}
           path: |
-            artifacts/Hokkaido-Fusion-0.3.52-preview.2.apk
+            artifacts/Hokkaido-Fusion-0.3.52-preview.3.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
