@@ -53,7 +53,7 @@ def check_elf(archive, name, label):
 def check_badging(path):
     text = path.read_text(encoding="utf-8")
     package = re.findall(r"^package:\s+name='([^']+)'", text, re.MULTILINE)
-    sdk = re.findall(r"^sdkVersion:'(\d+)'", text, re.MULTILINE)
+    sdk = re.findall(r"^(?:minSdkVersion|sdkVersion):[ \t]*'(\d+)'[ \t]*$", text, re.MULTILINE)
     native = re.findall(r"^native-code:\s*(.*)$", text, re.MULTILINE)
     require(package == ["dev.lichii.fusion"], f"Unexpected APK package: {package}")
     require(sdk == ["33"], f"Expected minimum SDK 33, got: {sdk}")

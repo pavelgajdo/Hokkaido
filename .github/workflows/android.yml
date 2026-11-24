@@ -39,7 +39,7 @@ jobs:
         run: |
           bash -n tools/android/sync_bananative.sh
           python3 -m py_compile tools/android/extract_banana_buildconfig.py tools/android/verify_fusion_apk.py
-          python3 -m unittest discover -s tools/android -p 'test_extract_banana_buildconfig.py' -v
+          python3 -m unittest discover -s tools/android -p 'test_*.py' -v
 
       - name: Free disk space
         run: |
@@ -73,7 +73,8 @@ jobs:
           exit 1
 
       - name: Restore compiler cache
-        uses: actions/cache@v4
+        id: compiler-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/.ccache
           key: fusion-android-ccache-${{ github.sha }}
@@ -82,7 +83,8 @@ jobs:
             android-ccache-
 
       - name: Restore native dependencies
-        uses: actions/cache@v4
+        id: dependency-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/.cache/cpm
           key: android-cpm-${{ hashFiles('cpmfile.json', 'externals/cpmfile.json', 'src/**/cpmfile.json') }}
@@ -127,16 +129,49 @@ jobs:
             -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
             -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/apk-build.log"
 
-      - name: Verify APK identity, signature and native libraries
+      - name: Save compiler cache after successful compilation
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
+
+      - name: Save native dependencies
+        if: steps.dependency-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/.cache/cpm
+          key: ${{ steps.dependency-cache.outputs.cache-primary-key }}
+
+      - name: Verify signature and retain signed APK
+        id: signed
         run: |
           built=src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$built" > artifacts/apk-signature.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$built" > artifacts/apk-badging.txt
-          python3 tools/android/verify_fusion_apk.py "$built" "$BANANA_APK" artifacts/apk-badging.txt | tee artifacts/apk-payload-verification.txt
           cp "$built" artifacts/Hokkaido-Fusion-0.3.52-preview.apk
           (cd artifacts && sha256sum Hokkaido-Fusion-0.3.52-preview.apk > SHA256SUMS.txt)
+
+      - name: Verify APK identity and native libraries
+        id: payload
+        run: |
+          built=artifacts/Hokkaido-Fusion-0.3.52-preview.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$built" > artifacts/apk-badging.txt
+          python3 tools/android/verify_fusion_apk.py "$built" "$BANANA_APK" artifacts/apk-badging.txt | tee artifacts/apk-payload-verification.txt
           echo '### Fusion APK built and verified' >> "$GITHUB_STEP_SUMMARY"
           echo 'Download the APK artifact below. Device installation and gameplay still need testing.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve signed candidate if payload verification fails
+        if: failure() && steps.signed.outcome == 'success' && steps.payload.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hokkaido-Fusion-SIGNED-CANDIDATE-NOT-FULLY-VERIFIED-${{ github.run_number }}
+          path: |
+            artifacts/Hokkaido-Fusion-0.3.52-preview.apk
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
