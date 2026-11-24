@@ -270,6 +270,9 @@ final class Recommend {
     /** How many recommended settings the player set to another value for this game (the card's "You changed N of these.") */
     static int changedCount(List<State> states) { int n = 0; for (State st : states) if (st.changed()) n++; return n; }
 
+    /** Whether the card shows Custom: the player picked it (kept per game) or changed a recommended setting */
+    static boolean showsCustom(boolean picked, int changed) { return picked || changed > 0; }
+
     /** The card's muted line, null when nothing was changed (no line, no button) */
     static String changedLine(int n) { return n <= 0 ? null : "You changed " + n + " of these."; }
 

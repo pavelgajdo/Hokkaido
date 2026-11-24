@@ -48,6 +48,7 @@ final class TouchControls extends View {
     private int mode = MODE_AUTO;   // the "On-screen controls" setting (setMode)
     private float opacity, scale;
     private boolean haptics;
+    private final String game;   // the running game (Prefs.gameOf; null in the self-test): its own look (opacity, size, the tick, the log, the show / hide button), else the main screen's
 
     // The layout in pixels, as the host has it
     private int n;
@@ -55,6 +56,8 @@ final class TouchControls extends View {
     private final long[] buttons = new long[MAX];
     private final float[] cx = new float[MAX], cy = new float[MAX], r = new float[MAX];
     private final String[] label = new String[MAX];
+    private final boolean[] hid = new boolean[MAX];   // the control is hidden by the player (TouchHidden): drawn dimmed in the editor, left out of the layout otherwise
+    private java.util.Set<String> hidden = new java.util.LinkedHashSet<>();   // the keys of the hidden controls on this screen shape (controlKey)
     private float tx, ty, tr;      // the show / hide button
     private float picX, picY, picW = 1, picH = 1;   // the game's picture in the view, normalized
 
@@ -82,7 +85,9 @@ final class TouchControls extends View {
     // The layout editor (startEditLayout): touches move the groups and the picture instead of going to the host
     private boolean editing;
     private int dragG = -1, dragId = -1, pinchId = -1;   // dragG: a group, GROUPS for the picture
-    private float lastX, lastY, pinchD0, pinchS0;
+    private float lastX, lastY, pinchD0, pinchS0, downX, downY;
+    private int tapI = -1;         // the control under the first touch of the editor: a tap without a drag hides or shows it (TouchHidden)
+    private boolean moved;         // the touch moved past the tap slop: it drags the group, no tap
     private final RectF[] tool = new RectF[5];   // the editor's buttons: Top, Centre, Bottom, Reset, Done
     private static final String[] TOOL = {"Top", "Centre", "Bottom", "Reset", "Done"};
 
@@ -99,9 +104,10 @@ final class TouchControls extends View {
     TouchControls(Context c, boolean input) {
         super(c);
         this.input = input;
-        opacity = prefs().getFloat("opacity", 0.6f);
-        scale = prefs().getFloat("scale", 1f);
-        haptics = prefs().getBoolean("haptics", true);
+        game = Prefs.gameOf(c);
+        opacity = opacity(c, game);
+        scale = scale(c, game);
+        haptics = haptics(c, game);
         shown = prefs().getBoolean("shown", true);
         line.setStyle(Paint.Style.STROKE);
         text.setTextAlign(Paint.Align.CENTER);
@@ -149,12 +155,35 @@ final class TouchControls extends View {
         if (m == null) e.remove(Prefs.gameKey("mode", titleId)); else e.putInt(Prefs.gameKey("mode", titleId), m);
         e.commit();
     }
-    /** Settings › Show / hide button: the small button at the top centre that shows or hides the controls (on by default), for every game */
+    /** Settings › Show / hide button: the small button at the top centre that shows or hides the controls (on by default), the default of every game */
     static boolean toggleButton(Context c) { return Prefs.open(c, "touch_controls").getBoolean("button", true); }
     static void toggleButton(Context c, boolean on) { Prefs.open(c, "touch_controls").edit().putBoolean("button", on).commit(); }
-    /** The in-game panel's switch: kept, and applied at once */
+
+    // ---- The controls' look: the main screen's defaults (Settings › On-screen controls look, and the Show / hide button row), then each game's own values (its Game
+    // settings › On-screen controls look, the in-game panel's Controls rows), "<key>@<title ID>" in this file. titleId null: the defaults ----
+    static final String[] LOOK_KEYS = {"opacity", "scale", "haptics", "log", "button"};
+    private static String lookKey(String key, String titleId) { return OwnSetting.key(key, titleId); }
+    private static SharedPreferences file(Context c) { return Prefs.open(c, "touch_controls"); }
+    private static OwnSetting.Store store(Context c) { return Prefs.store(file(c)); }
+    /** Opacity 0.1..1 (default 0.6) */
+    static float opacity(Context c, String titleId) { return OwnSetting.real(store(c), "opacity", titleId, 0.6f); }
+    /** Size 0.6..1.5 (default 1) */
+    static float scale(Context c, String titleId) { return OwnSetting.real(store(c), "scale", titleId, 1f); }
+    /** A short vibration on each press (on by default) */
+    static boolean haptics(Context c, String titleId) { return OwnSetting.bool(store(c), "haptics", titleId, true); }
+    static boolean toggleButton(Context c, String titleId) { return OwnSetting.bool(store(c), "button", titleId, true); }
+    /** Writes one look value: the default (titleId null) or the game's own */
+    static void look(Context c, String titleId, float opacity, float scale, boolean haptics) {
+        file(c).edit().putFloat(lookKey("opacity", titleId), opacity).putFloat(lookKey("scale", titleId), scale).putBoolean(lookKey("haptics", titleId), haptics).commit();
+    }
+    static void lookBool(Context c, String titleId, String key, boolean on) { file(c).edit().putBoolean(lookKey(key, titleId), on).commit(); }
+    static boolean ownLook(Context c, String titleId) { return OwnSetting.own(store(c), LOOK_KEYS, titleId); }
+    /** The game follows the main screen's look again */
+    static void lookDefault(Context c, String titleId) { Prefs.remove(file(c), OwnSetting.ownKeys(LOOK_KEYS, titleId)); }
+
+    /** The in-game panel's switch: kept (the running game's own value), and applied at once */
     void setToggleButton(boolean on) {
-        toggleButton(getContext(), on);
+        lookBool(getContext(), game, "button", on);
         button = on;
         Native.note("on-screen controls: show / hide button " + (on ? "on" : "off"));
         apply();
@@ -260,6 +289,10 @@ final class TouchControls extends View {
                     cx[j] += cx[j] < w / 2f ? move : -move;
                 }
         groups(w, h, u);
+        java.util.List<String> keys = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) keys.add(controlKey(i));
+        for (int i = 0; i < n; i++) hid[i] = hidden.contains(keys.get(i));
+        if (!editing) hideFromLayout();   // the editor keeps them (dimmed) so a tap can show them again; play leaves them out of the picture and of the host's layout
         tr = 10 * u; tx = w / 2f; ty = m + tr;   // small and faint (onDraw); its touch area is larger (onToggle)
         // The host's units: centres normalized to the view, radii in units of its height; a stick's grab ring is its own (input_map.c)
         float[] f = new float[n * 6];
@@ -275,6 +308,37 @@ final class TouchControls extends View {
                 n, w, h, h / dp, u, y0, prof, custom() ? ", the user's layout" : "", picX, picY, scale, opacity, active() ? "shown" : "hidden")
                 + (stretch || pictureSize < PictureFit.SIZE_MAX ? ", picture " + (stretch ? "stretched" : "fitted") + " at " + pictureSize + " %" : ""));
         apply();
+    }
+
+    /** The key of control i in TouchHidden's set: a button's own name, "stick0" / "stick1", "dpad" */
+    private String controlKey(int i) {
+        if (kind[i] == STICK) return "stick" + stick[i];
+        if (kind[i] == DPAD) return "dpad";
+        return KEY_NAMES[Long.numberOfTrailingZeros(buttons[i])];
+    }
+    private static final String[] KEY_NAMES = {"a", "b", "x", "y", "l3", "r3", "l", "r", "zl", "zr", "plus", "minus", "left", "up", "right", "down"};   // DM_BTN_* bit order
+    private static java.util.List<String> allKeys() {
+        return java.util.Arrays.asList("zl", "l", "zr", "r", "minus", "plus", "stick0", "dpad", "l3", "a", "b", "x", "y", "stick1", "r3");
+    }
+
+    /** Leaves the hidden controls out of the layout (the arrays shrink; the groups' bounds were taken with them, so nothing else moves) */
+    private void hideFromLayout() {
+        int j = 0;
+        for (int i = 0; i < n; i++) {
+            if (hid[i]) continue;
+            if (j != i) { kind[j] = kind[i]; buttons[j] = buttons[i]; stick[j] = stick[i]; shape[j] = shape[i]; cx[j] = cx[i]; cy[j] = cy[i]; r[j] = r[i]; label[j] = label[i]; }
+            hid[j] = false; j++;
+        }
+        n = j;
+    }
+
+    /** The control under a point in the editor, or -1 (the shoulders are wider than tall) */
+    private int controlAt(float x, float y) {
+        for (int i = n - 1; i >= 0; i--) {
+            float dx = Math.abs(x - cx[i]), dy = Math.abs(y - cy[i]);
+            if (shape[i] == SHAPE_SHOULDER ? dx <= r[i] && dy <= r[i] * 0.62f : dx * dx + dy * dy <= r[i] * r[i]) return i;
+        }
+        return -1;
     }
 
     // ---- The user's layout: groups moved and scaled, the picture placed, kept per screen shape ----
@@ -310,16 +374,17 @@ final class TouchControls extends View {
 
     private boolean custom() {
         for (int g = 0; g < GROUPS; g++) if (gdx[g] != 0 || gdy[g] != 0 || gsc[g] != 1) return true;
-        return placeX != 0.5f || placeY != defY();
+        return placeX != 0.5f || placeY != defY() || !hidden.isEmpty();
     }
 
     private void load() {
-        button = toggleButton(getContext());
+        button = toggleButton(getContext(), game);
         for (int g = 0; g < GROUPS; g++) {
             String[] v = prefs().getString("group" + g + "@" + prof, "0 0 1").split(" ");
             try { gdx[g] = Float.parseFloat(v[0]); gdy[g] = Float.parseFloat(v[1]); gsc[g] = Float.parseFloat(v[2]); }
             catch (RuntimeException e) { gdx[g] = 0; gdy[g] = 0; gsc[g] = 1; }
         }
+        hidden = TouchHidden.parse(prefs().getString("hidden@" + prof, ""), allKeys());
         String[] v = prefs().getString("picture@" + prof, "0.5 " + defY()).split(" ");
         try { placeX = Float.parseFloat(v[0]); placeY = Float.parseFloat(v[1]); } catch (RuntimeException e) { placeX = 0.5f; placeY = defY(); }
     }
@@ -327,6 +392,7 @@ final class TouchControls extends View {
     private void saveLayout() {
         SharedPreferences.Editor e = prefs().edit();
         for (int g = 0; g < GROUPS; g++) e.putString("group" + g + "@" + prof, gdx[g] + " " + gdy[g] + " " + gsc[g]);
+        e.putString("hidden@" + prof, TouchHidden.encode(hidden));
         e.putString("picture@" + prof, placeX + " " + placeY).commit();   // commit: the game process may end right after (Stop)
     }
 
@@ -354,6 +420,7 @@ final class TouchControls extends View {
         if (onEditStart != null) onEditStart.run();
         editing = true; shown = true; gamepad = false;
         Native.note("on-screen controls: the layout editor is open (screen " + prof + ")");
+        relayout();   // every control, the hidden ones too, so a tap can show them
         apply();
     }
 
@@ -364,7 +431,7 @@ final class TouchControls extends View {
     }
 
     private void resetLayout() {
-        Arrays.fill(gdx, 0); Arrays.fill(gdy, 0); Arrays.fill(gsc, 1); placeX = 0.5f; placeY = defY();
+        Arrays.fill(gdx, 0); Arrays.fill(gdy, 0); Arrays.fill(gsc, 1); placeX = 0.5f; placeY = defY(); hidden = new java.util.LinkedHashSet<>();
         relayout(); saveLayout();
     }
 
@@ -399,7 +466,7 @@ final class TouchControls extends View {
                 for (int g = 0; g < GROUPS; g++)
                     if (gbox[g] != null && x >= gbox[g].left - pad && x <= gbox[g].right + pad && y >= gbox[g].top - pad && y <= gbox[g].bottom + pad) { dragG = g; break; }
                 if (dragG < 0 && x >= picX * getWidth() && x <= (picX + picW) * getWidth() && y >= picY * getHeight() && y <= (picY + picH) * getHeight()) dragG = GROUPS;
-                dragId = id; lastX = x; lastY = y;
+                dragId = id; lastX = x; lastY = y; downX = x; downY = y; moved = false; tapI = controlAt(x, y);
                 invalidate();
                 return true;
             }
@@ -414,6 +481,10 @@ final class TouchControls extends View {
                 int j = e.findPointerIndex(dragId);
                 if (dragG < 0 || j < 0) return true;
                 float mx = e.getX(j), my = e.getY(j), u = unit();
+                if (!moved && pinchId < 0) {   // a tap stays put: the drag starts only past a slop of 8 units, from there
+                    if (Math.hypot(mx - downX, my - downY) < 8 * u) return true;
+                    moved = true; lastX = mx; lastY = my;
+                }
                 if (pinchId >= 0) {
                     int q = e.findPointerIndex(pinchId);
                     if (q >= 0 && pinchD0 > 0) gsc[dragG] = Math.max(0.5f, Math.min(2f, pinchS0 * (float) Math.hypot(mx - e.getX(q), my - e.getY(q)) / pinchD0));
@@ -429,13 +500,14 @@ final class TouchControls extends View {
                 return true;
             }
             case MotionEvent.ACTION_POINTER_UP:
-                if (id == pinchId) pinchId = -1;
+                if (id == pinchId) { pinchId = -1; moved = true; }
                 else if (id == dragId) { dragG = -1; dragId = -1; pinchId = -1; }
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                if (act == MotionEvent.ACTION_UP && !moved && tapI >= 0) toggleHidden(tapI);
                 if (dragG == GROUPS) { placeX = snapEnd(placeX); placeY = snapEnd(placeY); relayout(); }
-                dragG = -1; dragId = -1; pinchId = -1;
+                dragG = -1; dragId = -1; pinchId = -1; tapI = -1;
                 saveLayout(); invalidate();
                 return true;
             default:
@@ -448,6 +520,16 @@ final class TouchControls extends View {
     private static float snapEnd(float v) {
         for (float t : new float[] {0, 0.5f, 1}) if (Math.abs(v - t) < 0.06f) return t;
         return v;
+    }
+
+    /** A tap on a control in the editor: hide it, or show it again (the last visible one stays); kept with the layout of this screen shape at Done and at each tap */
+    private void toggleHidden(int i) {
+        java.util.Set<String> now = TouchHidden.toggle(hidden, controlKey(i), allKeys());
+        if (now.equals(hidden)) return;
+        hidden = now;
+        if (haptics) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        Native.note("on-screen controls: " + controlKey(i) + (hidden.contains(controlKey(i)) ? " hidden" : " shown") + " on screen " + prof);
+        relayout(); saveLayout();
     }
 
     private void toolTap(int k) {
@@ -543,7 +625,8 @@ final class TouchControls extends View {
     }
 
     // ---- Drawing ----
-    private int alpha(float a) { return Math.max(0, Math.min(255, Math.round(255 * a * opacity))); }
+    private float dim = 1f;   // 0.3 while a hidden control is drawn in the editor
+    private int alpha(float a) { return Math.max(0, Math.min(255, Math.round(255 * a * opacity * dim))); }
 
     @Override protected void onDraw(Canvas c) {
         if (!available || clean || !visible() && !editing) return;
@@ -568,7 +651,9 @@ final class TouchControls extends View {
 
     private void drawControls(Canvas c) {
         for (int i = 0; i < n; i++) {
-            boolean held = pressed[i] != 0;
+            boolean off = editing && hid[i];   // hidden by the player: faint with a stroke through it, in the editor only
+            boolean held = pressed[i] != 0 && !off;
+            dim = off ? 0.35f : 1f;
             fill.setColor(held ? Color.argb(alpha(0.55f), 255, 255, 255) : Color.argb(alpha(0.35f), 0, 0, 0));
             line.setColor(Color.argb(alpha(0.9f), 255, 255, 255));
             if (kind[i] == STICK) drawStick(c, i);
@@ -586,6 +671,8 @@ final class TouchControls extends View {
                 text.setTextSize(r[i] * (label[i].length() > 1 ? 0.72f : 0.95f));
                 c.drawText(label[i], cx[i], cy[i] - (text.descent() + text.ascent()) / 2, text);
             }
+            if (off) { line.setColor(Color.argb(Math.round(255 * 0.8f), 255, 120, 120)); c.drawLine(cx[i] - r[i] * 0.7f, cy[i] + r[i] * 0.7f, cx[i] + r[i] * 0.7f, cy[i] - r[i] * 0.7f, line); }
+            dim = 1f;
         }
     }
 
@@ -622,6 +709,7 @@ final class TouchControls extends View {
         String hint = dragG >= 0 && dragG < GROUPS ? Tx.s(dev.nxnative.android.R.string.game_group_drag_to_move, GROUP_NAME[dragG], Math.round(gsc[dragG] * 100))
                 : dragG == GROUPS ? Tx.s(dev.nxnative.android.R.string.game_picture_drag_into_the_black) : Tx.s(dev.nxnative.android.R.string.game_drag_a_control_or_the);
         c.drawText(hint, w / 2f, y + bh + 22 * u, text);
+        c.drawText(Tx.s(dev.nxnative.android.R.string.game_tap_a_control_to_hide_or_show), w / 2f, y + bh + 42 * u, text);
     }
 
     private void drawStick(Canvas c, int i) {
@@ -663,13 +751,14 @@ final class TouchControls extends View {
     Runnable openSettings;
     private void settings() { if (openSettings != null) openSettings.run(); }
 
-    /** The on-screen controls' rows of the in-game panel: Auto / On / Off, opacity, size, the haptic tick, the log over the game, Reset and the layout editor; each applies at once (kept for every game) */
+    /** The on-screen controls' rows of the in-game panel: Auto / On / Off, opacity, size, the haptic tick, the log over the game, Reset and the layout editor; each applies at once,
+     *  kept as the running game's own (Settings' stay the default of the others); the layout itself is kept per screen shape */
     void controlRows(Context ctx, LinearLayout box) {
         RadioGroup mg = new RadioGroup(ctx);
         mg.setOrientation(RadioGroup.HORIZONTAL);
         for (int i = 0; i < MODE_NAMES.length; i++) { RadioButton b = new RadioButton(ctx); b.setId(4000 + i); b.setText(Tx.arr(dev.nxnative.android.R.array.arr_touch_mode)[i]); mg.addView(b); }
         mg.check(4000 + mode);
-        mg.setOnCheckedChangeListener((g, id) -> { mode(ctx, id - 4000); setMode(id - 4000); });
+        mg.setOnCheckedChangeListener((g, id) -> { if (game != null) mode(ctx, game, id - 4000); else mode(ctx, id - 4000); setMode(id - 4000); });
         box.addView(mg);
         TextView ol = new TextView(ctx), sl = new TextView(ctx);
         SeekBar os = new SeekBar(ctx), ss = new SeekBar(ctx);
@@ -678,7 +767,7 @@ final class TouchControls extends View {
         ss.setMax(90); ss.setProgress(Math.round(scale * 100) - 60);     // 60..150 %
         os.setKeyProgressIncrement(5); ss.setKeyProgressIncrement(5);   // the D-pad's left / right: 5 % a press
         hb.setText(Tx.s(dev.nxnative.android.R.string.game_vibrate_on_press)); hb.setChecked(haptics);
-        lb.setText(Tx.s(dev.nxnative.android.R.string.game_show_the_log_over_the)); lb.setChecked(showLog(ctx));
+        lb.setText(Tx.s(dev.nxnative.android.R.string.game_show_the_log_over_the)); lb.setChecked(showLog(ctx, game));
         tb.setText(Tx.s(dev.nxnative.android.R.string.game_show_hide_button_top_centre)); tb.setChecked(button);
         tb.setOnCheckedChangeListener((b, v) -> setToggleButton(v));
         Runnable labels = () -> { ol.setText(Tx.s(dev.nxnative.android.R.string.game_opacity_pct, os.getProgress() + 10)); sl.setText(Tx.s(dev.nxnative.android.R.string.game_size_percent, ss.getProgress() + 60)); };
@@ -698,7 +787,7 @@ final class TouchControls extends View {
         os.setOnSeekBarChangeListener(live);
         ss.setOnSeekBarChangeListener(live);
         hb.setOnCheckedChangeListener((b, v) -> { haptics = v; save(); });
-        lb.setOnCheckedChangeListener((b, v) -> prefs().edit().putBoolean("log", v).commit());
+        lb.setOnCheckedChangeListener((b, v) -> lookBool(ctx, game, "log", v));
         android.widget.Button reset = new android.widget.Button(ctx);
         reset.setText(Tx.s(dev.nxnative.android.R.string.game_reset_the_controls));
         reset.setOnClickListener(v -> { os.setProgress(50); ss.setProgress(40); hb.setChecked(true); });   // 60 % opacity, 100 % size, the tick on
@@ -709,9 +798,38 @@ final class TouchControls extends View {
         box.addView(ed);
     }
 
-    /** Whether GameActivity keeps the newest log lines over the picture once the game draws (off by default; the settings dialog's last box) */
-    static boolean showLog(Context c) { return Prefs.open(c, "touch_controls").getBoolean("log", false); }
-    static void showLog(Context c, boolean on) { Prefs.open(c, "touch_controls").edit().putBoolean("log", on).commit(); }
+    /**
+     * The look's rows outside a game: Settings › On-screen controls look (titleId null: the defaults of every game; the show / hide button has its own Settings row) and a
+     * game's Game settings › On-screen controls look (titleId: the game's own values, written at the first change)
+     */
+    static void lookRows(Context c, LinearLayout box, String titleId) {
+        TextView ol = new TextView(c), sl = new TextView(c);
+        SeekBar os = new SeekBar(c), ss = new SeekBar(c);
+        CheckBox hb = new CheckBox(c), lb = new CheckBox(c), tb = new CheckBox(c);
+        os.setMax(90); os.setProgress(Math.round(opacity(c, titleId) * 100) - 10);   // 10..100 %
+        ss.setMax(90); ss.setProgress(Math.round(scale(c, titleId) * 100) - 60);     // 60..150 %
+        os.setKeyProgressIncrement(5); ss.setKeyProgressIncrement(5);
+        hb.setText(Tx.s(dev.nxnative.android.R.string.game_vibrate_on_press)); hb.setChecked(haptics(c, titleId));
+        lb.setText(Tx.s(dev.nxnative.android.R.string.game_show_the_log_over_the)); lb.setChecked(showLog(c, titleId));
+        tb.setText(Tx.s(dev.nxnative.android.R.string.game_show_hide_button_top_centre)); tb.setChecked(toggleButton(c, titleId));
+        Runnable labels = () -> { ol.setText(Tx.s(dev.nxnative.android.R.string.game_opacity_pct, os.getProgress() + 10)); sl.setText(Tx.s(dev.nxnative.android.R.string.game_size_percent, ss.getProgress() + 60)); };
+        labels.run();
+        Runnable save = () -> look(c, titleId, (os.getProgress() + 10) / 100f, (ss.getProgress() + 60) / 100f, hb.isChecked());
+        SeekBar.OnSeekBarChangeListener l = new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar b, int v, boolean user) { labels.run(); if (user) save.run(); }
+            @Override public void onStartTrackingTouch(SeekBar b) {}
+            @Override public void onStopTrackingTouch(SeekBar b) {}
+        };
+        os.setOnSeekBarChangeListener(l); ss.setOnSeekBarChangeListener(l);
+        hb.setOnCheckedChangeListener((b, v) -> save.run());
+        lb.setOnCheckedChangeListener((b, v) -> lookBool(c, titleId, "log", v));
+        tb.setOnCheckedChangeListener((b, v) -> lookBool(c, titleId, "button", v));
+        box.addView(ol); box.addView(os); box.addView(sl); box.addView(ss); box.addView(hb); box.addView(lb);
+        if (titleId != null) box.addView(tb);
+    }
 
-    private void save() { prefs().edit().putFloat("opacity", opacity).putFloat("scale", scale).putBoolean("haptics", haptics).commit(); }
+    /** Whether GameActivity keeps the newest log lines over the picture once the game draws (off by default): the game's own, else the main screen's */
+    static boolean showLog(Context c, String titleId) { return OwnSetting.bool(store(c), "log", titleId, false); }
+
+    private void save() { look(getContext(), game, opacity, scale, haptics); }
 }

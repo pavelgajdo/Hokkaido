@@ -74,10 +74,43 @@ final class Updater {
     private static final Handler UI = new Handler(Looper.getMainLooper());
 
     private static boolean checkedThisStart;   // one check per app start (process)
+    /** The last check's results (the start's or Check for updates'), for Settings' rows and Home's dot: the player's channel's update, and what
+     *  another channel offers beyond it (UpdateCheck.elsewhere); null when none or no check yet. In memory only: every start checks again */
+    static volatile UpdateCheck.Update waiting, beyond;
+    /** The last check's newest release per channel (STABLE, HOTFIX, PREVIEW in CHANNELS' order; null: none newer), and whether a check ran at all */
+    static volatile UpdateCheck.Update[] next = new UpdateCheck.Update[3];
+    static volatile boolean checked;
+    static final String[] CHANNELS = {UpdateCheck.STABLE, UpdateCheck.HOTFIX, UpdateCheck.PREVIEW};
+    /** Called on the main thread after a check stores its results (MainActivity: the dot and the Settings rows) */
+    static Runnable changed;
+
+    private static void store(List<List<UpdateCheck.Release>> l, int[] cur, boolean pv, String ch, UpdateCheck.Update own) {
+        waiting = own;
+        UpdateCheck.Update[] n = new UpdateCheck.Update[CHANNELS.length];
+        for (int i = 0; i < n.length; i++) n[i] = UpdateCheck.pickAll(l, cur, pv, CHANNELS[i]);
+        next = n; checked = true;
+        beyond = UpdateCheck.elsewhere(l, cur, pv, ch, own);
+        UI.post(() -> { if (changed != null) changed.run(); });
+    }
+
+    /** The Check for updates row's value: the version, then the waiting update (critical ones say Important fix) */
+    static String versionText(Context c) {
+        String s = Tx.s(R.string.settings_banana_native_version, version(c)) + (available(c) ? "" : Tx.s(R.string.home_release_app_only));
+        UpdateCheck.Update p = waiting;
+        if (p == null) return s;
+        return s + "\n" + Tx.s(R.string.settings_update_ready, p.label()) + ("critical".equals(UpdateCheck.kind(p.release)) ? " · " + Tx.s(R.string.settings_update_important) : "");
+    }
+
+    /** Whether Home's Settings button shows the dot (UpdateCheck.dot) */
+    static boolean dot(Context c) { return UpdateCheck.dot(waiting, Prefs.updateSeen(c)); }
+
+    /** Settings opened: the waiting update counts as seen (a critical one keeps its dot) */
+    static void seen(Context c) { UpdateCheck.Update p = waiting; if (p != null) Prefs.updateSeen(c, p.tag()); }
     private static File pending;   // a verified download waiting for "install unknown apps" (resume)
+    private static File waitingAccess;   // a verified download waiting for All files access, so the saves can be backed up first (resume asks again)
 
     /** The download waiting for its install, or null (Settings › Storage leaves it alone) */
-    static File pending() { return pending; }
+    static File pending() { return pending != null ? pending : waitingAccess; }
     private static boolean receiverOn;
     private static WeakReference<Activity> front = new WeakReference<>(null);
 
@@ -240,7 +273,12 @@ final class Updater {
             int[] cur = UpdateCheck.appVersion(version(app));
             if (cur == null) { Log.i(TAG, "check skipped: version " + version(app) + " is not X.Y.Z"); return; }
             UpdateCheck.Update u;
-            try { u = UpdateCheck.pickAll(releases(app), cur, !Prefs.hotfixUpdates(app)); }   // the start's offer follows Settings > Updates > small fix updates; Check for updates (checkNow) shows the newest of any kind
+            try {
+                List<List<UpdateCheck.Release>> l = releases(app);
+                boolean pv = UpdateCheck.previewApp(version(app)); String ch = Prefs.updateChannel(app);
+                u = UpdateCheck.pickAll(l, cur, pv, ch);   // the start's offer follows Settings > Updates > Update channel
+                store(l, cur, pv, ch, u);
+            }
             catch (Throwable e) {   // silent: a log line only
                 Log.w(TAG, "update check failed: " + why(e, "the release sources"));
                 return;
@@ -252,7 +290,10 @@ final class Updater {
         }, "nx-update-check").start();
     }
 
-    /** Settings › Updates › Check for updates: the release page when a newer release exists, else "You're up to date" */
+    /**
+     * Settings › Updates › Check for updates: the release page when a newer release of the player's channel exists, else "You're up to date"; on Stable, when
+     * only a newer hotfix exists, the message names it and the Hotfix channel (the channel is the choice: Check for updates does not step around it)
+     */
     static void checkNow(Activity a) {
         if (!available(a)) {
             msg(a, "Updates", Tx.s(R.string.settings_only_the_release_app_dev));
@@ -263,19 +304,103 @@ final class Updater {
         AlertDialog wait = new PadFocus.Builder(a).setMessage(Tx.s(R.string.settings_checking_for_updates)).setCancelable(false).create();
         wait.show();
         Context app = a.getApplicationContext();
+        String ch = Prefs.updateChannel(a);
+        boolean pv = UpdateCheck.previewApp(version(a));
         new Thread(() -> {
-            UpdateCheck.Update u = null; String err = null;
-            try { u = UpdateCheck.pickAll(releases(app), cur); }
+            UpdateCheck.Update u = null, any = null; String err = null;
+            try {
+                List<List<UpdateCheck.Release>> l = releases(app);
+                u = UpdateCheck.pickAll(l, cur, pv, ch);
+                any = UpdateCheck.STABLE.equals(ch) ? UpdateCheck.pickAll(l, cur, pv, UpdateCheck.HOTFIX) : u;   // on Stable, a newer hotfix, only to name it
+                store(l, cur, pv, ch, u);
+            }
             catch (Throwable e) { err = why(e, Tx.s(R.string.settings_the_release_sources)); Log.w(TAG, "update check failed: " + err); }
-            final UpdateCheck.Update got = u; final String fail = err;
+            final UpdateCheck.Update got = u, hotfix = any; final String fail = err;
             UI.post(() -> {
                 if (gone(a)) return;
                 wait.dismiss();
                 if (fail != null) Toast.makeText(a, Tx.s(R.string.settings_update_check_failed, fail), Toast.LENGTH_LONG).show();
+                else if (got == null && hotfix != null) Toast.makeText(a, Tx.s(R.string.settings_up_to_date_on_stable, UpdateCheck.text(cur), hotfix.label()), Toast.LENGTH_LONG).show();
                 else if (got == null) Toast.makeText(a, Tx.s(R.string.settings_up_to_date, UpdateCheck.text(cur)), Toast.LENGTH_LONG).show();
                 else popup(a, got);
             });
         }, "nx-update-check").start();
+    }
+
+    /** The channel row's value: the channel, then what another channel offers beyond it (only named: the choice stays the player's) */
+    static String channelValue(String channel) {
+        String s = channelText(channel);
+        UpdateCheck.Update o = beyond;
+        if (o == null || UpdateCheck.PREVIEW.equals(channel)) return s;
+        String to = UpdateCheck.channelFor(o.release);
+        String name = UpdateCheck.PREVIEW.equals(to) ? Tx.s(R.string.settings_channel_preview) : Tx.s(R.string.settings_channel_hotfix);
+        return s + "\n" + Tx.s(R.string.settings_update_elsewhere, o.label(), name);
+    }
+
+    /** The channel's name and what it offers, for its row */
+    private static String channelText(String channel) {
+        if (UpdateCheck.PREVIEW.equals(channel)) return Tx.s(R.string.settings_channel_preview) + " · " + Tx.s(R.string.settings_channel_preview_help);
+        return UpdateCheck.skipsHotfix(channel) ? Tx.s(R.string.settings_channel_stable) + " · " + Tx.s(R.string.settings_channel_stable_help)
+                : Tx.s(R.string.settings_channel_hotfix) + " · " + Tx.s(R.string.settings_channel_hotfix_help);
+    }
+
+    /** Settings › Updates › Update channel: Stable, Hotfix or Preview (UpdateCheck.STABLE, HOTFIX, PREVIEW; Prefs.updateChannel), picked from a list; the next check follows it */
+    /** A choice in the channel dialog: its name (bold), what it offers, and the version it would bring now (from the last check) */
+    private static CharSequence channelItem(int i) {
+        String id = CHANNELS[i];
+        String name = Tx.s(UpdateCheck.PREVIEW.equals(id) ? R.string.settings_channel_preview : UpdateCheck.HOTFIX.equals(id) ? R.string.settings_channel_hotfix : R.string.settings_channel_stable);
+        String help = Tx.s(UpdateCheck.PREVIEW.equals(id) ? R.string.settings_channel_preview_help : UpdateCheck.HOTFIX.equals(id) ? R.string.settings_channel_hotfix_help : R.string.settings_channel_stable_help);
+        UpdateCheck.Update n = next[i];
+        String now = !checked ? "" : "\n" + (n == null ? Tx.s(R.string.settings_channel_none) : Tx.s(R.string.settings_channel_next, n.label()));
+        SpannableStringBuilder b = new SpannableStringBuilder(name);
+        b.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, name.length(), 0);
+        b.append("\n").append(help).append(now);
+        return b;
+    }
+
+    /** Switch to a channel; when it brings a newer version than the app, its release page opens at once, so the player reads what it is before Update */
+    private static void switchTo(Activity a, Ui.Setting row, int i) {
+        Prefs.updateChannel(a, CHANNELS[i]);
+        beyond = null;   // what lies beyond depends on the channel: known again at the next check
+        row.value(channelValue(CHANNELS[i]));
+        UpdateCheck.Update n = next[i];
+        waiting = n;
+        if (changed != null) changed.run();
+        if (n != null) popup(a, n);
+    }
+
+    /** Settings › Updates: one line about the running build when it is a preview or a hotfix (BuildKind); "" for a weekly release or a test build */
+    static String runningBuild(String channel) {
+        String kind = Prefs.buildKind(), v = BuildConfig.VERSION_NAME, base = BuildKind.base(v);
+        if ("preview".equals(kind)) {
+            String s = Tx.s(R.string.settings_build_preview, v, base);
+            if (!UpdateCheck.PREVIEW.equals(channel))
+                s += "\n" + Tx.s(R.string.settings_build_preview_channel, UpdateCheck.STABLE.equals(channel) ? Tx.s(R.string.settings_channel_stable) : Tx.s(R.string.settings_channel_hotfix), base);
+            return s;
+        }
+        return BuildKind.isHotfix(kind) ? Tx.s(R.string.settings_build_hotfix, v) : "";
+    }
+
+    static Ui.Setting channelSetting(Activity a) {
+        Ui.Setting row = new Ui.Setting(a, "🩹", Tx.s(R.string.settings_update_channel), null).chevron(a);
+        CharSequence[] items = new CharSequence[CHANNELS.length];
+        row.view.setOnClickListener(v -> {
+            for (int i = 0; i < items.length; i++) items[i] = channelItem(i);
+            int was = java.util.Arrays.asList(CHANNELS).indexOf(Prefs.updateChannel(a));
+            new PadFocus.Builder(a).setTitle(Tx.s(R.string.settings_update_channel))
+                .setSingleChoiceItems(items, was, (d, w) -> {
+                    d.dismiss();
+                    if (w == was) return;
+                    if (UpdateCheck.PREVIEW.equals(CHANNELS[w]))   // previews may break games: say so before the switch
+                        new PadFocus.Builder(a).setTitle(Tx.s(R.string.settings_channel_preview)).setMessage(Tx.s(R.string.settings_channel_preview_confirm))
+                            .setPositiveButton(Tx.s(R.string.settings_channel_preview_switch), (d2, w2) -> switchTo(a, row, w))
+                            .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+                    else switchTo(a, row, w);
+                })
+                .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+        });
+        row.value(channelValue(Prefs.updateChannel(a)));
+        return row;
     }
 
     private static void msg(Activity a, String title, String msg) { new PadFocus.Builder(a).setTitle(title).setMessage(msg).setPositiveButton(android.R.string.ok, null).show(); }
@@ -342,7 +467,7 @@ final class Updater {
     static void cleanup(Context c) {
         File[] l = dir(c).listFiles();
         if (l == null) return;
-        for (File f : l) if (!f.equals(pending) && !f.delete()) Log.w(TAG, "could not delete " + f);
+        for (File f : l) if (!f.equals(pending) && !f.equals(waitingAccess) && !f.delete()) Log.w(TAG, "could not delete " + f);
     }
 
     private static void download(Activity a, UpdateCheck.Update u) {
@@ -369,7 +494,7 @@ final class Updater {
                 if (cancel[0]) return;
                 if (gone(a)) return;
                 if (fail != null) { msg(a, Tx.s(R.string.settings_update_not_installed), fail); return; }
-                install(a, got);
+                backupThenInstall(a, got);
             });
         }, "nx-update-download").start();
     }
@@ -413,6 +538,14 @@ final class Updater {
         return apk;
     }
 
+    /**
+     * A checked download: the saves are backed up first (UpdateBackupUi; Settings › Updates › Back up saves before updating), so a player who later uninstalls to go
+     * back to an older version keeps them outside app storage; then install
+     */
+    private static void backupThenInstall(Activity a, File apk) {
+        UpdateBackupUi.beforeInstall(a, () -> install(a, apk), () -> waitingAccess = apk, () -> { if (!apk.delete()) Log.w(TAG, "could not delete " + apk); });
+    }
+
     /** Installs a checked download; when installs from this app are not allowed yet, the system's screen for it first (resume continues) */
     private static void install(Activity a, File apk) {
         if (!a.getPackageManager().canRequestPackageInstalls()) {
@@ -432,6 +565,12 @@ final class Updater {
     /** MainActivity.onResume: back from "Install unknown apps" with a download waiting */
     static void resume(Activity a) {
         front = new WeakReference<>(a);
+        File w = waitingAccess;
+        if (w != null) {   // back from All files access (the save backup's question): asked again, with the access as it is now
+            waitingAccess = null;
+            if (w.isFile()) backupThenInstall(a, w);
+            return;
+        }
         File f = pending;
         if (f == null) return;
         if (!f.isFile()) { pending = null; return; }

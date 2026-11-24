@@ -77,6 +77,7 @@
     <string name="common_stop">Durdur</string>
     <string name="common_system">Sistem</string>
     <string name="common_time_of_day">Günün saati</string>
+    <string name="common_game_upscaler">Oyun ölçekleyici (DLSS)</string>
     <string name="common_upscaler">Yükseltici</string>
     <string name="common_use_fast_cores">Hızlı çekirdekleri kullan</string>
     <string name="common_users">Kullanıcılar</string>
@@ -178,8 +179,33 @@
     <string name="settings_on_the_controller_or_the">Kumandada veya kumandasız telefonda</string>
     <string name="settings_overlay">Bindirme</string>
     <string name="settings_picture_from_the_release_notes">Sürüm notlarından resim</string>
-    <string name="settings_small_fix_updates">Küçük düzeltme güncellemeleri</string>
-    <string name="settings_small_fix_updates_help">Uygulama açılırken küçük düzeltme sürümlerini öner. Kapalıysa yalnızca büyük güncellemeler önerilir; Güncellemeleri denetle yine en yenisini gösterir. Sonraki büyük güncelleme tüm düzeltmeleri içerir.</string>
+    <string name="settings_update_channel">Güncelleme kanalı</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">Haftalık sürümler ve kritik düzeltmeler. Her haftalık sürüm, öncesindeki tüm küçük düzeltmeleri içerir.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">Her sürüm; haftalık sürümler arasındaki küçük düzeltmeler de dahil.</string>
+    <string name="settings_channel_preview">Önizleme</string>
+    <string name="settings_channel_preview_help">Yeni bir gölgelendirici sürümü gibi büyük değişikliklerin erken sürümleri, Kararlı’dan yaklaşık bir hafta önce. Oyunları bozabilir; test edenler için.</string>
+    <string name="settings_backup_before_update">Güncellemeden önce kayıtları yedekle</string>
+    <string name="settings_backup_before_update_note">Bir güncelleme kurulmadan önce değişen kayıtlar, oyunlarının yanındaki save-backups klasörüne, uygulamanın depolama alanının dışına kopyalanır.</string>
+    <string name="settings_update_backing_up">Kayıtlar yedekleniyor…</string>
+    <string name="settings_update_backing_up_game">Kayıtlar yedekleniyor: %1$s (%2$d / %3$d)</string>
+    <string name="settings_update_game_user">%1$s (kullanıcı %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="one">Kayıtlar yedeklendi: %1$d oyun</item>
+        <item quantity="other">Kayıtlar yedeklendi: %1$d oyun</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">Kayıtlar son yedekten beri değişmedi</string>
+    <string name="settings_update_skipped_running">Oyun açıkken yedeklenmedi: %1$s</string>
+    <string name="settings_update_no_backup_title">Kayıtlar yedeklenmedi</string>
+    <string name="settings_update_no_backup_message">Bu kayıtlar uygulamanın depolama alanı dışına yedeklenemiyor ve uygulamayı kaldırmak o alanı siler:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: Tüm dosyalara erişim kapalı</string>
+    <string name="settings_update_reason_in_app">%1$s: yedek klasörü uygulamanın depolama alanında</string>
+    <string name="settings_update_without_backup">Yedeksiz güncelle</string>
+    <string name="settings_update_backup_failed_title">Kayıt yedeği başarısız</string>
+    <string name="settings_update_backup_failed_message">Bu kayıtlar yedeklenemedi. Kayıtların değişmedi.</string>
+    <string name="settings_update_anyway">Yine de güncelle</string>
+    <string name="settings_up_to_date_on_stable">Stable kanalında güncelsin (v%1$s). Küçük bir düzeltme, v%2$s, Hotfix kanalında çıktı.</string>
     <string name="settings_player_wiki">Oyuncu wikisi</string>
     <string name="settings_remove_leftovers_and_old_files">Artıkları ve eski dosyaları kaldırır; kayıtlara asla dokunmaz</string>
     <string name="settings_sample_games">Örnek oyunlar</string>
@@ -203,6 +229,9 @@
     <string name="settings_updates">Güncellemeler</string>
     <string name="settings_what_s_new">Yenilikler</string>
     <string name="settings_while_home_shows_a_game">Ana ekranda bir oyun hazırlanırken</string>
+    <string name="settings_update_shaders_automatically">Gölgelendiricileri otomatik güncelle</string>
+    <string name="settings_auto_shader_update_on">Gölgelendiricileri güncel olmayan bir oyun bunları arka planda günceller</string>
+    <string name="settings_auto_shader_update_off">Kapalı: oyunun sayfası istediğinizde bunları günceller</string>
     <string name="settings_xbox_button_label_swap">Xbox düğme etiketi değişimi</string>
     <string name="game_1_player">1 oyuncu</string>
     <string name="game_3d_scene">3B sahne</string>
@@ -215,13 +244,11 @@
     <string name="game_aspect_ratio">En-boy oranı</string>
     <string name="game_back_from_the_background_paused">Arka plandan dönüşte: dokunana kadar duraklatılır</string>
     <string name="game_back_from_the_background_runs">Arka plandan dönüşte: hemen çalışır</string>
-    <string name="game_back_to_the_game">Oyuna dön</string>
     <string name="game_background_pipelines">Arka plan işlem hatları</string>
     <string name="game_busy_threads_off_the_small">Yoğun iş parçacıkları küçük çekirdeklerden uzak</string>
     <string name="game_centre">Orta</string>
     <string name="game_classic_render_passes">Klasik çizim geçişleri</string>
     <string name="game_clear">Temizle</string>
-    <string name="game_close_the_panel_back_to">Paneli kapat, oyuna dön</string>
     <string name="game_controller_panel">Kumanda paneli</string>
     <string name="game_could_not_save_link_play">Link Play ayarları kaydedilemedi.</string>
     <string name="game_details">Ayrıntılar</string>
@@ -271,7 +298,9 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">Uygulamanın depolaması inceleniyor…</string>
     <string name="game_made_when_first_drawn_may">İlk çizildiğinde oluşturulur: takılabilir</string>
-    <string name="game_mode_performance_the_only_shader">Mod: performans (Eden\'in LSFG\'sinin kullandığı tek gölgelendirici kümesi)</string>
+    <string name="game_lsfg_quality">Kalite</string>
+    <string name="game_lsfg_shaders">Gölgelendiriciler (Kalite: üretilen karelerde daha fazla ayrıntı, yaklaşık dört kat GPU süresi)</string>
+    <string name="game_lsfg_screen_limit">Ekran en fazla %1$d Hz ile çalışıyor (Android ekran ayarları): daha hızlı hedefler ve oyun karesi başına daha fazla kare sunulmuyor</string>
     <string name="game_motion_clarity">Hareket netliği</string>
     <string name="game_motion_estimation_resolution_lower_i">Hareket kestirimi çözünürlüğü (düşük olan daha hızlı)</string>
     <string name="game_motion_sensitivity">Hareket hassasiyeti</string>
@@ -282,6 +311,8 @@
     <string name="game_building_shaders_label">“Gölgelendiriciler oluşturuluyor” etiketi</string>
     <string name="settings_building_shaders_label">“Gölgelendiriciler oluşturuluyor” etiketi</string>
     <string name="settings_building_shaders_label_note">Oynarken eksik gölgelendiricileri oluşturan bir oyun, ekranın üstünde küçük, yarı saydam bir sayı gösterir. Telefonun soğumasını ya da daha fazla pili bekleyen bir oluşturma her zaman bildirilir. Etiketi gizlemek oluşturmayı durdurmaz.</string>
+    <string name="settings_startup_log">Başlangıç günlüğünü göster</string>
+    <string name="settings_startup_log_note">Oyun ilk karesini çizene kadar siyah ekran üzerinde önyükleme günlüğünü gösterir. Çökmeler yine gösterilir ve günlük her zaman diske kaydedilir.</string>
     <string-array name="arr_layer_label">
         <item>Kapalı</item>
         <item>Yalnızca sayı</item>
@@ -303,6 +334,7 @@
     <string name="game_open_the_in_game_panel">Oyun içi paneli aç</string>
     <string name="game_pause_on_return">Dönüşte duraklat</string>
     <string name="game_pause_the_game">Oyunu duraklat</string>
+    <string name="game_resume_the_game">Oyuna devam et</string>
     <string name="game_hide_everything_clean_picture">Her şeyi gizle (temiz görüntü)</string>
     <string name="game_show_everything">Her şeyi göster</string>
     <string name="game_pause_when_the_game_comes">Oyun arka plandan dönünce duraklat</string>
@@ -470,6 +502,15 @@
     <string name="prepare_pack_not_imported">Paket içe aktarılmadı</string>
     <string name="prepare_pack_imported">Paket içe aktarıldı</string>
     <string name="ready_readiness_check">Hazırlık kontrolü</string>
+    <string name="settings_update_ready">v%1$s yüklenmeye hazır</string>
+    <string name="settings_update_elsewhere">v%1$s, %2$s kanalında çıktı</string>
+    <string name="settings_channel_next">Sonraki güncelleme: v%1$s</string>
+    <string name="settings_channel_none">Bu sürümden yenisi yok</string>
+    <string name="settings_channel_preview_confirm">Önizlemeler büyük değişikliklerin erken derlemeleridir. Bir oyunu bozabilir veya gölgelendiricilerinin yeniden derlenmesini gerektirebilir. Kayıtların olduğu gibi kalır ve uygulama her güncellemeden önce yedekler. Önizleme kanalına geçilsin mi?</string>
+    <string name="settings_channel_preview_switch">Önizlemeye geç</string>
+    <string name="settings_update_hotfix">Haftalık sürümler arasında küçük düzeltme (Hotfix kanalı).</string>
+    <string name="settings_update_important">Önemli düzeltme: herkesin bu güncellemeyi yüklemesi önerilir.</string>
+    <string name="settings_update_preview">Önizleme sürümü: hatalar içerebilir. Kayıtların olduğu gibi kalır.</string>
     <string name="settings_update_available">Güncelleme var</string>
     <string name="game_no_backup_made">Yedek alınmadı</string>
     <string name="game_the_save_could_not_be">Kayıt yedeklenemedi. Yalnızca okundu, hiç değiştirilmedi.</string>
@@ -499,6 +540,7 @@
     <string name="home_copied_into_the_app">Uygulamaya kopyalandı: %1$s</string>
     <string name="home_game_now_uses">%1$s artık şunu kullanıyor: %2$s.</string>
     <string name="home_lossless_dll_not_installed">Lossless.dll kurulmadı: %1$s</string>
+    <string name="home_tile_details">Ayrıntılar ›</string>
     <string name="home_checking_name">Denetleniyor: %1$s…</string>
     <plurals name="home_checking_games">
         <item quantity="one">%1$d oyun denetleniyor…</item>
@@ -560,12 +602,14 @@
     <string name="game_save_copy_failed">Kaydınız uygulamanın depolamasına kopyalanamadı (%1$s). Bu başlangıçta bulunduğu yerde oynanır: %2$s.</string>
     <string name="game_name_checking_gpu">%1$s: bu telefonun GPU\'su denetleniyor…</string>
     <string name="game_details_also_in_readiness">Ayrıntılar Ayarlar › Hazırlık kontrolü\'nde de var.</string>
+    <string name="game_name_starting">%1$s: başlatılıyor…</string>
     <string name="game_name_starting_log">%1$s: başlatılıyor. Günlük: %2$s</string>
     <string name="err_cannot_start_name">Başlatılamıyor: %1$s</string>
     <string name="err_name_is_running">%1$s çalışıyor</string>
     <string name="err_stop_it_first_then_start">Önce durdurun (oyun içi panel › Oyunu durdur), sonra %1$s oyununu başlatın. Aynı anda tek oyun çalışır.</string>
-    <string name="game_menu_hint">Menü: sağ kenardan içeri kaydırın veya Geri\'ye basın</string>
-    <string name="game_tab_n_of_m">%1$s sekmesi, %2$d / %3$d</string>
+    <string name="game_menu_hint">Menü: Geri\'ye basın\nAyarlar: sağ kenardan içeri kaydırın</string>
+    <string name="game_menu_gpu_driver">GPU sürücüsü: %1$s</string>
+    <string name="game_menu_system_driver">Sistem</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">Boyut %1$d %%</string>
     <string name="game_button_mapping_applies">Düğme eşleme: %1$s, bir sonraki başlangıçta uygulanır</string>
@@ -746,6 +790,9 @@
     <string name="game_experimental">Deneysel</string>
     <string name="game_never_drops_to_30_less">30\'a düşmez; 60 altında daha az düzgün</string>
     <string name="game_drops_to_30_when_60">60 tutmazsa 30\'a düşer</string>
+    <string name="game_keep_gpu_clock_up">GPU saat hızını yüksek tut</string>
+    <string name="game_keep_gpu_clock_up_on">Menülerden sonra da: düşük kare hızında takılan bir oyunu düzeltebilir; telefon daha çok ısınır</string>
+    <string name="game_keep_gpu_clock_up_off">Sistem menülerde GPU saat hızını düşürebilir; telefon daha serin kalır</string>
     <string name="game_normal_speed_when_the_frame">Kare hızı düşünce normal hız</string>
     <string name="game_slows_down_with_the_frame">Kare hızıyla birlikte yavaşlar</string>
     <string name="game_all_grass_and_foliage">Tüm çimen ve yapraklar</string>
@@ -759,6 +806,9 @@
     <string name="home_lossless_dll_missing">" · Lossless.dll eksik"</string>
     <string name="home_why">Neden?</string>
     <string name="home_shaders_need_one_update">Gölgelendiricilerin bir güncellemeye ihtiyacı var</string>
+    <string name="home_other_pack_has_shaders">Başka bir pakette gölgelendiriciler var</string>
+    <string name="home_other_pack_has_shaders_message">Bu kartın kullandığı pakette uygulamanın bu sürümü için gölgelendirici yok. %1$s için başka bir pakette var. Bu kart için o paket kullanılsın mı?</string>
+    <string name="home_use_that_pack">O paketi kullan</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">Bir sonraki kareden itibaren uygulanır, bu oyun için saklanır (Oyun ayarları › Yükseltici ile aynı ayar).</string>
     <string name="game_applies_from_the_next_frame_2">Bir sonraki kareden itibaren uygulanır, bu oyun için saklanır (Oyun ayarları › Ekran ölçekleme ile aynı ayar).</string>
@@ -780,6 +830,10 @@
     <string name="prepare_the_ones_it_has_stay">"Mevcut olanlar yapıldıkları gibi kalır; Gölgelendiricileri güncelle hepsini bu sürümle yeniden yapar. "</string>
     <string name="prepare_shaders_older_built_while_playing">Gölgelendiriciler: eski, oynarken oluşturuldu</string>
     <string name="prepare_also_build_all_shaders_now">Tüm gölgelendiricileri de şimdi oluştur</string>
+    <string name="prepare_recommended_build_all_shaders">Önerilen: daha akıcı oyun için tüm gölgelendiricileri şimdi derle (%1$s, en iyisi şarjdayken).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">Şimdi oynayabilirsin; eksik gölgelendiriciler oynarken derlenir.</string>
+    <string name="prepare_you_can_play_now_older">Şimdi eski gölgelendiricilerle oynayabilirsin.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" Eski gölgelendiricileriyle çalışır."</string>
     <string name="prepare_or_finish_with_the_game">Ya da yalnızca oyunun koduyla bitirin: oyun o zaman oynanır ve gölgelendiricilerini siz oynarken oluşturur; sayfasındaki Tümünü oluştur tüm seti sonra yapar.</string>
     <string name="prepare_finish_without_shaders">Gölgelendiricisiz bitir</string>
     <string name="prepare_ready_to_play_it_builds">Oynamaya hazır. Oynarken gölgelendiricileri oluşturur.</string>
@@ -965,6 +1019,7 @@
     <string name="game_throttle_dot_green_yellow_red">Kısma noktası (yeşil / sarı / kırmızı)</string>
     <string name="game_frame_rate_and_frame_time">Kare hızı ve kare süresi</string>
     <string name="game_drag_a_control_or_the">Bir kontrolü veya görüntüyü sürükleyin; boyutlandırmak için bir kontrolü sıkıştırın</string>
+    <string name="game_tap_a_control_to_hide_or_show">Bir kontrolü gizlemek veya göstermek için dokunun</string>
     <string name="game_picture_drag_into_the_black">görüntü: siyah şeritlere sürükleyin</string>
     <string name="game_temporal_sharpness">Zamansal keskinlik</string>
     <string name="game_sharpness">Keskinlik</string>
@@ -1117,8 +1172,6 @@
     <string name="err_this_game">bu oyun</string>
     <string name="err_app_supports_only">Bu uygulama yalnızca %1$s (%2$s) %3$s destekler.</string>
     <string name="err_or_word">" veya "</string>
-    <string name="prepare_in_the_background_best_on">, arka planda, en iyisi şarjda). İstediğiniz zaman duraklatabilirsiniz.</string>
-    <string name="prepare_the_game_plays_now_and">Oyun şimdi oynanır ve siz oynarken gölgelendiricileri oluşturur; bu, tüm seti şimdi oluşturur (</string>
     <string name="prepare_build_them_there_scripts_pack">onları orada oluşturun (scripts/pack_android.py) ve kitaplığı Kitaplık içe aktar ile ekleyin.</string>
     <string name="prepare_the_game_plays_now_on">"Oyun şimdi eski gölgelendiricileriyle oynanır; ihtiyaç duyduğu ve kitaplıkta olmayanlar siz oynarken oluşturulur. "</string>
     <string name="prepare_build_all_on_the_game_2">Oyun sayfasındaki Tümünü oluştur tüm seti şimdi yapar, oradaki Kitaplık içe aktar ise bir bilgisayarda oluşturulmuş birini alır.</string>
@@ -1300,7 +1353,6 @@
     <string name="settings_player_id">Oyuncu kimliği</string>
     <string name="settings_player_id_hint">İsimler yalnızca etikettir: kayıtlar kimliği izler, bu yüzden ad değiştirmek kayıtları taşımaz veya karıştırmaz.</string>
     <string name="settings_that_picture_could_not_be_read">Bu resim okunamadı</string>
-    <string name="home_tile_details">Ayrıntılar ›</string>
     <string name="home_move_left">Sola taşı</string>
     <string name="home_move_right">Sağa taşı</string>
     <string name="home_delete_game_menu">Oyunu kaldır…</string>
@@ -1321,9 +1373,10 @@
         <item>Liste</item>
     </string-array>
     <string name="home_move_game">Taşı</string>
+    <string name="home_rename_game">Oyunu yeniden adlandır</string>
+    <string name="home_reset_name">Adı sıfırla</string>
     <string name="hint_open">Aç</string>
     <string name="hint_options_hold">Seçenekler (basılı tut)</string>
-    <string name="hint_hold_for_options">Seçenekler için bir oyuna basılı tut</string>
     <string name="hint_move">Taşı</string>
     <string name="hint_place">Bırak</string>
     <string name="hint_cancel">İptal</string>
@@ -1358,4 +1411,15 @@
     <string name="game_fast_fp16_shader_math">Hızlı FP16 gölgelendirici matematiği</string>
     <string name="game_fp16_on_turnip_faster">Turnip\'te 16 bit yarım duyarlık: daha hızlı gölgelendirme, daha az ısı</string>
     <string name="game_fp16_default_precision">Varsayılan duyarlık</string>
+    <string name="settings_build_preview">Bir önizleme sürümü (v%1$s) kullanıyorsun. Önizlemeler oyunları bozabilir. Kararlı v%2$s çıktığında bunun yerini alır.</string>
+    <string name="settings_build_preview_channel">Kanalın %1$s: kararlı v%2$s çıktığında uygulama seni ona geçirir.</string>
+    <string name="settings_build_hotfix">Bir hızlı düzeltme sürümü (v%1$s) kullanıyorsun: haftalık sürümler arasında küçük bir düzeltme. Sonraki haftalık sürüm onu içerir.</string>
+    <string name="common_picture_size">Görüntü boyutu</string>
+    <string name="game_lsfg_on_target">Açık · %1$d fps</string>
+    <string name="game_own_follows_settings">Bu oyun Ayarlar\'ı izliyor (%1$s). Burada yapılan bir değişiklik bu oyuna özel olur.</string>
+    <string name="game_own_settings_note">Bunlar bu oyunun kendi ayarları. Ayarlar\'a yeniden uymak için Ayarlar varsayılanını kullanın.</string>
+    <string name="game_use_settings_default">Ayarlar varsayılanını kullan</string>
+    <string name="settings_touch_look">Ekran kontrollerinin görünümü</string>
+    <string name="settings_panel_look">Oyun içi panelin görünümü</string>
+    <string name="settings_player_one_away">Seçilen kumanda (bağlı değil)</string>
 </resources>

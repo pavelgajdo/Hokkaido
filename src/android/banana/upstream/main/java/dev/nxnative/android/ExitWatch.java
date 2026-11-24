@@ -84,8 +84,13 @@ final class ExitWatch {
         if (owned) append(recordFile, "log=" + log.getName() + "\n");
     }
 
-    /** The player stopped the game (Stop, Back at a start that cannot go on): no notice */
-    static void stopped() { if (owned && recordFile != null) append(recordFile, "state=stopped\n"); }
+    /** The player stopped the game (Stop, Back at a start that cannot go on, the game's screen gone for good): no notice. Written once per process */
+    private static boolean stoppedOnce;
+    static synchronized void stopped() {
+        if (stoppedOnce) return;
+        stoppedOnce = true;
+        if (owned && recordFile != null) append(recordFile, "state=stopped\n");
+    }
 
     /** An end the game's screen told the player about itself (a screen restored into a new process): the launcher does not tell it again */
     static void shown(Context c) { append(record(c), "shown=1\n"); }
@@ -106,7 +111,7 @@ final class ExitWatch {
                     File log = runLog;
                     if (log == null) {
                         log = new File(logDir, runId + "-" + new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date()) + ".log");
-                        append(log, "[nxlaunch] build " + BuildConfig.VERSION_NAME + " (" + BuildConfig.NX_COMMIT + "): the game process crashed before its log started\n");
+                        append(log, "[nxlaunch] build " + BuildConfig.VERSION_NAME + BuildKind.logNote(Prefs.buildKind()) + " (" + BuildConfig.NX_COMMIT + "): the game process crashed before its log started\n");
                         append(recordFile, "log=" + log.getName() + "\n");
                     }
                     append(log, ExitNotice.crashBlock(t.getName(), w.toString(), 60));   // the log is opened O_APPEND by nxlaunch too: whole lines, no overlap

@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- machine translated, unreviewed: the English res/values/strings.xml is the source; see android/README.md, Languages -->
 <resources>
-    <!-- Resolution, Upscaling quality and Graphics quality (a game whose profile has a render_cfg row: Game settings and the in-game panel; Profile.renderOutLabel,
-         Profile.renderPctLabel, Profile.renderRestartNote) -->
     <string name="render_res_title">Роздільна здатність</string>
     <string name="render_upscale_title">Якість апскейлінгу</string>
     <string name="render_gfx_title">Якість графіки</string>
-    <!-- a size's label from its height; the game's original size; the suffix of a size above the original and of Native -->
     <string name="render_res_height">%1$dp</string>
     <string name="render_res_original">%1$dp (оригінал у док-режимі)</string>
     <string name="render_heavy">%1$s (важкий режим)</string>
-    <!-- in the order of Profile.RENDER_PCTS: 100, 67, 59, 50, 33 % -->
     <string-array name="render_upscale">
         <item>Нативна</item>
         <item>Якість</item>
@@ -18,14 +14,11 @@
         <item>Продуктивність</item>
         <item>Ультрапродуктивність</item>
     </string-array>
-    <!-- quality, then performance -->
     <string-array name="render_gfx">
         <item>Якість</item>
         <item>Продуктивність</item>
     </string-array>
-    <!-- shown only when a pick needs another render target pool size than the running game loaded (in Game settings: than the setting stored before the pick) -->
     <string name="render_restart_note">Ця зміна набуде чинності після перезапуску гри.</string>
-    <!-- Cheats (a game whose profile has cheat files: Game settings › Game options, its Cheat files sheet, and the in-game panel's General tab; Cheats.java, CheatsUi.java) -->
     <string name="cheats_title">Чити</string>
     <string name="cheats_caution">Змінені читами значення зберігаються під час збереження гри.</string>
     <string name="cheats_on">Список читів у внутрішньоігровій панелі (Загальне). Змінені читами значення зберігаються під час збереження гри</string>
@@ -42,13 +35,8 @@
     <string name="cheats_refused">Не імпортовано: %1$s</string>
     <string name="cheats_zip_done">Імпортовано файлів читів: %1$d, а також перемикачі читів.</string>
     <string name="cheats_exported">Чити експортовано.</string>
-    <!-- The launcher's text, moved out of the code (Tx.s(R.string.key); android/README.md, Languages). English is the source and the fallback. Keys by screen:
-         common_ (shared), home_, settings_, game_, prepare_, ready_, err_. The Advanced page, log lines and [RED] lines stay English in the code -->
     <string name="settings_language_title">Мова</string>
-    <!-- the language's own name comes first: "Español (unreviewed)" -->
     <string name="settings_language_system">Системна за замовчуванням (%1$s)</string>
-
-    <!-- Shared -->
     <string name="common_about">Про додаток</string>
     <string name="common_appearance">Зовнішній вигляд</string>
     <string name="common_back">Назад</string>
@@ -83,15 +71,16 @@
     <string name="common_resolution">Роздільна здатність</string>
     <string name="common_rumble">Вібрація</string>
     <string name="common_screen_rotation">Орієнтація екрана</string>
+    <string name="common_screen_scaling">Масштабування екрана</string>
+    <string name="common_screen_sharpness">Різкість екрана</string>
     <string name="common_share_log">Надіслати лог</string>
     <string name="common_stop">Зупинити</string>
     <string name="common_system">Система</string>
     <string name="common_time_of_day">Час доби</string>
+    <string name="common_game_upscaler">Апскейлер гри (DLSS)</string>
     <string name="common_upscaler">Апскейлер</string>
     <string name="common_use_fast_cores">Використовувати швидкі ядра</string>
     <string name="common_users">Користувачі</string>
-
-    <!-- Home, the dock, adding and removing a game -->
     <string name="home_a_command_from_another_app">Команду від іншого додатка проігноровано (Налаштування › Керування через ADB вимкнено)</string>
     <string name="home_a_dump_folder_copied_into">Папка дампа (скопійована в додаток: для читання папки на її поточному місці потрібен доступ до всіх файлів)</string>
     <string name="home_a_shortcut_that_starts_this">Ярлик для швидкого запуску цієї гри</string>
@@ -139,6 +128,7 @@
     <string name="home_ready">Готово</string>
     <string name="home_ready_game_code_update_paused">Готово · оновлення коду гри на паузі</string>
     <string name="home_ready_game_code_update_waits">Готово · очікує оновлення коду гри</string>
+    <string name="home_ready_game_code_update_stopped">Готово · оновлення коду гри зупинено, торкніться, щоб повторити</string>
     <string name="home_ready_shaders_need_one_update">Готово · потрібне разове оновлення шейдерів</string>
     <string name="home_ready_update">Готово · оновлення</string>
     <string name="home_ready_updating_game_code">Готово · оновлення коду гри</string>
@@ -160,8 +150,6 @@
     <string name="home_this_game_s_newest_log">Найновіший лог цієї гри</string>
     <string name="home_turn_on_and_play">Увімкнути та грати</string>
     <string name="home_without_them_the_game_draws">Без них гра нічого не відображатиме.</string>
-
-    <!-- Settings, users, updates, the release page -->
     <string name="settings_a_tick_when_the_focus">Клацання при переміщенні фокуса та сигнал при натисканні</string>
     <string name="settings_a_user_needs_a_name">Користувачеві потрібне ім\'я</string>
     <string name="settings_adb_control_debug">Керування через ADB (налагодження)</string>
@@ -191,6 +179,35 @@
     <string name="settings_on_the_controller_or_the">На геймпаді або на екрані телефона без нього</string>
     <string name="settings_overlay">Оверлей</string>
     <string name="settings_picture_from_the_release_notes">Зображення з приміток до релізу</string>
+    <string name="settings_update_channel">Канал оновлень</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">Щотижневі випуски та критичні виправлення. Кожен щотижневий випуск містить усі попередні дрібні виправлення.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">Кожен випуск, також дрібні виправлення між щотижневими.</string>
+    <string name="settings_channel_preview">Попередній перегляд</string>
+    <string name="settings_channel_preview_help">Ранні збірки більших змін, як-от нова версія шейдерів, приблизно за тиждень до Стабільного. Можуть ламати ігри; для тестувальників.</string>
+    <string name="settings_backup_before_update">Резервна копія збережень перед оновленням</string>
+    <string name="settings_backup_before_update_note">Перед встановленням оновлення змінені збереження копіюються в save-backups поруч з іграми, поза сховищем застосунку.</string>
+    <string name="settings_update_backing_up">Копіювання збережень…</string>
+    <string name="settings_update_backing_up_game">Копіювання збережень: %1$s (%2$d з %3$d)</string>
+    <string name="settings_update_game_user">%1$s (користувач %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="one">Збереження скопійовано: %1$d гра</item>
+        <item quantity="few">Збереження скопійовано: %1$d гри</item>
+        <item quantity="many">Збереження скопійовано: %1$d ігор</item>
+        <item quantity="other">Збереження скопійовано: %1$d гри</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">Збереження не змінювалися з останньої копії</string>
+    <string name="settings_update_skipped_running">Без копії, поки гра працює: %1$s</string>
+    <string name="settings_update_no_backup_title">Збереження без копії</string>
+    <string name="settings_update_no_backup_message">Ці збереження не можна скопіювати поза сховище застосунку, а видалення застосунку стирає це сховище:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: доступ до всіх файлів вимкнено</string>
+    <string name="settings_update_reason_in_app">%1$s: папка копій у сховищі застосунку</string>
+    <string name="settings_update_without_backup">Оновити без копії</string>
+    <string name="settings_update_backup_failed_title">Не вдалося скопіювати збереження</string>
+    <string name="settings_update_backup_failed_message">Ці збереження не вдалося скопіювати. Ваші збереження не змінено.</string>
+    <string name="settings_update_anyway">Все одно оновити</string>
+    <string name="settings_up_to_date_on_stable">У вас актуальна версія на Stable (v%1$s). Дрібне виправлення v%2$s вийшло на каналі Hotfix.</string>
     <string name="settings_player_wiki">Wiki для гравців</string>
     <string name="settings_remove_leftovers_and_old_files">Видалення залишків і старих файлів; збереження ніколи не зачіпаються</string>
     <string name="settings_sample_games">Тестові плитки ігор</string>
@@ -214,9 +231,10 @@
     <string name="settings_updates">Оновлення</string>
     <string name="settings_what_s_new">Що нового</string>
     <string name="settings_while_home_shows_a_game">Поки на головному екрані триває підготовка гри</string>
+    <string name="settings_update_shaders_automatically">Оновлювати шейдери автоматично</string>
+    <string name="settings_auto_shader_update_on">Гра із застарілими шейдерами оновлює їх у фоновому режимі</string>
+    <string name="settings_auto_shader_update_off">Вимкнено: сторінка гри оновлює їх на ваш запит</string>
     <string name="settings_xbox_button_label_swap">Підміна позначень кнопок під Xbox</string>
-
-    <!-- The game page, the in-game panel, pickers and sliders -->
     <string name="game_1_player">1 гравець</string>
     <string name="game_3d_scene">3D-сцена</string>
     <string name="game_a_game_s_data">Дані гри</string>
@@ -228,13 +246,11 @@
     <string name="game_aspect_ratio">Співвідношення сторін</string>
     <string name="game_back_from_the_background_paused">Після повернення з фону: на паузі до дотику</string>
     <string name="game_back_from_the_background_runs">Після повернення з фону: працює одразу</string>
-    <string name="game_back_to_the_game">Повернутися до гри</string>
     <string name="game_background_pipelines">Фонова компіляція конвеєрів</string>
     <string name="game_busy_threads_off_the_small">Навантажені потоки подалі від малих ядер</string>
     <string name="game_centre">По центру</string>
     <string name="game_classic_render_passes">Класичні проходи рендерингу</string>
     <string name="game_clear">Очистити</string>
-    <string name="game_close_the_panel_back_to">Закрити панель і повернутися до гри</string>
     <string name="game_controller_panel">Панель геймпада</string>
     <string name="game_could_not_save_link_play">Не вдалося зберегти налаштування Link Play.</string>
     <string name="game_details">Деталі</string>
@@ -284,17 +300,21 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">Перевірка сховища додатка…</string>
     <string name="game_made_when_first_drawn_may">Створюються при першому відмальовуванні: можливі мікрофризи</string>
-    <string name="game_mode_performance_the_only_shader">Режим: продуктивність (єдиний набір шейдерів, який використовує LSFG в Eden)</string>
+    <string name="game_lsfg_quality">Якість</string>
+    <string name="game_lsfg_shaders">Шейдери (Якість: більше деталей у згенерованих кадрах, приблизно вчетверо більше часу GPU)</string>
+    <string name="game_lsfg_screen_limit">Екран працює з частотою до %1$d Гц (налаштування дисплея Android): швидші цілі та більше кадрів на кадр гри не пропонуються</string>
     <string name="game_motion_clarity">Чіткість у русі</string>
     <string name="game_motion_estimation_resolution_lower_i">Роздільна здатність оцінки руху (менше — швидше)</string>
     <string name="game_motion_sensitivity">Чутливість гіроскопа</string>
-    <string name="game_needs_prepare_again">" \u00b7 потрібне «Підготувати знову»"</string>
+    <string name="game_needs_prepare_again">" · потрібне «Підготувати знову»"</string>
     <string name="game_none">Немає</string>
     <string name="game_not_in_this_build_built">Відсутнє в цій збірці (зібрано з -PnxLsfg=false).</string>
     <string name="game_not_now">Не зараз</string>
     <string name="game_building_shaders_label">Індикатор збірки шейдерів</string>
     <string name="settings_building_shaders_label">Індикатор збірки шейдерів</string>
     <string name="settings_building_shaders_label_note">Коли гра збирає відсутні шейдери під час гри, угорі екрана показується невеликий напівпрозорий лічильник. Якщо збірка чекає на охолодження телефона чи вищий заряд батареї, про це повідомляється завжди. Приховування напису не зупиняє збірку.</string>
+    <string name="settings_startup_log">Показувати лог запуску</string>
+    <string name="settings_startup_log_note">Показувати лог завантаження на чорному екрані, доки гра не намалює перший кадр. Збої все одно показуються, а лог завжди зберігається на диск.</string>
     <string-array name="arr_layer_label">
         <item>Вимкнено</item>
         <item>Лише число</item>
@@ -316,6 +336,7 @@
     <string name="game_open_the_in_game_panel">Відкрити внутрішньоігрову панель</string>
     <string name="game_pause_on_return">Пауза при поверненні</string>
     <string name="game_pause_the_game">Поставити гру на паузу</string>
+    <string name="game_resume_the_game">Продовжити гру</string>
     <string name="game_hide_everything_clean_picture">Сховати все (чисте зображення)</string>
     <string name="game_show_everything">Показати все</string>
     <string name="game_pause_when_the_game_comes">Ставити на паузу при поверненні гри з фонового режиму</string>
@@ -377,8 +398,6 @@
     <string name="game_with_the_device_save">, зі збереженням на пристрої</string>
     <string name="game_xbox_button_labels">Позначення кнопок Xbox</string>
     <string name="game_your_own_values_stay_change">Ваші власні значення зберігаються: змініть будь-який параметр нижче.</string>
-
-    <!-- Prepare, packs, folders, the on-device preparation -->
     <string name="prepare_build_shaders">Зібрати шейдери</string>
     <string name="prepare_copy_and_use">Скопіювати та використати</string>
     <string name="prepare_copy_the_save">Скопіювати збереження?</string>
@@ -418,22 +437,16 @@
     <string name="prepare_use_an_existing_pack">Використати наявний пак…</string>
     <string name="prepare_use_it_empty">Використати порожньою</string>
     <string name="prepare_use_the_app_s_save">Використати збереження додатка</string>
-
-    <!-- Readiness check and graphics self-test -->
     <string name="ready_checking">Перевірка…</string>
     <string name="ready_fail_this_host_has_no">ПОМИЛКА: у цьому хості немає nxhost_vk_selftest</string>
     <string name="ready_graphics_self_test_waiting_for">Самоперевірка графіки: очікування поверхні</string>
     <string name="ready_readiness_report_copied">Звіт про готовність скопійовано</string>
     <string name="ready_run_again">Запустити знову</string>
     <string name="ready_share">Поділитися</string>
-
-    <!-- Errors and the notices after a game ends -->
     <string name="err_cannot_start_the_game">Не вдається запустити гру</string>
     <string name="err_more_details">Детальніше</string>
     <string name="err_undo">Скасувати</string>
     <string name="err_what_it_means">Що це означає</string>
-
-    <!-- more of the same, found by a second pass over array and list items -->
     <string name="game_performance">Продуктивність</string>
     <string name="game_storage">Сховище</string>
     <string name="game_recommended">Рекомендовано</string>
@@ -462,8 +475,6 @@
     <string name="game_bottom">Знизу</string>
     <string name="settings_rename">Перейменувати</string>
     <string name="settings_remove">Вилучити</string>
-
-    <!-- dialogs, sheets, headers and error lines -->
     <string name="prepare_save_folder_gone">Папка збережень зникла</string>
     <string name="prepare_no_games_yet_add_game">Ігор ще немає: спершу натисніть «+ Додати гру». Кожна гра має власні папки (торкніться її плитки, потім Сховище › Папки…).</string>
     <string name="common_pick_the_pack_folder_the">Оберіть папку паку (ту, що містить pack.tsv і shaders/)</string>
@@ -482,7 +493,7 @@
     <string name="home_this_game_has_no_pack">Ця гра не має придатного паку. Його можна обрати на сторінці гри › Сховище › Папки.</string>
     <string name="home_unsupported_game_version">Непідтримувана версія гри</string>
     <string name="home_the_pack_cannot_start_this">Цей пак не може запустити цю гру</string>
-    <string name="home_n_nprepare_again_rewrites_the">\n\n«Підготувати знову» перезапише код гри з вашого дампа (кілька хвилин; шейдери збережуться).</string>
+    <string name="home_n_nprepare_again_rewrites_the">"\n\n«Підготувати знову» перезапише код гри з вашого дампа (кілька хвилин; шейдери збережуться)."</string>
     <string name="home_overlay">Оверлей</string>
     <string name="home_frame_generation">Генерація кадрів</string>
     <string name="home_no_log_yet">Логу ще немає.</string>
@@ -493,6 +504,15 @@
     <string name="prepare_pack_not_imported">Пак не імпортовано</string>
     <string name="prepare_pack_imported">Пак імпортовано</string>
     <string name="ready_readiness_check">Перевірка готовності</string>
+    <string name="settings_update_ready">v%1$s готова до встановлення</string>
+    <string name="settings_update_elsewhere">v%1$s вийшла на каналі %2$s</string>
+    <string name="settings_channel_next">Наступне оновлення: v%1$s</string>
+    <string name="settings_channel_none">Немає новішої за цю версію</string>
+    <string name="settings_channel_preview_confirm">Попередні версії — це ранні збірки великих змін. Вони можуть зламати гру або потребувати повторного збирання її шейдерів. Збереження лишаються, і застосунок копіює їх перед кожним оновленням. Перейти на Preview?</string>
+    <string name="settings_channel_preview_switch">Перейти на Preview</string>
+    <string name="settings_update_hotfix">Невелике виправлення між щотижневими випусками (канал Hotfix).</string>
+    <string name="settings_update_important">Важливе виправлення: усім варто встановити це оновлення.</string>
+    <string name="settings_update_preview">Попередня збірка: можуть бути помилки. Ваші збереження лишаються як є.</string>
     <string name="settings_update_available">Доступне оновлення</string>
     <string name="game_no_backup_made">Резервну копію не створено</string>
     <string name="game_the_save_could_not_be">Не вдалося створити резервну копію збереження. Його лише зчитували, але не змінювали.</string>
@@ -517,8 +537,6 @@
     <string name="prepare_delete_the_prepared_pack">Видалити підготовлений пак?</string>
     <string name="prepare_delete_working_files_2">Видалити робочі файли?</string>
     <string name="prepare_delete">Видалити</string>
-
-    <!-- placeholders: sentences that had variables glued in (MainActivity) -->
     <string name="settings_about_games">Ігри в цьому додатку:%1$s\n\nНа основі nxnative від seedds. LSFG з Eden (GPL-3.0).</string>
     <string name="home_the_save_at">Збереження: %1$s</string>
     <string name="home_copied_into_the_app">Скопійовано в додаток: %1$s</string>
@@ -545,12 +563,10 @@
     <string name="err_save_busy">Резервне копіювання або відновлення збереження %1$s ще триває: «Грати» чекає на завершення.</string>
     <string name="err_pack_busy">Експорт або імпорт паку %1$s ще триває: «Грати» чекає на завершення.</string>
     <string name="err_no_app_can_open">Жоден додаток не може відкрити %1$s</string>
-
-    <!-- placeholders (MainActivity dialogs) -->
     <string name="settings_adb_control_warning">Поки цей параметр увімкнено, adb і будь-який інший додаток на цьому телефоні можуть додавати ігри, запускати підготовку та встановлювати чи обирати драйвер GPU через лаунчер Banana Native без вашого підтвердження. Драйвер GPU — це код, що виконується всередині гри. Вмикайте цю опцію лише на час роботи з adb, а потім вимикайте знову.</string>
     <string name="home_pick_dump_folder_again">Знову оберіть папку дампа для %1$s</string>
     <string name="err_no_game_in_folder">%1$s не містить main.npdm (base/exefs/, updates/&lt;version&gt;/exefs/ або exefs/), файлу .nup чи папки гри всередині. Оберіть власну папку гри, її файл .nup або папку, у якій зберігаються ваші ігри.</string>
-    <string name="err_nup_rename">%1$s: перейменуйте файл так, щоб його назва закінчувалася на ".nup" або ".nsp" (малими літерами); гра та інструменти читають лише таку назву.</string>
+    <string name="err_nup_rename">%1$s: перейменуйте файл так, щоб його назва закінчувалася на \".nup\" або \".nsp\" (малими літерами); гра та інструменти читають лише таку назву.</string>
     <string name="err_cannot_be_read">%1$s не вдається прочитати. Перевірте, чи ввімкнено доступ до всіх файлів.</string>
     <string name="home_no_pack_found_for_this">Не знайдено паку для цього %1$s, і це не дамп, із якого може початися підготовка.</string>
     <string name="home_no_pack_for_this_what">Немає паку для цього %1$s</string>
@@ -558,11 +574,7 @@
     <string name="home_remove_entry_message">Зникне лише запис зі списку. Ваш дамп, його пак і ваші збереження залишаться на телефоні; «Додати гру» поверне її назад.</string>
     <string name="home_remove_entry_message_save">Зникне лише запис зі списку. Ваш дамп, його пак і ваші збереження (%1$s) залишаться на телефоні; «Додати гру» поверне її назад.</string>
     <string name="home_edition_needs_pack">%1$s потребує власного паку (власного коду та шейдерів). Підготуйте його на комп\'ютері командою scripts/pack_android.py --program 1 і помістіть у папку додатка packs/%2$s або перемкніть видання назад на сторінці гри.</string>
-
-    <!-- titles of the game dialogs: "Setting · Game" -->
     <string name="game_title_for">%1$s · %2$s</string>
-
-    <!-- placeholders and long explanations (GameSettings) -->
     <string name="game_older_shaders_update_text">Зараз гра працює на старіших шейдерах. Ця версія створює шейдери оновленим транслятором. «Оновити шейдери» збере весь набір зараз, що займе певний час: тримайте телефон на зарядці. Пізніше: сторінка гри › Сховище › Підготувати знову.</string>
     <string name="game_show_n">Показати %1$d</string>
     <plurals name="game_show_advanced_n_settings">
@@ -577,8 +589,6 @@
     <string name="game_scene_args_explain">Розмір 3D-сцени як частка кадру, задана через власні налаштування гри: вище значення дає чіткішу картинку, але нижчу швидкість, меню та текст залишаються чіткими. Вказані розміри — максимальні; під навантаженням динамічна роздільна здатність знижує їх. Набуває чинності з наступного запуску. Рядок DM_GAME_ARGS_ADD у env.txt має пріоритет.</string>
     <string name="game_scene_overlay_explain">Розмір 3D-сцени як масштаб виходу апскейлера вікна перед розтягуванням до розміру вікна: нижче значення працює швидше, але м\'якше. Меню та текст залишаються чіткими. Створюється з файлів гри під час підготовки; набуває чинності з наступного запуску. Рядок DM_ROMFS_OVERLAY у env.txt має пріоритет.</string>
     <string name="game_extra_env_explain">Рядки KEY=VALUE для хоста, по одному на рядок (# починає коментар). Вони застосовуються після env.txt і перевизначають його лише для %1$s.</string>
-
-    <!-- placeholders (Prepare, Ondevice) -->
     <string name="err_could_not_save_job">Не вдалося зберегти завдання: %1$s</string>
     <string name="prepare_name_is_ready">%1$s готова до гри.</string>
     <string name="prepare_it_goes_on">Процес продовжиться з місця зупинки.</string>
@@ -594,18 +604,18 @@
     <string name="prepare_preparing_name">Підготовка %1$s</string>
     <string name="prepare_forget_message">Видалено: нічого. Екран більше не показує це завдання.\n\nЗбережено: його файли в %1$s, пак, ваш дамп і ваші збереження. Повторний вибір цього ж дампа знову знайде це завдання.\n\nЗбережений прогрес розділення (копія у власному сховищі додатка) видаляється, коли починається завдання іншої гри; доти незавершене розділення продовжується з нього.</string>
     <string name="err_not_deleted_holds">Не видалено: %1$s містить або розташована всередині %2$s.</string>
-
-    <!-- placeholders (in-game, side panel, controllers) -->
     <string name="game_save_copied_to_app">Ваше збереження скопійовано у сховище додатка (%1$s). Стару папку %2$s залишено без змін.</string>
     <string name="game_save_copy_failed">Не вдалося скопіювати ваше збереження у сховище додатка (%1$s). Цей запуск використовуватиме його з поточного місця: %2$s.</string>
     <string name="game_name_checking_gpu">%1$s: перевірка GPU цього телефона…</string>
     <string name="game_details_also_in_readiness">Подробиці також є в Налаштування › Перевірка готовності.</string>
+    <string name="game_name_starting">%1$s: запуск…</string>
     <string name="game_name_starting_log">%1$s: запуск. Лог: %2$s</string>
     <string name="err_cannot_start_name">Не вдається запустити %1$s</string>
     <string name="err_name_is_running">%1$s уже запущено</string>
     <string name="err_stop_it_first_then_start">Спершу зупиніть її (внутрішньоігрова панель › Зупинити гру), а потім запустіть %1$s. Одночасно може працювати лише одна гра.</string>
-    <string name="game_menu_hint">Меню: проведіть пальцем від правого краю або натисніть «Назад»</string>
-    <string name="game_tab_n_of_m">Вкладка «%1$s», %2$d із %3$d</string>
+    <string name="game_menu_hint">Меню: натисніть «Назад»\nНалаштування: проведіть від правого краю</string>
+    <string name="game_menu_gpu_driver">Драйвер GPU: %1$s</string>
+    <string name="game_menu_system_driver">Системний</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">Розмір %1$d %%</string>
     <string name="game_button_mapping_applies">Призначення кнопок: %1$s, набуде чинності з наступного запуску</string>
@@ -621,8 +631,6 @@
         <item quantity="many">Власний файл гри та %1$d імпортованих</item>
         <item quantity="other">Власний файл гри та %1$d імпортованих</item>
     </plurals>
-
-    <!-- placeholders (saves, storage) -->
     <string name="err_save_still_working">Резервне копіювання або відновлення збереження %1$s усе ще триває.</string>
     <string name="err_game_running_holds_save">%1$s запущена (вона утримує своє збереження): спершу зупиніть її (внутрішньоігрова панель › Зупинити гру), а потім виконайте %2$s. Гра може саме записувати збереження.</string>
     <string name="err_no_save_yet">%1$s ще не має збережень: нічого копіювати.</string>
@@ -643,8 +651,6 @@
     <string name="game_storage_found">Знайдено %1$s, які можна видалити; позначено: %2$s. Збереження ніколи не відображаються тут і не видаляються.</string>
     <string name="game_remove_name_data">Видалити дані %1$s…</string>
     <string name="err_no_data_that_can_go">%1$s не має даних у сховищі додатка, які можна видалити (її пак розташований в іншому місці або відсутній). Збереження ніколи не видаляються.</string>
-
-    <!-- placeholders (folders, packs, GPU driver) -->
     <string name="prepare_pick_folder_for_save">Оберіть папку для збереження %1$s</string>
     <string name="err_not_a_pack_folder">Не є папкою паку: %1$s</string>
     <string name="err_pack_is_for_other">Цей пак призначено для %1$s, а не для %2$s (%3$s).</string>
@@ -672,8 +678,6 @@
     <string name="game_no_zip_assets">%1$s: у релізах немає .zip-файлів</string>
     <string name="game_not_installed_reason">Не встановлено: %1$s</string>
     <string name="game_installed_and_picked">Встановлено та обрано %1$s</string>
-
-    <!-- placeholders (update, release page, Ui, controller mapping) -->
     <string name="settings_banana_native_version">Banana Native %1$s</string>
     <string name="settings_version_is_available">Доступна версія %1$s</string>
     <string name="settings_you_have_install_over">У вас встановлено %1$s. Встановіть поверх: збереження, паки та налаштування залишаться.</string>
@@ -699,8 +703,6 @@
     <string name="game_switch_button">Switch %1$s</string>
     <string name="game_press_button_for_switch">Натисніть кнопку на геймпаді для Switch %1$s.</string>
     <string name="prepare_has_this_apps_library">Містить бібліотеку шейдерів цієї версії додатка (%1$s): готово до гри.</string>
-
-    <!-- labels of the pickers (arrays; the English constants in the code stay for tests and logs) -->
     <string-array name="arr_theme">
         <item>Як у системі</item>
         <item>Світла</item>
@@ -755,6 +757,14 @@
         <item>Білінійний (найшвидший, найм\'якший)</item>
         <item>FSR 3.1 (чіткий, стабільний)</item>
     </string-array>
+    <string-array name="arr_screen_scale">
+        <item>Найближчий сусід</item>
+        <item>Білінійне</item>
+        <item>Бікубічне</item>
+        <item>FSR 1</item>
+        <item>SGSR 1</item>
+        <item>Пристрій (економія енергії)</item>
+    </string-array>
     <string-array name="arr_panel_look">
         <item>Мала</item>
         <item>Звичайна</item>
@@ -773,8 +783,6 @@
         <item>Керування</item>
         <item>Загальне</item>
     </string-array>
-
-    <!-- placeholders (users, copy, overlay, sliders) -->
     <string name="settings_remove_user_question">Вилучити %1$s?</string>
     <string name="settings_remove_user_message">Ігри більше не пропонуватимуть цього користувача. Його збереження залишаться на телефоні (папка збережень кожної гри із суфіксом _user_%1$s… у кінці) і повернуться, якщо знову додати користувача з таким самим ID, чого новий користувач ніколи не отримує.</string>
     <string name="err_not_copied">Не скопійовано: %1$s. Жодної частини копії не збережено.</string>
@@ -789,11 +797,12 @@
         <item quantity="many">%1$d рядків: %2$s</item>
         <item quantity="other">%1$d рядків: %2$s</item>
     </plurals>
-
-    <!-- second sweep: the in-game panel, hints, tags -->
     <string name="game_experimental">Експериментально</string>
     <string name="game_never_drops_to_30_less">Ніколи не скидає до 30; менш рівномірно нижче 60</string>
     <string name="game_drops_to_30_when_60">Скидає до 30, коли не вдається втримати 60</string>
+    <string name="game_keep_gpu_clock_up">Тримати частоту GPU високою</string>
+    <string name="game_keep_gpu_clock_up_on">Також після меню: може виправити гру, що застрягла на низькій частоті кадрів; телефон гріється більше</string>
+    <string name="game_keep_gpu_clock_up_off">Система може знижувати частоту GPU в меню; телефон лишається холоднішим</string>
     <string name="game_normal_speed_when_the_frame">Нормальна швидкість при падінні частоти кадрів</string>
     <string name="game_slows_down_with_the_frame">Сповільнюється разом із частотою кадрів</string>
     <string name="game_all_grass_and_foliage">Уся трава та листя</string>
@@ -807,8 +816,12 @@
     <string name="home_lossless_dll_missing">" · відсутній Lossless.dll"</string>
     <string name="home_why">Чому?</string>
     <string name="home_shaders_need_one_update">Шейдерам потрібне разове оновлення</string>
+    <string name="home_other_pack_has_shaders">Інший пак має шейдери</string>
+    <string name="home_other_pack_has_shaders_message">Пак цієї картки не має шейдерів для цієї версії застосунку. Інший пак %1$s їх має. Використати той пак для цієї картки?</string>
+    <string name="home_use_that_pack">Використати той пак</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">Застосовується з наступного кадру, зберігається для цієї гри (той самий параметр, що й Налаштування гри › Апскейлер).</string>
+    <string name="game_applies_from_the_next_frame_2">Діє з наступного кадру й зберігається для цієї гри (це те саме налаштування, що Налаштування гри › Масштабування екрана).</string>
     <string name="game_applies_at_the_next_start">Застосовується з наступного запуску (цей запуск не приймає змін на льоту: DM_CTL вимкнено).</string>
     <string name="game_applies_at_once_kept_for">Застосовується одразу, зберігається для цієї гри (той самий параметр, що й Налаштування гри › Розширені).</string>
     <string name="game_shaders_the_game_lacks_are_3">Шейдери, яких бракує грі, збираються під час її роботи. Перемикач міститься на сторінці гри › Розширені › Шейдери під час гри (увімкнено за замовчуванням; зміна набуває чинності з наступного запуску).</string>
@@ -819,16 +832,18 @@
     <string name="game_panel">Панель</string>
     <string name="game_next_start">Наступний запуск</string>
     <string name="game_controllers">Геймпади</string>
-
-    <!-- text of the classes without Android (Words.s): Prepare progress, Readiness report, Recommend, Storage, notices -->
     <string name="prepare_shaders_up_to_date">Шейдери актуальні</string>
-    <string name="prepare_ready_u00b7_checking_shaders_u2026">Готово \u00b7 перевірка шейдерів\u2026</string>
-    <string name="prepare_ready_u00b7_older_shaders">Готово \u00b7 старіші шейдери</string>
+    <string name="prepare_ready_u00b7_checking_shaders_u2026">Готово · перевірка шейдерів…</string>
+    <string name="prepare_ready_u00b7_older_shaders">Готово · старіші шейдери</string>
     <string name="prepare_the_whole_set_can_come">Весь набір можна взяти з комп\'ютера через «Імпортувати бібліотеку».</string>
-    <string name="prepare_update_shaders_builds_the_whole">«Оновити шейдери» збере весь набір зараз, що триватиме певний час: тримайте телефон на зарядці. Пізніше: сторінка гри \u203a Сховище \u203a Підготувати знову.</string>
+    <string name="prepare_update_shaders_builds_the_whole">«Оновити шейдери» збере весь набір зараз, що триватиме певний час: тримайте телефон на зарядці. Пізніше: сторінка гри › Сховище › Підготувати знову.</string>
     <string name="prepare_the_ones_it_has_stay">"Наявні шейдери залишаються такими, як були створені; «Оновити шейдери» перезбере їх усі в цій версії. "</string>
     <string name="prepare_shaders_older_built_while_playing">Шейдери: старіші, дозбируються під час гри</string>
     <string name="prepare_also_build_all_shaders_now">Також зібрати всі шейдери зараз</string>
+    <string name="prepare_recommended_build_all_shaders">Рекомендовано: зібрати всі шейдери зараз для плавнішої гри (%1$s, краще на зарядці).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">Можна грати зараз; відсутні шейдери збираються під час гри.</string>
+    <string name="prepare_you_can_play_now_older">Можна грати зараз на старіших шейдерах.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" Працює на своїх старіших шейдерах."</string>
     <string name="prepare_or_finish_with_the_game">Або завершіть лише з кодом гри: тоді гра запуститься та збиратиме шейдери під час гри; «Зібрати всі» на її сторінці створить повний набір пізніше.</string>
     <string name="prepare_finish_without_shaders">Завершити без шейдерів</string>
     <string name="prepare_ready_to_play_it_builds">Готово до гри. Шейдери збираються під час гри.</string>
@@ -944,26 +959,20 @@
     <string name="ready_this_phone">Цей телефон</string>
     <string name="ready_gpu_driver_picked">Обраний драйвер GPU</string>
     <string name="ready_gpu_and_driver">GPU та драйвер</string>
-    <!-- Prepare's steps (Job.stepText) -->
     <string name="prepare_step_checking_the_dump">Перевірка дампа</string>
     <string name="prepare_step_rewriting_the_game_s_code">Перезапис коду гри</string>
     <string name="prepare_step_finding_the_shaders">Пошук шейдерів</string>
     <string name="prepare_step_translating_shaders">Переклад шейдерів</string>
     <string name="prepare_step_finishing_the_pack">Завершення паку</string>
-    <!-- tile states -->
     <string name="home_checking">Перевірка…</string>
     <string name="home_preparing">Підготовка…</string>
     <string name="home_ready_shader_update_waits">Готово · оновлення шейдерів чекає на підготовку іншої гри</string>
     <string name="home_ready_shader_update_starting">Готово · запуск оновлення шейдерів</string>
     <string name="home_ready_shader_update_paused">Готово · оновлення шейдерів на паузі</string>
-
-    <!-- more labels and states -->
     <string name="home_preparing_not_finished">Підготовку не завершено</string>
     <string name="home_needs_preparing">Потрібна підготовка</string>
     <string name="home_no_pack">Немає паку</string>
     <string name="home_pack_unfinished">Пак незавершений</string>
-
-    <!-- second sweep: placeholders and notes -->
     <plurals name="game_n_built_while_you_play">
         <item quantity="one">%1$,d зібрано під час гри</item>
         <item quantity="few">%1$,d зібрано під час гри</item>
@@ -986,8 +995,6 @@
     <string name="home_game_details">Title ID: %1$s\nГра: %2$s\nПак: %3$s\nШейдери: %4$s\nЗбереження: %5$s</string>
     <string name="home_nup_in_place">%1$s (.nup використовується безпосередньо з поточного місця, обрано через файловий менеджер)</string>
     <string name="home_shaders_present">наявні (%1$s)</string>
-
-    <!-- found by the whole-file sweep -->
     <string name="home_landscape_the_game_window_stays">Альбомна: вікно гри залишається горизонтальним на телефоні</string>
     <string name="home_automatic_the_game_follows_the">Автоматично: гра слідує за поворотом телефона, зокрема в портретній орієнтації</string>
     <string name="home_auto_hidden_while_a_controller">Авто: сховано, доки під\'єднано геймпад</string>
@@ -1015,7 +1022,7 @@
     <string name="game_this_game_picks_its_own_2">Ця гра сама визначає частоту кадрів.</string>
     <string name="game_this_build_has_no_frame">Ця збірка не має обмеження частоти кадрів.</string>
     <string name="game_automatic">Автоматично</string>
-    <string name="game_advanced_u00b7_window">Розширені \u00b7 Вікно</string>
+    <string name="game_advanced_u00b7_window">Розширені · Вікно</string>
     <string name="game_the_game_s_own_2">власне для гри</string>
     <string name="game_auto">Авто</string>
     <string name="game_memory_the_game_s_and">Пам\'ять: гри та телефона</string>
@@ -1026,6 +1033,7 @@
     <string name="game_throttle_dot_green_yellow_red">Індикатор тротлінгу (зелений / жовтий / червоний)</string>
     <string name="game_frame_rate_and_frame_time">Частота кадрів і час кадру</string>
     <string name="game_drag_a_control_or_the">Перетягніть кнопку або зображення; зведіть/розведіть два пальці на кнопці, щоб змінити її розмір</string>
+    <string name="game_tap_a_control_to_hide_or_show">Торкніться кнопки, щоб приховати або показати її</string>
     <string name="game_picture_drag_into_the_black">зображення: перетягніть у межі чорних смуг</string>
     <string name="game_temporal_sharpness">Темпоральна різкість</string>
     <string name="game_sharpness">Різкість</string>
@@ -1076,8 +1084,6 @@
     <string name="game_chosen_new">обрано, новий</string>
     <string name="game_a_save_restore_or_swap">перерване відновлення або підміну збереження спершу було завершено</string>
     <string name="game_for_every_game_without_its">Для кожної гри без власного призначення кнопок, із її наступного запуску.</string>
-
-    <!-- second sweep: labels with values -->
     <string name="game_needs_prepare_again_tail">" · потрібне «Підготувати знову»"</string>
     <string name="game_drs_between">Від %1$s до 100%% вікна</string>
     <string name="game_low_performance_here">" (низька продуктивність тут)"</string>
@@ -1098,16 +1104,12 @@
     <string name="settings_n_users_games_start_with">Користувачів: %1$d · ігри запускаються з %2$s</string>
     <string name="game_drs_title_native">Динамічна роздільна здатність: %1$s (нативний розмір)</string>
     <string name="game_drs_title_to_100">Динамічна роздільна здатність: від %1$s до 100%%</string>
-
-    <!-- DlssTune words -->
     <string name="game_clarity_steadiest">Найстабільніша</string>
     <string name="game_clarity_steady">Стабільна</string>
     <string name="game_clarity_balanced">Збалансована</string>
     <string name="game_clarity_clear">Чітка</string>
     <string name="game_clarity_clearest">Найчіткіша</string>
     <string name="game_clarity_may_flicker">" (можливе мерехтіння в бою)"</string>
-
-    <!-- second sweep: Add game results, storage, saves -->
     <string name="home_added_list">Додано: %1$s.</string>
     <string name="home_needs_prepare_list">Потребують підготовки: %1$s. Придатного паку не знайдено: кнопка «Підготувати» на картці створить його на цьому телефоні (по одній грі за раз).</string>
     <string name="home_not_in_version_list">Немає в цій версії додатка: %1$s. Встановіть збірку, яка підтримує їх (їхній перелік є в Налаштування › Про додаток).</string>
@@ -1130,8 +1132,6 @@
     <string name="game_restoring_save">Відновлення збереження %1$s…</string>
     <string name="game_backup_from">із %1$s</string>
     <string name="game_files_size_device">Файлів: %1$d, %2$s%3$s</string>
-
-    <!-- second sweep: in-game errors, notification -->
     <string name="err_stopped_in_background">Гру було зупинено у фоновому режимі (Android завершив її процес).</string>
     <string name="err_unsaved_progress_lost">Незбережений прогрес втрачено; запустіть гру знову з лаунчера.</string>
     <string name="err_gpu_no_placed_maps">Власний драйвер цього GPU не підтримує фіксовані відображення пам\'яті (placed memory maps), тому нічого не малюється: екран залишається чорним під час роботи гри. Кастомні драйвери, які може встановити додаток, призначені лише для GPU Adreno, тож цей телефон поки не може відображати цю гру.</string>
@@ -1153,8 +1153,6 @@
     <string name="prepare_could_not_prepare_name">Не вдалося підготувати %1$s</string>
     <string name="prepare_paused_name">На паузі: %1$s</string>
     <string name="prepare_step_n_of_m_pct">Крок %1$d із %2$d · %3$d %%</string>
-
-    <!-- second sweep: notes and errors -->
     <string name="prepare_no_shaders_yet">Ця гра ще не має шейдерів для цієї версії додатка. Вона запуститься зараз і збиратиме потрібні шейдери під час гри, тож під час першого показу сцена може виглядати неповною.</string>
     <string name="prepare_build_all_makes_set">«Зібрати всі» на сторінці гри створить повний набір зараз.</string>
     <string name="prepare_import_library_makes_set">«Імпортувати бібліотеку» на сторінці гри приймає бібліотеку, зібрану на комп\'ютері.</string>
@@ -1169,8 +1167,6 @@
     <string name="game_aspect_native_laid_out">" (нативне: камери та меню зверстано під %1$s)"</string>
     <string name="game_hold60_text">Вимкнено: гра знижує частоту до 30 fps, коли не може втримати 60, як на консолі. Увімкнено: гра завжди працює в режимі 60 fps, а Banana Native не затримує кадри, тому частота ніколи не падає до 30; плавність менш рівномірна, а гра трохи сповільнюється, коли FPS нижчий за 60. Працює лише з обмеженням 60 fps</string>
     <string name="game_present_only_note">Експериментально для цієї гри: обмеження лімітує лише частоту виведення зображення на екран, а не саму гру. Можливі баги (наприклад, сповільнення або прискорення гри).</string>
-
-    <!-- second sweep: folders, packs, mapping, controls, profile -->
     <string name="prepare_save_default_earlier">" (за замовчуванням: ваше збереження з попередньої версії поруч із грою. Під час наступного запуску гри воно скопіюється у сховище додатка, %1$s, і використовуватиметься звідти; ця папка ніколи не змінюється)"</string>
     <string name="prepare_save_default_in_app_copied">" (за замовчуванням: у сховищі додатка; скопійовано з %1$s, яку залишено без змін)."</string>
     <string name="prepare_save_default_in_app">" (за замовчуванням: у сховищі додатка)."</string>
@@ -1192,10 +1188,6 @@
     <string name="err_this_game">цю гру</string>
     <string name="err_app_supports_only">Цей додаток підтримує лише %1$s (%2$s) %3$s.</string>
     <string name="err_or_word">" або "</string>
-
-    <!-- sentences and clauses of the long messages (Prepare, readiness, shaders ...) -->
-    <string name="prepare_in_the_background_best_on">, у фоновому режимі, найкраще на зарядці). Можна призупинити будь-коли.</string>
-    <string name="prepare_the_game_plays_now_and">Гра запускається одразу й збирає шейдери під час гри; ця дія збере весь набір зараз (</string>
     <string name="prepare_build_them_there_scripts_pack">зберіть їх там (scripts/pack_android.py) і додайте бібліотеку через «Імпортувати бібліотеку».</string>
     <string name="prepare_the_game_plays_now_on">"Гра запускається зараз на старіших шейдерах; ті, що знадобляться й відсутні в бібліотеці, збиратимуться під час гри. "</string>
     <string name="prepare_build_all_on_the_game_2">«Зібрати всі» на сторінці гри створить весь набір зараз, а «Імпортувати бібліотеку» там само дозволяє додати набір, зібраний на комп\'ютері.</string>
@@ -1204,43 +1196,43 @@
     <string name="prepare_best_on_the_charger_or">, найкраще на зарядці), або зробіть це пізніше через «Зібрати всі» на сторінці гри.</string>
     <string name="prepare_to_translate_it_in_the">\", щоб перекласти їх у межах цього ж завдання (</string>
     <string name="prepare_the_whole_set_of_shaders">Повний набір шейдерів не обов\'язковий: позначте \"</string>
-    <string name="prepare_the_app_rewrites_the_game">Додаток перезапише код гри (кілька хвилин), після чого гра запуститься. Вона збиратиме шейдери під час гри, тому перші хвилини в новій локації можуть бути мікрофризи.\n\n</string>
+    <string name="prepare_the_app_rewrites_the_game">"Додаток перезапише код гри (кілька хвилин), після чого гра запуститься. Вона збиратиме шейдери під час гри, тому перші хвилини в новій локації можуть бути мікрофризи.\n\n"</string>
     <string name="prepare_keeping_the_shaders_already_transl">Збереження вже перекладених шейдерів</string>
     <string name="prepare_still_working_last_update">" · ще працює, останнє оновлення "</string>
     <string name="prepare_shaders_up_to_date_nothing">"  ·  шейдери актуальні: перекладати нічого"</string>
     <string name="prepare_tap_retry_details_says_why">. Натисніть «Повторити». Причину вказано в «Деталях».</string>
     <string name="prepare_preparing_stopped_while">"Підготовку зупинено на етапі: "</string>
     <string name="prepare_and_tap_retry_or_try">та натисніть «Повторити» або «Усе одно спробувати».</string>
-    <string name="prepare_the_dump_may_be_incomplete">"). Дамп може бути неповним або зміненим: зробіть дамп гри повторно </string>
+    <string name="prepare_the_dump_may_be_incomplete">\"). Дамп може бути неповним або зміненим: зробіть дамп гри повторно</string>
     <string name="prepare_your_dump_s_shaders_are">"Шейдери у вашому дампі не збігаються з тими, які цей додаток знає для "</string>
     <string name="prepare_gb_close_other_apps_then">" ГБ). Закрийте інші додатки, а потім натисніть «Повторити»."</string>
-    <string name="prepare_times_most_likely_for_lack">" разів, найімовірніше через брак пам\'яті (потрібно до "</string>
+    <string name="prepare_times_most_likely_for_lack">" разів, найімовірніше через брак пам'яті (потрібно до "</string>
     <string name="prepare_was_stopped_by_android">" — процес було зупинено системою Android "</string>
     <string name="prepare_stopped_because_of_an_error">" — зупинено через помилку в додатку. Натисніть «Повторити». Якщо зупиниться знову, текст помилки є в «Деталях»."</string>
     <string name="prepare_tap_retry_if_it_stops">" Натисніть «Повторити». Якщо зупиниться знову, лог є в «Деталях»."</string>
     <string name="prepare_your_dump_s_shaders_are_2">" Шейдери у вашому дампі не відповідають тим, які додаток очікує для цієї версії гри. Якщо ви зробили дамп повторно, натисніть «Повторити»."</string>
     <string name="prepare_some_shaders_could_not_be">" Деякі шейдери не вдалося перекласти, тому бібліотеку шейдерів не створено. «Усе одно спробувати» створить пак без них (ці елементи можуть не відображатися)."</string>
     <string name="prepare_the_storage_is_full_free">" Сховище заповнене. Звільніть трохи місця, а потім натисніть «Повторити»."</string>
-    <string name="prepare_the_phone_ran_out_of">" На телефоні закінчилася оперативна пам\'ять. Закрийте інші додатки, а потім натисніть «Повторити»."</string>
+    <string name="prepare_the_phone_ran_out_of">" На телефоні закінчилася оперативна пам'ять. Закрийте інші додатки, а потім натисніть «Повторити»."</string>
     <string name="prepare_and_the_game_may_not">а гра може не запуститися або вилітати. Звіти про помилки для цієї версії виправити неможливо. Ваш дамп і збереження не змінюються.</string>
     <string name="prepare_it_has_not_been_tested">У такому вигляді роботу не перевіряли. Ваш дамп і збереження не змінюються.</string>
     <string name="prepare_of_the_app_or_report">додатка або повідомте про проблему, додавши лог із «Деталей».</string>
     <string name="prepare_it_has_no_shaders_for">"У ньому немає шейдерів для цієї версії додатка: гра запуститься та збиратиме їх під час гри. "</string>
-    <string name="prepare_the_game_plays_now_it">"Гра запускається одразу. Вона збирає потрібні шейдери під час гри (у Налаштування › Сховище вони вказані як кеш шейдерів); під час першого запуску екран може бути чорним або напівпорожнім протягом кількох хвилин, а об\'єкти підвантажуватимуться поступово. "</string>
+    <string name="prepare_the_game_plays_now_it">"Гра запускається одразу. Вона збирає потрібні шейдери під час гри (у Налаштування › Сховище вони вказані як кеш шейдерів); під час першого запуску екран може бути чорним або напівпорожнім протягом кількох хвилин, а об'єкти підвантажуватимуться поступово. "</string>
     <string name="prepare_or_import_a_whole_pack">або імпортуйте цілий пак (сторінка гри › Сховище › Імпортувати пак…).</string>
-    <string name="prepare_this_game_s_file_is_2">" Файл цієї гри телефон не може підготувати самостійно: зберіть бібліотеку на комп\'ютері (scripts/pack_android.py) і додайте її через «Імпортувати бібліотеку» на сторінці гри, "</string>
+    <string name="prepare_this_game_s_file_is_2">" Файл цієї гри телефон не може підготувати самостійно: зберіть бібліотеку на комп'ютері (scripts/pack_android.py) і додайте її через «Імпортувати бібліотеку» на сторінці гри, "</string>
     <string name="prepare_the_game_s_code_is">; код гри зберігається).</string>
     <string name="prepare_prepare_shaders_makes_them_from">" «Підготувати шейдери» створить їх із вашого дампа ("</string>
     <string name="prepare_prepare_shaders_updates_them_none">" «Підготувати шейдери» оновить їх; повторний переклад не потрібен (код гри зберігається)."</string>
     <string name="prepare_free_some_space_or_pick">Звільніть трохи місця або оберіть папку паку, у яку додаток може записувати (сторінка гри › Сховище › Папки).</string>
-    <string name="prepare_turns_off_building_them_while"> вимикає їх збірку під час гри. Вимкніть цей параметр, щоб грати зараз і збирати шейдери на льоту.</string>
+    <string name="prepare_turns_off_building_them_while">вимикає їх збірку під час гри. Вимкніть цей параметр, щоб грати зараз і збирати шейдери на льоту.</string>
     <string name="prepare_to_play_now_and_build">), щоб грати зараз і збирати їх під час гри.</string>
-    <string name="game_storage_u203a_shader_cache_built">. Сховище \u203a Кеш шейдерів, зібраний під час гри очистить цей кеш; після цього він знову збиратиметься під час гри.</string>
+    <string name="game_storage_u203a_shader_cache_built">. Сховище › Кеш шейдерів, зібраний під час гри очистить цей кеш; після цього він знову збиратиметься під час гри.</string>
     <string name="game_or_build_all">" або «Зібрати всі»"</string>
     <string name="game_free_space_on_the_phone">Звільніть місце на телефоні або додайте весь набір через «Імпортувати бібліотеку» (зібрану на комп\'ютері)</string>
     <string name="game_stopped_the_shader_builder_could">" · зупинено (не вдалося запустити збирач шейдерів)"</string>
     <string name="game_starting_shader_build">Запуск збірки шейдерів (</string>
-    <string name="game_u00b7_next_try_in">") \u00b7 наступна спроба через "</string>
+    <string name="game_u00b7_next_try_in">") · наступна спроба через "</string>
     <string name="game_shader_build_waiting">Очікування збірки шейдерів (</string>
     <string name="err_a_version_this_app_does">"), версію, яку цей додаток не підтримує (підтримується "</string>
     <string name="err_the_pack_is_for">"Пак призначено для "</string>
@@ -1253,7 +1245,7 @@
     <string name="err_is_read_from_a_dump">" читається з папки дампа"</string>
     <string name="err_a_nup_holds_program_0">"файл .nup містить лише program 0; у цього паку "</string>
     <string name="ready_on_in_env_txt">"Увімкнено в env.txt: "</string>
-    <string name="ready_stopped_for_memory_in_the">" зупинено через брак пам\'яті за останні 7 днів, востаннє "</string>
+    <string name="ready_stopped_for_memory_in_the">" зупинено через брак пам'яті за останні 7 днів, востаннє "</string>
     <string name="ready_settings_share_log_sends_its">. Налаштування › Надіслати лог надішле його лог.</string>
     <string name="ready_the_last_game">"Останню гру "</string>
     <string name="ready_a_game_s_pack_takes">: пак однієї гри займає кілька ГБ.</string>
@@ -1310,7 +1302,7 @@
     <string name="settings_only_the_release_app_dev">Лише релізна версія додатка (dev.bananative.android) перевіряє оновлення. Тестова збірка перевіряє їх, якщо у файлі update.txt у її папці files вказано repo= або url=.</string>
     <string name="settings_no_release_source">немає джерела релізів</string>
     <string name="settings_did_not_answer_in_time">" не відповів вчасно)"</string>
-    <string name="settings_s_answer_is_too_large"> повернув занадто велику відповідь</string>
+    <string name="settings_s_answer_is_too_large">повернув занадто велику відповідь</string>
     <string name="settings_s_answer_could_not_be">" повернув відповідь, яку не вдалося прочитати: "</string>
     <string name="settings_no_network_cannot_reach">"Немає мережі (не вдається підключитися до "</string>
     <string name="settings_rate_limit_try_again_later">" — перевищено ліміт запитів, спробуйте пізніше"</string>
@@ -1318,8 +1310,8 @@
     <string name="prepare_let_it_finish_or_forget">): дочекайтеся завершення або спершу забудьте завдання в меню ⋯ Керування</string>
     <string name="game_gib_it_is_not_a">" ГіБ: це не збереження"</string>
     <string name="game_nin_the_app">"\nУ додатку: "</string>
-    <string name="err_the_game_process_ends_n">, процес гри завершується\n</string>
-    <string name="err_n_nshare_log_sends_the">\n\n«Надіслати лог» відправить лог того запуску, де є більше подробиць.</string>
+    <string name="err_the_game_process_ends_n">", процес гри завершується\n"</string>
+    <string name="err_n_nshare_log_sends_the">"\n\n«Надіслати лог» відправить лог того запуску, де є більше подробиць."</string>
     <string name="game_could_be_removed">" вдалося видалити: "</string>
     <string name="game_not_all_of">"не все з "</string>
     <string name="game_a_save_folder_cannot_be">"не вдається визначити папку збережень: "</string>
@@ -1328,53 +1320,45 @@
     <string name="game_the_app_s_gpu_drivers">"  (папка gpu_drivers додатка)"</string>
     <string name="prepare_has_a_name_the_app">" має назву, яку додаток не може використати: "</string>
     <string name="prepare_remove_that_game_with_its">): спершу видаліть ту гру разом із її копією або оберіть її там</string>
-
-    <!-- found by the whole-file sweep -->
     <string name="prepare_base_game">Базова гра</string>
     <string name="prepare_rewriting_the_game_s_code">Перезапис коду гри (кілька хвилин, у фоновому режимі). Шейдери актуальні: перекладати нічого.</string>
     <string name="prepare_about_20_35_minutes">близько 20–35 хвилин</string>
     <string name="prepare_shaders_up_to_date_nothing_2">Шейдери актуальні: перекладати нічого.</string>
-
-    <!-- sentences and clauses of the long messages (Prepare, readiness, shaders ...) -->
     <string name="prepare_tap_resume_to_go_on">. Натисніть «Продовжити», щоб іти далі.</string>
-    <string name="prepare_nif_the_phone_is_not">\nЯкщо телефон не гарячий, натисніть «Усе одно продовжити».</string>
+    <string name="prepare_nif_the_phone_is_not">"\nЯкщо телефон не гарячий, натисніть «Усе одно продовжити»."</string>
     <string name="prepare_ready_to_play_2">Готово до гри.</string>
     <string name="prepare_shaders_up_to_date_nothing_3">Шейдери актуальні: перекладати нічого</string>
     <string name="prepare_under_a_minute_left">залишилося менше хвилини</string>
-    <string name="prepare_n_na_new_prepare_starts">\n\nНова підготовка почнеться з самого початку.</string>
-    <string name="prepare_n_nthe_game_will_not">\n\nГра не запуститься, доки її не буде підготовлено знову (близько 30–45 хвилин).</string>
+    <string name="prepare_n_na_new_prepare_starts">"\n\nНова підготовка почнеться з самого початку."</string>
+    <string name="prepare_n_nthe_game_will_not">"\n\nГра не запуститься, доки її не буде підготовлено знову (близько 30–45 хвилин)."</string>
     <string name="prepare_saves_are_never_deleted_here">. Збереження тут ніколи не видаляються.</string>
     <string name="prepare_and_the_pack">, а також пак (</string>
     <string name="prepare_and_your_saves">) і ваші збереження</string>
-    <string name="prepare_n_nkept_your_dump">\n\nЗбережено: ваш дамп (</string>
+    <string name="prepare_n_nkept_your_dump">"\n\nЗбережено: ваш дамп ("</string>
     <string name="prepare_n_the_prepared_pack_and">"\n· підготовлений пак і його бібліотеку шейдерів у "</string>
     <string name="prepare_with_the_pack_inside_it">" із паком усередині"</string>
-    <string name="prepare_n_the_split_s_kept">\n· збережений прогрес розділення та перекладені шейдери у власному сховищі додатка</string>
+    <string name="prepare_n_the_split_s_kept">"\n· збережений прогрес розділення та перекладені шейдери у власному сховищі додатка"</string>
     <string name="prepare_rewritten_code_split_and_translate">" (перезаписаний код, розділені й перекладені шейдери, прогрес завдання)"</string>
     <string name="prepare_deleted_n_the_working_files">"Видалено:\n· робочі файли в "</string>
     <string name="prepare_nits_code_is">"\nЇї код — "</string>
     <string name="prepare_untested_version_try_anyway">" (неперевірена версія: Усе одно спробувати)"</string>
     <string name="prepare_gb_free_now">" ГБ вільно зараз)."</string>
-    <string name="prepare_n_nneeds_about_1_5">\n\nПотрібно близько 1,5 ГБ вільного місця (</string>
+    <string name="prepare_n_nneeds_about_1_5">"\n\nПотрібно близько 1,5 ГБ вільного місця ("</string>
     <string name="prepare_in_the_background">, у фоновому режимі).</string>
     <string name="prepare_rewriting_the_game_s_code_2">Перезапис коду гри (кілька хвилин) та переклад шейдерів із вашого дампа (</string>
     <string name="prepare_rewriting_the_game_s_code_3">"Перезапис коду гри (кілька хвилин). "</string>
-    <string name="prepare_the_pack_s_game_code_2">Код гри в цьому паку створено іншими інструментами, ніж інструменти цього додатка.\n\n</string>
-    <string name="prepare_n_nit_goes_on_from">\n\nПроцес продовжиться з місця зупинки.</string>
+    <string name="prepare_the_pack_s_game_code_2">"Код гри в цьому паку створено іншими інструментами, ніж інструменти цього додатка.\n\n"</string>
+    <string name="prepare_n_nit_goes_on_from">"\n\nПроцес продовжиться з місця зупинки."</string>
     <string name="prepare_translating_shaders_from_your_dump">Переклад шейдерів із вашого дампа (</string>
     <string name="ready_whether_this_gpu_has_what">): невідомо, чи має цей GPU все необхідне для гри.</string>
     <string name="ready_the_game_needs_vulkan_1">): грі потрібен Vulkan 1.3.</string>
     <string name="ready_the_gpu_driver_could_not">Не вдалося використати драйвер GPU (</string>
-
-    <!-- text of the classes without Android (Words.s): Prepare progress, Readiness report, Recommend, Storage, notices -->
     <string name="prepare_translator_does_not_match_the">"транслятор не збігається з lock-файлом: "</string>
-
-    <!-- long Prepare notes (PrepareText) -->
     <string name="prepare_this_app_build_s_shader_transl">"Транслятор шейдерів цієї збірки додатка не збігається з її власними інструментами, тому повторна спроба не допоможе. Встановіть останній реліз "</string>
     <string name="prepare_this_goes_on_without_the_check">"Процес продовжиться без перевірки, яка його зупинила. Гра може не запуститися, вилітати або відображати частину графіки неправильно чи не показувати її взагалі. "</string>
     <string name="prepare_this_version_is_not_supported">"Ця версія не підтримується: додаток має шейдери та виправлення лише для підтримуваної версії, тому частина зображення, ймовірно, буде відсутня, "</string>
     <string name="prepare_shaders_build_as_you_play_the">"Шейдери збираються під час гри. Під час першого запуску зображення може бути чорним або напівпорожнім протягом кількох хвилин, "</string>
-    <string name="prepare_the_game_plays_with_the_shader">"Гра працює на наявних шейдерах від старішої версії. Файл цієї гри телефон не може підготувати самостійно, тому нові шейдери потрібно створити на комп\'ютері: "</string>
+    <string name="prepare_the_game_plays_with_the_shader">"Гра працює на наявних шейдерах від старішої версії. Файл цієї гри телефон не може підготувати самостійно, тому нові шейдери потрібно створити на комп'ютері: "</string>
     <string name="settings_choose_an_icon">Обрати значок</string>
     <string name="settings_new_player">Гравець</string>
     <string name="settings_users_hint">Ігри запускаються з обраним гравцем.</string>
@@ -1405,9 +1389,10 @@
         <item>Список</item>
     </string-array>
     <string name="home_move_game">Перемістити</string>
+    <string name="home_rename_game">Перейменувати гру</string>
+    <string name="home_reset_name">Скинути назву</string>
     <string name="hint_open">Відкрити</string>
     <string name="hint_options_hold">Параметри (утримувати)</string>
-    <string name="hint_hold_for_options">Утримуйте гру для виклику параметрів</string>
     <string name="hint_move">Перемістити</string>
     <string name="hint_place">Розмістити</string>
     <string name="hint_cancel">Скасувати</string>
@@ -1439,21 +1424,18 @@
     <string name="game_mods_remove_note">Файли мода буде видалено з цього телефона. Власні файли гри залишаться.</string>
     <string name="game_mods_imported">Імпортовано %1$s (%2$d файлів). Застосується під час наступного запуску.</string>
     <string name="game_mods_refused">Не імпортовано: %1$s</string>
-    <string name="common_screen_scaling">Масштабування екрана</string>
-    <string name="common_screen_sharpness">Різкість екрана</string>
-    <string name="game_applies_from_the_next_frame_2">Діє з наступного кадру й зберігається для цієї гри (це те саме налаштування, що Налаштування гри › Масштабування екрана).</string>
     <string name="game_fast_fp16_shader_math">Швидка математика шейдерів FP16</string>
-    <string name="game_fp16_default_precision">Точність за замовчуванням</string>
     <string name="game_fp16_on_turnip_faster">16-бітна половинна точність на Turnip: швидші шейдери, менше тепла</string>
-    <string name="home_ready_game_code_update_stopped">Готово · оновлення коду гри зупинено, торкніться, щоб повторити</string>
-    <string name="settings_small_fix_updates">Оновлення з дрібними виправленнями</string>
-    <string name="settings_small_fix_updates_help">Пропонувати випуски з дрібними виправленнями під час запуску застосунку. Вимкнено: пропонуються лише великі оновлення; «Перевірити оновлення» все одно показує найновіше. Наступне велике оновлення міститиме всі виправлення.</string>
-    <string-array name="arr_screen_scale">
-        <item>Найближчий сусід</item>
-        <item>Білінійне</item>
-        <item>Бікубічне</item>
-        <item>FSR 1</item>
-        <item>SGSR 1</item>
-        <item>Пристрій (економія енергії)</item>
-    </string-array>
+    <string name="game_fp16_default_precision">Точність за замовчуванням</string>
+    <string name="settings_build_preview">Ти користуєшся тестовою збіркою (v%1$s). Тестові збірки можуть ламати ігри. Стабільна v%2$s замінить її, коли вийде.</string>
+    <string name="settings_build_preview_channel">Твій канал: %1$s. Коли вийде стабільна v%2$s, застосунок переведе тебе на неї.</string>
+    <string name="settings_build_hotfix">Ти користуєшся хотфіксом (v%1$s): невеликим виправленням між щотижневими випусками. Наступний щотижневий випуск його містить.</string>
+    <string name="common_picture_size">Розмір зображення</string>
+    <string name="game_lsfg_on_target">Увімкнено · %1$d к/с</string>
+    <string name="game_own_follows_settings">Ця гра використовує Налаштування (%1$s). Зміна тут стане власним налаштуванням цієї гри.</string>
+    <string name="game_own_settings_note">Це власні налаштування цієї гри. «Типово з Налаштувань» знову повертає Налаштування.</string>
+    <string name="game_use_settings_default">Типово з Налаштувань</string>
+    <string name="settings_touch_look">Вигляд екранного керування</string>
+    <string name="settings_panel_look">Вигляд ігрової панелі</string>
+    <string name="settings_player_one_away">Вибраний контролер (не під’єднано)</string>
 </resources>

@@ -263,8 +263,13 @@ final class PrepareText {
     static String CHECKING_SHADERS() { return Words.s("prepare_ready_u00b7_checking_shaders_u2026", "Ready \u00b7 checking shaders\u2026"); }
     static String SHADERS_UP_TO_DATE() { return Words.s("prepare_shaders_up_to_date", "Shaders up to date"); }
 
-    /** The dialog of the optional shaders step (Prepare shaders for a pack that has code only); minutes: ShaderLibs.minutesText */
-    static String optionalShadersText(String minutes) {
-        return Words.s("prepare_the_game_plays_now_and", "The game plays now and builds shaders while you play; this builds the whole set now (") + minutes + Words.s("prepare_in_the_background_best_on", ", in the background, best on the charger). You can pause any time.");
+    /**
+     * The recommendation of an optional shader build (ShaderState.need: the game plays without it): minutes: ShaderLibs.minutesText of what it translates; layer: the shader
+     * layer builds the missing shaders while the game runs (else the game plays on its older shaders)
+     */
+    static String recommendText(String minutes, boolean layer) {
+        return Words.s("prepare_recommended_build_all_shaders", "Recommended: build all shaders now for smoother play (%1$s, best on the charger).", minutes) + " "
+                + (layer ? Words.s("prepare_you_can_play_now_built_as_you_play", "You can play now; missing shaders are built as you play.")
+                        : Words.s("prepare_you_can_play_now_older", "You can play now on the older shaders."));
     }
 }

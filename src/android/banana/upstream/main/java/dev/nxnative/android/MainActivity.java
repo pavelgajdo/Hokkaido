@@ -52,7 +52,9 @@ public final class MainActivity extends Activity {
     private View accessCard;
     private BananaBackgroundView bananas;   // the drifting bananas behind the screen
     private TextView poppedText;   // Settings › About: "Bananas Popped: n" (null when Settings is not shown)
-    private Ui.Setting overlayRow, resRow, capRow, upsRow, sharpRow, drsRow, lsfgRow, gpuRow, updateRow, timeRow;
+    private Ui.Setting overlayRow, resRow, capRow, upsRow, sharpRow, drsRow, lsfgRow, gpuRow, updateRow, timeRow, channelRow, dispRow, sizeRow, lookRow, motionRow, panelRow, oneRow;
+    /** The update dot on the dock's Settings button (Updater.dot) */
+    private View updateDot; private View settingsButton;
     private boolean resumed, settingsPage;
     private boolean usersPage;   // the Users page (UsersUi) in place of Home
     private String usersEdit;   // the player whose own page it shows, else the page of all players
@@ -89,6 +91,7 @@ public final class MainActivity extends Activity {
         build();
         if (saved == null) { setIntent(gated(getIntent())); fromIntent(getIntent()); GameReturn.back(this, getIntent()); }   // start() reads no_pause from getIntent() too; GameReturn: Home made anew by the app's icon while a game runs
         GpuGl.probe(this, () -> { if (!isFinishing() && settingsGame != null) gameSettingsAgain(); });   // the GPU's name and, before any readiness check, the system driver's facts for the recommendations
+        Updater.changed = this::updatesChanged;
         Updater.onStart(this);   // the release app: a newer release on GitHub opens the update popup (once per process start: not on a resume or a rotation)
     }
 
@@ -412,6 +415,8 @@ public final class MainActivity extends Activity {
         logo.setContentDescription(Tx.s(R.string.home_banana_native));
         logo.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         top.addView(logo);
+        TextView kindChip = buildKindChip();   // Preview or Hotfix: this build is not a weekly release
+        if (kindChip != null) { LinearLayout.LayoutParams kl = Ui.wrap(); kl.setMarginStart(dp(10)); top.addView(kindChip, kl); }
         top.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
         top.addView(dock(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)));
         content.addView(top, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
@@ -431,6 +436,19 @@ public final class MainActivity extends Activity {
         holder.addView(addFab, fl);
         content.addView(holder, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         refresh();
+    }
+
+    /** A small chip beside the logo for a preview ("Preview", the warning tint) or a hotfix or critical build ("Hotfix"); null for a weekly release and a test build (BuildKind) */
+    private TextView buildKindChip() {
+        String kind = Prefs.buildKind();
+        boolean preview = "preview".equals(kind);
+        if (!preview && !BuildKind.isHotfix(kind)) return null;
+        TextView t = Ui.chip(this, Tx.s(preview ? R.string.settings_channel_preview : R.string.settings_channel_hotfix));
+        if (preview) {
+            t.setBackground(Ui.round(Ui.col(this, R.color.bn_warn_tint), dp(999), 0, 0));
+            t.setTextColor(Ui.col(this, R.color.bn_text));
+        }
+        return t;
     }
 
     /** The dock: round buttons in a pill. The first is the user (the console's users, what games start with): its letter is the current user's, as the profile icon of a console's home */
@@ -461,7 +479,17 @@ public final class MainActivity extends Activity {
         up.leftMargin = up.rightMargin = dp(3);
         dockRow.addView(userButton, up);
         dockRow.addView(dockButton(R.drawable.ic_wiki, Tx.s(R.string.settings_player_wiki), false, v -> openLink(WIKI_URL)));
-        dockRow.addView(dockButton(R.drawable.ic_settings, Tx.s(R.string.home_settings), false, v -> page(true)));
+        settingsButton = dockButton(R.drawable.ic_settings, Tx.s(R.string.home_settings), false, v -> page(true));
+        FrameLayout sb = new FrameLayout(this);   // the button with the update dot in its corner
+        sb.setLayoutParams(settingsButton.getLayoutParams());
+        settingsButton.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        sb.addView(settingsButton);
+        updateDot = new View(this);
+        updateDot.setBackground(Ui.round(Ui.col(this, R.color.bn_banana_deep), dp(999), Ui.col(this, R.color.bn_bg), dp(2)));
+        FrameLayout.LayoutParams dl = new FrameLayout.LayoutParams(dp(11), dp(11), android.view.Gravity.TOP | android.view.Gravity.END);
+        sb.addView(updateDot, dl);
+        dockRow.addView(sb);
+        refreshUpdateDot();
         return dockRow;
     }
 
@@ -470,6 +498,23 @@ public final class MainActivity extends Activity {
     /** The dock's user button: the picture of the user games start with (an emoji on its colour) */
     private void styleUserButton() {
         if (userButton != null) UsersUi.styleButton(this, userButton);
+    }
+
+    /** The dock's update dot: shown while Updater.dot says so; the button then also says it to TalkBack */
+    private void refreshUpdateDot() {
+        if (updateDot == null) return;
+        boolean on = Updater.dot(this);
+        updateDot.setVisibility(on ? View.VISIBLE : View.GONE);
+        UpdateCheck.Update p = Updater.waiting;
+        settingsButton.setContentDescription(Tx.s(R.string.home_settings) + (on && p != null ? ", " + Tx.s(R.string.settings_update_ready, p.label()) : ""));
+    }
+
+    /** A check stored its results (Updater.changed): the dot, and the Updates rows when Settings shows */
+    private void updatesChanged() {
+        if (settingsPage && settingsGame == null) Updater.seen(this);
+        refreshUpdateDot();
+        if (updateRow != null) updateRow.value(Updater.versionText(this));
+        if (channelRow != null) channelRow.value(Updater.channelValue(Prefs.updateChannel(this)));
     }
 
     private View dockButton(int drawable, String name, boolean accent, View.OnClickListener l) {
@@ -706,9 +751,14 @@ public final class MainActivity extends Activity {
         LinearLayout upd = settingsCard(content);
         updateRow = new Ui.Setting(this, "🔄", Tx.s(R.string.common_check_for_updates), v -> Updater.checkNow(this)).chevron(this);
         upd.addView(updateRow.view);
-        upd.addView(new Ui.Setting(this, "🩹", Tx.s(R.string.settings_small_fix_updates), null)
-                .toggle(this, Prefs.hotfixUpdates(this), (b, on) -> Prefs.hotfixUpdates(this, on))
-                .value(Tx.s(R.string.settings_small_fix_updates_help)).view);
+        channelRow = Updater.channelSetting(this);   // Update channel: Stable, Hotfix or Preview; names a newer release on another channel
+        upd.addView(channelRow.view);
+        String runLine = Updater.runningBuild(Prefs.updateChannel(this));   // what kind of build this is: a preview or a hotfix says so; a weekly release says nothing
+        if (!runLine.isEmpty()) Ui.add(upd, Ui.small(this, runLine), 8);
+        Updater.seen(this);   // Settings shows the waiting update: the dot goes (a critical one keeps it)
+        upd.addView(new Ui.Setting(this, "💾", Tx.s(R.string.settings_backup_before_update), null)   // UpdateBackupUi: the saves outside app storage before an update installs
+                .toggle(this, Prefs.backupBeforeUpdate(this), (b, on) -> Prefs.backupBeforeUpdate(this, on))
+                .value(Tx.s(R.string.settings_backup_before_update_note)).view);
         upd.addView(new Ui.Setting(this, "📖", Tx.s(R.string.settings_player_wiki), v -> openLink(WIKI_URL)).chevron(this)
                 .value(Tx.s(R.string.settings_guides_what_every_setting_does)).view);
 
@@ -776,6 +826,9 @@ public final class MainActivity extends Activity {
                 .setSingleChoiceItems(Overlay.labelChoices(), Prefs.layerLabel(this), (d, w) -> { Prefs.layerLabel(this, w); labelRow.value(Overlay.labelChoices()[w]); d.dismiss(); })
                 .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
         play.addView(labelRow.view);
+        play.addView(new Ui.Setting(this, "📜", Tx.s(R.string.settings_startup_log), null)
+                .toggle(this, Prefs.startupLog(this), (b, on) -> Prefs.startupLog(this, on))
+                .value(Tx.s(R.string.settings_startup_log_note)).view);
         Ui.Setting touch = new Ui.Setting(this, "🎮", Tx.s(R.string.common_on_screen_controls), null).chevron(this);
         touch.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.common_on_screen_controls))
                 .setSingleChoiceItems(Tx.arr(R.array.arr_touch_mode), TouchControls.mode(this), (d, w) -> { TouchControls.mode(this, w); touch.value(touchLabel(w)); d.dismiss(); })
@@ -825,7 +878,24 @@ public final class MainActivity extends Activity {
                 this::refreshSettings)).chevron(this);
         perf.addView(drsRow.view);
         lsfgRow = new Ui.Setting(this, "✨", Tx.s(R.string.settings_frame_generation), v -> frameGen()).chevron(this);
-        play.addView(lsfgRow.view);   // no per-game twin (the in-game panel has it): not a default, so it stays on the page
+        perf.addView(lsfgRow.view);   // the default of every game; a game's own: its Game settings › Frame generation, or the in-game panel
+        // The rest of the in-game panel's settings, as defaults a game's own Game settings (and the in-game panel, which writes the game's own) can override
+        dispRow = new Ui.Setting(this, "📺", Tx.s(R.string.common_display), v -> pick(Tx.s(R.string.common_display), Tx.arr(R.array.arr_display), Prefs.stretch(this) ? 1 : 0, w -> Prefs.stretchDefault(this, w == 1))).chevron(this);
+        perf.addView(dispRow.view);
+        sizeRow = new Ui.Setting(this, "🔲", Tx.s(R.string.common_picture_size), v -> pick(Tx.s(R.string.common_picture_size), GameSettings.sizeNames(), GameSettings.sizeIndex(Prefs.pictureSize(this)),
+                w -> Prefs.pictureSizeDefault(this, GameSettings.sizeOfIndex(w)))).chevron(this);
+        perf.addView(sizeRow.view);
+        lookRow = new Ui.Setting(this, "🎨", Tx.s(R.string.settings_touch_look), v -> touchLook()).chevron(this);
+        perf.addView(lookRow.view);
+        motionRow = new Ui.Setting(this, "🎯", Tx.s(R.string.game_motion_sensitivity), v -> pick(Tx.s(R.string.game_motion_sensitivity), Prefs.MOTION_NAMES, Prefs.motionSens(this), w -> Prefs.motionSensDefault(this, w))).chevron(this);
+        perf.addView(motionRow.view);
+        perf.addView(new Ui.Setting(this, "⏸️", Tx.s(R.string.game_pause_on_return), null).toggle(this, Prefs.pauseOnReturn(this), (b, on) -> Prefs.pauseOnReturnDefault(this, on))
+                .says(Tx.s(R.string.game_back_from_the_background_paused), Tx.s(R.string.game_back_from_the_background_runs)).view);
+        // The in-game panel's own look and Player 1: one setting for every game (see panelLook, playerOne)
+        panelRow = new Ui.Setting(this, "🎛️", Tx.s(R.string.settings_panel_look), v -> panelLook()).chevron(this);
+        ctl.addView(panelRow.view);
+        oneRow = new Ui.Setting(this, "1️⃣", Tx.s(R.string.game_player_1), v -> playerOne()).chevron(this);
+        ctl.addView(oneRow.view);
         gpuRow = new Ui.Setting(this, "🎮", Tx.s(R.string.common_gpu_driver), v -> GpuDriver.dialog(this, PICK_DRIVER)).chevron(this);   // custom GPU drivers (GpuDriver.java)
         sys.addView(gpuRow.view);
         timeRow = new Ui.Setting(this, "🕒", Tx.s(R.string.common_time_of_day), v -> TimeOfDay.dialog(this, this::refreshSettings)).chevron(this);   // the clock the next start gives the game (Prefs.timeOverride → DM_TIME)
@@ -839,6 +909,9 @@ public final class MainActivity extends Activity {
         // some phones stop or slow a background job once the screen is off (GitHub discussion 58): Home keeps the screen on while preparing (Ondevice), the service its wake lock
         sys.addView(new Ui.Setting(this, "🔆", Tx.s(R.string.settings_keep_the_screen_on_while), null).toggle(this, Prefs.keepScreenPreparing(this), (b, on) -> Prefs.keepScreenPreparing(this, on))
                 .value(Tx.s(R.string.settings_while_home_shows_a_game)).view);   // the game, pack and save folders, kept across updates (Folders.java)
+        // a game whose shaders are not this version's is updated in the background at start and at Play (Ondevice.autoUpdate); off: the game's page does it when asked
+        sys.addView(new Ui.Setting(this, "🔄", Tx.s(R.string.settings_update_shaders_automatically), null).toggle(this, Prefs.autoShaderUpdate(this), (b, on) -> Prefs.autoShaderUpdate(this, on))
+                .says(Tx.s(R.string.settings_auto_shader_update_on), Tx.s(R.string.settings_auto_shader_update_off)).view);
 
         Ui.add(content, Ui.section(this, Tx.s(R.string.common_help)), Ui.SECTION_GAP);
         LinearLayout help = settingsCard(content);
@@ -914,7 +987,7 @@ public final class MainActivity extends Activity {
     /** The settings rows' current values (after a dialog, on resume) */
     private void refreshSettings() {
         if (overlayRow == null) return;
-        updateRow.value(Tx.s(R.string.settings_banana_native_version, Updater.version(this)) + (Updater.available(this) ? "" : Tx.s(R.string.home_release_app_only)));
+        updateRow.value(Updater.versionText(this));
         boolean ov = Prefs.overlay(this);
         if (overlayRow.toggle.isChecked() != ov) overlayRow.toggle.setChecked(ov);
         int n = 0;
@@ -926,7 +999,13 @@ public final class MainActivity extends Activity {
         sharpRow.value(GameUpscaler.sharpName(GameUpscaler.sharp(this)));
         sharpRow.view.setVisibility(GameUpscaler.mode(this) == GameUpscaler.MODE_FSR ? View.VISIBLE : View.GONE);
         drsRow.value(Prefs.DRS_NAMES[Prefs.drs(this)]);
-        lsfgRow.value(!BuildConfig.NX_LSFG ? Tx.s(R.string.home_not_in_this_build) : Lsfg.on(this) ? Tx.s(R.string.home_on_multiplier, Lsfg.multiplier(this)) + (Lsfg.find(this) == null ? Tx.s(R.string.home_lossless_dll_missing) : "") : Tx.s(R.string.game_off));
+        lsfgRow.value(!BuildConfig.NX_LSFG ? Tx.s(R.string.home_not_in_this_build) : Lsfg.on(this) ? Lsfg.label(this, null) + (Lsfg.find(this) == null ? Tx.s(R.string.home_lossless_dll_missing) : "") : Tx.s(R.string.game_off));
+        dispRow.value(Tx.arr(R.array.arr_display)[Prefs.stretch(this) ? 1 : 0]);
+        sizeRow.value(GameSettings.sizeNames()[GameSettings.sizeIndex(Prefs.pictureSize(this))]);
+        lookRow.value(GameSettings.touchLookValue(this, null));
+        motionRow.value(Prefs.MOTION_NAMES[Prefs.motionSens(this)]);
+        panelRow.value(Tx.arr(R.array.arr_panel_look)[Prefs.panelSize(this)] + " · " + Tx.arr(R.array.arr_panel_look)[Prefs.panelText(this)]);
+        oneRow.value(playerOneLabel());
         GpuDriver.Info d = GpuDriver.selected(this);
         gpuRow.value(d == null ? Tx.s(R.string.common_system) : d.label());
         timeRow.value(TimeOfDay.label(this));
@@ -939,7 +1018,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
-        if (GameReturn.back(this, i)) return;   // the app's icon while a game runs: back to the game, not Home (the launcher's start closed the game's screen above this singleTask root)
+        if (GameReturn.back(this, i)) return;   // the app's icon while a game runs: back to the game, not Home (the icon brought Home's task forward; the game's own task waits behind it)
         fromIntent(i);
     }
 
@@ -995,6 +1074,7 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        GameReturn.homeInRecents(this, true);   // Home's card in Recents again (a game's screen leaves it out while it shows: one card, the game's)
         if (gameBox != null && Game.load(this).size() != games.size()) refresh();   // a card FrontendLaunch added while Home was in the background
         onResumeViews();
         Ondevice.resume(this);
@@ -1064,7 +1144,7 @@ public final class MainActivity extends Activity {
             }
             if (j == null) {   // no update runs for this card: say why instead of "updating" with no count
                 String why = Ondevice.busy(this) ? Tx.s(R.string.home_ready_shader_update_waits)
-                        : Ondevice.deltaShaders(new File(g.packDir), g.titleId) < 0 ? Tx.s(R.string.home_ready_update) : Tx.s(R.string.home_ready_shader_update_starting);
+                        : !Pack.deltaAutomatic(new File(g.packDir), g.titleId) ? Tx.s(R.string.home_ready_update) : Tx.s(R.string.home_ready_shader_update_starting);
                 state(e.getKey(), why, R.color.bn_leaf, ST_SOFT);
                 continue;
             }
@@ -1097,6 +1177,7 @@ public final class MainActivity extends Activity {
         if (Ondevice.sampleAny()) updateUi.postDelayed(sampleRun, 2000);
         games.clear();
         games.addAll(Game.load(this));
+        orderRecent();
         if (gameBox == null) return;
         if (BuildConfig.DEBUG && Prefs.demoGames(this)) { refreshDemo(); return; }   // test builds only: sample tiles to judge the look
         if (!merged && games.size() > 1) {   // a list an older version left with two entries of one game: one card each (GameList.collapse; reads the dumps: off the main thread)
@@ -1106,10 +1187,14 @@ public final class MainActivity extends Activity {
         gameBox.removeAllViews();
         selectedTile = null;
         if (addFab != null) addFab.setVisibility(View.VISIBLE);   // Add game is always there: with no game it is the only way in (#381: it was hidden and the welcome card had no button)
-        if (games.isEmpty() && !Ondevice.showing()) {   // no game: one line, the button has the focus
+        boolean empty = games.isEmpty() && !Ondevice.showing();
+        if (addFab != null) addFab.setFocusedByDefault(empty);   // where a controller's first press lands (startSelection): Add game only when there is no game
+        if (empty) {   // no game: one line, the button has the focus
             gameBox.addView(emptyHint(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             noFocusTint(gameBox);
-            if (addFab != null) addFab.post(() -> { if (addFab.isAttachedToWindow() && !addFab.isInTouchMode() && getCurrentFocus() == null) addFab.requestFocus(); });
+            boolean first = !tilesShown;
+            tilesShown = true;
+            if (addFab != null) addFab.post(() -> { if (addFab.isAttachedToWindow() && !addFab.isInTouchMode() && (first || getCurrentFocus() == null)) addFab.requestFocus(); });
             hintUpdate();
             return;
         }
@@ -1145,6 +1230,25 @@ public final class MainActivity extends Activity {
     private List<Game> shownGames() { return GameOrder.sort(games, Prefs.gameOrder(this), Game::orderId); }
 
     /**
+     * Home is a recency list (GameOrder.recent, .front): a game played (start) or added goes first, newest first. The games already on Home keep their places:
+     * the first time (Prefs.orderRecent), the order Home shows is stored as it is (the player's order, else the order the games were added in), so nothing moves
+     */
+    private void orderRecent() {
+        List<String> ids = new ArrayList<>();
+        for (Game g : games) ids.add(g.orderId());
+        if (ids.isEmpty()) return;
+        if (!Prefs.orderRecent(this)) {
+            List<String> shown = new ArrayList<>();
+            for (Game g : shownGames()) shown.add(g.orderId());
+            Prefs.gameOrder(this, GameOrder.write(shown));
+            Prefs.orderRecent(this, true);
+            return;
+        }
+        List<String> now = GameOrder.recent(Prefs.gameOrder(this), ids);
+        if (now != null) Prefs.gameOrder(this, now);
+    }
+
+    /**
      * A game's options, from a long press on its tile (Hold X or Y on a controller): Move (a reorder mode, below), Set cover image (and Reset cover when it has one: CoverUi)
      * and Remove game (GameDelete). A tile being prepared keeps its job sheet on a long press (workTile)
      */
@@ -1155,8 +1259,22 @@ public final class MainActivity extends Activity {
         if (shownGames().size() > 1) { labels.add(Tx.s(R.string.home_move_game)); acts.add(() -> startMove(g)); }
         labels.add(Tx.s(R.string.game_cover_set)); acts.add(() -> CoverUi.start(this, g));
         if (CoverUi.has(this, g)) { labels.add(Tx.s(R.string.game_cover_reset)); acts.add(() -> CoverUi.reset(this, g)); }
+        labels.add(Tx.s(R.string.home_rename_game)); acts.add(() -> renameGame(g));
+        if (Game.renamed(this, g)) { labels.add(Tx.s(R.string.home_reset_name)); acts.add(() -> { Game.rename(this, g, ""); refresh(); }); }
         labels.add(Tx.s(R.string.home_delete_game_menu)); acts.add(() -> GameDelete.ask(this, g));
         new PadFocus.Builder(this).setTitle(g.name).setItems(labels.toArray(new String[0]), (d, w) -> acts.get(w).run()).show();
+    }
+
+    /** Rename game: a text box with the game's name; Save keeps what was typed (Game.rename), an empty box gives the game's own name back */
+    private void renameGame(Game g) {
+        android.widget.EditText t = new android.widget.EditText(this);
+        t.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        t.setSingleLine(true);
+        t.setText(g.name);
+        t.setSelection(t.getText().length());
+        new PadFocus.Builder(this).setTitle(Tx.s(R.string.home_rename_game)).setView(t)
+                .setPositiveButton(Tx.s(R.string.game_save), (x, w) -> { Game.rename(this, g, t.getText().toString()); refresh(); })
+                .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
     }
 
     // ---- Move: a reorder mode. The game is lifted; D-pad (the grid: all four directions) or a tap on another game's place moves it, A or a tap on it puts it down, B cancels ----
@@ -1234,7 +1352,6 @@ public final class MainActivity extends Activity {
             boolean onTile = f != null && f.getTag() instanceof TileInfo;
             if (games.isEmpty()) { if (pad) hint.set(new String[] {"A", Tx.s(R.string.home_add_game)}); else hint.set(); }
             else if (pad && onTile) hint.set(new String[] {"A", Tx.s(R.string.hint_open)}, new String[] {"X", Tx.s(R.string.hint_options_hold)});
-            else if (!pad) hint.set(new String[] {null, Tx.s(R.string.hint_hold_for_options)});
             else hint.set();
         } else if (pad) hint.set(new String[] {"A", Tx.s(R.string.hint_select)}, new String[] {"B", Tx.s(R.string.hint_back)});
         else hint.set();
@@ -1296,14 +1413,29 @@ public final class MainActivity extends Activity {
         workUi.postDelayed(workRun, 700);
     }
 
-    /** A controller or keyboard starts on the first game's tile (nothing happens in touch mode, where tiles take no focus); the first game is the selected one either way */
+    /** Whether Home's tiles were built once since the screen was made (startSelection) */
+    private boolean tilesShown;
+
+    /**
+     * A controller or keyboard starts on the first game's tile; the first game is the selected one either way. The app opens in touch mode, where a tile takes no
+     * focus (requestFocus does nothing), and a controller's first press leaves it: Android then gives the focus to the window's default view
+     * (ViewRootImpl.leaveTouchMode → restoreDefaultFocus), which without one is the first focusable view in the tree, a top-bar button. So the first tile is the
+     * window's default focus (setFocusedByDefault; Add game is when there is no game: refresh). Out of touch mode, the first build since the screen was made (the
+     * app opened) moves the focus to the first game even when the window already gave it to another view; a later build only when nothing has the focus
+     */
     private void startSelection(ViewGroup row) {
+        boolean first = !tilesShown;
+        tilesShown = true;
         if (gameBox != null) noFocusTint(gameBox);   // the tiles were made after the page was
         for (int k = 0; k < row.getChildCount(); k++)
             if (row.getChildAt(k).getTag() instanceof TileInfo) {
                 View t = row.getChildAt(k);
                 selectTile(t, false);
-                if (getCurrentFocus() == null) t.requestFocus();
+                t.setFocusedByDefault(true);
+                if (!t.isInTouchMode() && (first || getCurrentFocus() == null)) {
+                    if (t.isAttachedToWindow()) t.requestFocus();
+                    else t.post(() -> { if (!t.isInTouchMode() && (first || getCurrentFocus() == null)) t.requestFocus(); });   // the app opening: once the page is in the window
+                }
                 return;
             }
     }
@@ -1631,20 +1763,24 @@ public final class MainActivity extends Activity {
             String restamped = Pack.restamp(new File(g.packDir), g.titleId);
             if (restamped != null) android.util.Log.i("nxnative", g.titleId + ": shader library v-" + restamped + " taken over as v-" + BuildConfig.NX_DMSH_VK_CHAIN + " (restamp)");
             Problem problem = problem(g);
+            File other = problem != null ? Folders.packWithLibrary(this, g) : null;   // another pack of this game has this app's shaders: offered, not taken
             Boolean ok = null;
             if (problem == null || problem.onDemand) try { ok = PackCheck.code(this, Pack.read(new File(g.packDir)), new File(g.gameDir)); } catch (IOException e) { ok = null; }
             Boolean code = ok;
             boolean own = Boolean.FALSE.equals(ok) && Ondevice.ownPack(new File(g.gameDir), new File(g.packDir), g.titleId);   // the app's own pack, its code from older tools
+            boolean auto = problem != null && problem.shadersOnly && problem.prepare;
+            boolean dump = auto && Ondevice.isDump(new File(g.gameDir));   // here, off the main thread: a .nup is opened to say (Nup.onOpen's red line on the main thread)
             runOnUiThread(() -> {
                 if (info.getParent() == null) return;
                 // An APK update's new shaders: made in the background with no question when the pack's older library is one the delta manifest knows (Ondevice.autoUpdate)
-                if (problem != null && problem.shadersOnly && problem.prepare) Ondevice.autoUpdate(this, new File(g.gameDir), new File(g.packDir), g.titleId);
+                if (auto) Ondevice.autoUpdate(this, new File(g.gameDir), new File(g.packDir), g.titleId, dump);
                 if (problem == null) state(st, Tx.s(R.string.home_ready), R.color.bn_leaf, ST_HIDDEN);
                 else if (problem.onDemand) state(st, problem.label, R.color.bn_leaf, ST_HIDDEN);   // Play starts it; the layer builds the shaders as it runs
                 else if (problem.playable && !problem.prepare) state(st, PrepareText.READY_OLDER(), R.color.bn_leaf, ST_SOFT);   // not a dump: nothing is updated on the phone (the page says where new ones come from)
                 else if (problem.playable && Ondevice.sampling(new File(g.packDir))) { state(st, PrepareText.CHECKING_SHADERS(), R.color.bn_leaf, ST_SOFT | ST_WORKING); updating.put(st, g); updateTick(); updateUi.removeCallbacks(sampleRun); updateUi.postDelayed(sampleRun, 2000); }   // the quick check of the older library (Ondevice.sampledKeep): the card follows it
                 else if (problem.playable && Pack.shaderLayerFills(new File(g.packDir), g.titleId, Prefs.layerEnv(this, g.titleId))) state(st, Tx.s(R.string.home_ready), R.color.bn_leaf, ST_HIDDEN);   // the layer builds what the older library lacks: no "update" to nag about
-                else if (problem.playable && Pack.deltaShaders(new File(g.packDir), g.titleId) < 0) state(st, Tx.s(R.string.home_ready_update), R.color.bn_accent, ST_SOFT);   // an optional shader update: the game's page offers it (GameSettings.shaderUpdateCard)
+                else if (problem.playable && !Pack.deltaAutomatic(new File(g.packDir), g.titleId)) state(st, Tx.s(R.string.home_ready_update), R.color.bn_accent, ST_SOFT);   // an optional shader update (no manifest row, or a large delta): the game's page offers it (GameSettings.shaderUpdateCard)
+                else if (problem.playable && !Prefs.autoShaderUpdate(this) && !Ondevice.busy(this)) state(st, Tx.s(R.string.home_ready_update), R.color.bn_accent, ST_SOFT);   // Update shaders automatically is off: nothing started, the game's page updates them
                 else if (problem.playable) { state(st, Tx.s(R.string.home_ready_updating_shaders), R.color.bn_leaf, ST_SOFT | ST_WORKING); updating.put(st, g); updateTick(); }   // the count follows (updateTick)
                 else if (problem.legacy) state(st, Tx.s(R.string.home_ready_shaders_need_one_update), R.color.bn_accent, ST_SOFT);
                 else state(st, problem.label, problem.prepare || problem.anyway ? R.color.bn_accent : R.color.bn_danger, problem.working ? ST_WORKING : 0);
@@ -1668,6 +1804,15 @@ public final class MainActivity extends Activity {
                     play.setOnClickListener(v -> relink(g));
                     st.setOnClickListener(v -> play.performClick());   // the state chip does what the state needs
                     st.setContentDescription(play.label.getText() + ": " + st.getText());
+                }
+                if (other != null) {   // the player decides: a tap shows the pack and takes it for this card (Folders.usePack)
+                    TextView n = Ui.warnChip(this, Tx.s(R.string.home_other_pack_has_shaders), Tx.s(R.string.home_other_pack_has_shaders), "");
+                    n.setOnClickListener(v -> Ui.explain(this, Tx.s(R.string.home_other_pack_has_shaders), Tx.s(R.string.home_other_pack_has_shaders_message, g.name), "Pack now: " + g.packDir + "\nOther pack: " + other)
+                            .setPositiveButton(Tx.s(R.string.home_use_that_pack), (d, w) -> new Thread(() -> { Folders.usePack(this, g, other); runOnUiThread(this::refresh); }, "nx-use-pack").start())
+                            .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+                    LinearLayout.LayoutParams wl = Ui.wrap();
+                    wl.topMargin = dp(6);
+                    info.addView(n, wl);
                 }
                 if (problem != null && problem.legacy) {   // Play stays Play; a chip says why the shaders want one more update
                     TextView n = Ui.warnChip(this, Tx.s(R.string.home_shaders_need_one_update), Tx.s(R.string.home_shaders_need_one_update), ShaderLibs.legacyWarning(problem.prepare));
@@ -1706,10 +1851,10 @@ public final class MainActivity extends Activity {
     void manageGame(Game g) { manage(g); }
 
     /** The optional shader update from the game's page: Home, then Prepare (Ondevice asks first and says what it will make) */
-    void updateShaders(Game g) { page(false); Ondevice.prepare(this, new File(g.gameDir), true); }
+    void updateShaders(Game g) { page(false); Ondevice.prepareShaders(this, new File(g.gameDir), true); }
 
     /** The optional "Prepare shaders" of a game that starts with no library (GameSettings): Home, then Prepare shaders for the whole set (Ondevice asks first and says what it will make) */
-    void prepareShaders(Game g) { page(false); Ondevice.prepare(this, new File(g.gameDir), false); }
+    void prepareShaders(Game g) { page(false); Ondevice.prepareShaders(this, new File(g.gameDir), false); }
 
     /** A game's page (a tap or long press on its tile; GameSettings): its settings, saves and storage under tabs, Play in its header */
     private void manage(Game g) { GameSettings.open(this, g); }
@@ -2238,15 +2383,24 @@ public final class MainActivity extends Activity {
 
     void launch(Game card) {
         if (needAccess(new File(card.gameDir))) return;
-        if (Edition.on(this, card.titleId) && Edition.offered(card)) {   // the card's edition switch: program 1 of its set, as a game of its own (Edition.forPlay)
-            Game e = Edition.forPlay(this, card);
-            if (e == null) {
-                Ui.explain(this, Tx.s(R.string.home_no_pack_for_the_switch), Tx.s(R.string.home_edition_needs_pack, Edition.name(card), Edition.program1(new File(card.gameDir))),
-                        "Game: " + card.gameDir).setPositiveButton(android.R.string.ok, null).show();
-                return;
-            }
-            card = e;
+        if (Edition.on(this, card.titleId) && Edition.offered(card)) {   // the card's edition switch: program 1 of its set, as a game of its own (Edition.forPlay reads its packs: off the main thread)
+            new Thread(() -> {
+                Game e = Edition.forPlay(this, card);
+                String p1 = e == null ? Edition.program1(new File(card.gameDir)) : null;
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    if (e != null) { launchGame(e); return; }
+                    Ui.explain(this, Tx.s(R.string.home_no_pack_for_the_switch), Tx.s(R.string.home_edition_needs_pack, Edition.name(card), p1), "Game: " + card.gameDir)
+                            .setPositiveButton(android.R.string.ok, null).show();
+                });
+            }, "nx-edition-pack").start();
+            return;
         }
+        launchGame(card);
+    }
+
+    /** Play for the game launch decided on (the card, or its edition's program 1) */
+    private void launchGame(Game card) {
         Game g = Folders.repack(this, card);   // a remembered pack folder that is gone: the usual search instead
         File saveGone = Folders.goneSave(this, g);
         if (saveGone != null) { Folders.saveGoneDialog(this, g, saveGone); return; }
@@ -2307,12 +2461,12 @@ public final class MainActivity extends Activity {
             return;
         }
         if (lp != null && Pack.playableLibrary(new File(g.packDir), g.titleId) != null) {   // the older library plays while the update makes this version's (vka_shader.c lib_load)
-            if (dump) Ondevice.autoUpdate(this, gd, new File(g.packDir), g.titleId);
+            if (dump) Ondevice.autoUpdate(this, gd, new File(g.packDir), g.titleId, true);
             start(g);
             return;
         }
         if (lp != null && Pack.legacyLibrary(new File(g.packDir), g.titleId) != null) {   // made before versioned updates: never blocks Play, says so (the host warns in its log too)
-            if (dump) Ondevice.autoUpdate(this, gd, new File(g.packDir), g.titleId);
+            if (dump) Ondevice.autoUpdate(this, gd, new File(g.packDir), g.titleId, true);
             Toast.makeText(this, ShaderLibs.legacyWarning(dump), Toast.LENGTH_LONG).show();
             start(g);
             return;
@@ -2358,6 +2512,9 @@ public final class MainActivity extends Activity {
     private void start(Game g) {
         Ondevice.playTakesLead(this);   // a running shader check stops and waits at the front of the line; the game does not wait for it
         Game.touch(this, g);   // the entry played last is the one kept if the list ever holds this game twice
+        List<String> shownIds = new ArrayList<>();
+        for (Game x : shownGames()) shownIds.add(x.orderId());
+        Prefs.gameOrder(this, GameOrder.front(shownIds, g.orderId()));   // Home is a recency list: the game played last comes first
         Intent intent = new Intent(this, GameActivity.class).putExtra("title_id", g.titleId).putExtra("name", g.name).putExtra("game", g.gameDir).putExtra("pack", g.packDir);
         if (getIntent().getBooleanExtra("no_pause", false)) intent.putExtra("no_pause", true);
         GameReturn.remember(this, g.titleId, g.name, g.gameDir, g.packDir);   // the app's icon goes back to this game while it runs
@@ -2368,7 +2525,7 @@ public final class MainActivity extends Activity {
     private void overlayItems() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        Overlay.rows(this, box, null);
+        Overlay.rows(this, box, null, null);   // the default of every game without its own
         Ui.sheet(this, Tx.s(R.string.home_overlay), box).setPositiveButton(Tx.s(R.string.common_done), null).setOnDismissListener(d -> refreshSettings()).show();
     }
 
@@ -2404,7 +2561,7 @@ public final class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         File dll = Lsfg.find(this);
-        Lsfg.rows(this, box, Lsfg.note + (dll != null ? "" : Tx.s(R.string.game_put_dll_in_documents)), () -> {});
+        Lsfg.rows(this, box, Lsfg.note + (dll != null ? "" : Tx.s(R.string.game_put_dll_in_documents)), () -> {}, null);   // the default of every game without its own
         Ui.add(box, Ui.small(this, Tx.s(R.string.home_ported_from_eden_gpl_3)), 10);
         Ui.sheet(this, Tx.s(R.string.home_frame_generation), box).setPositiveButton(Tx.s(R.string.common_done), null).setOnDismissListener(d -> refreshSettings())
                 .setNeutralButton(Tx.s(R.string.home_pick_lossless_dll), (d, w) -> {
@@ -2456,6 +2613,53 @@ public final class MainActivity extends Activity {
     private static String touchLabel(int m) { return m == TouchControls.MODE_AUTO ? Tx.s(R.string.home_auto_hidden_while_a_controller) : Tx.arr(R.array.arr_touch_mode)[m]; }
     private static String rotationLabel(boolean auto) { return auto ? Tx.s(R.string.home_automatic_the_game_follows_the) : Tx.s(R.string.home_landscape_the_game_window_stays); }
     /** A default's choice in Settings (no "Default" entry: this is the default) */
+    /** Settings › On-screen controls look: the defaults of every game without its own (TouchControls.lookRows; the show / hide button is its own row) */
+    private void touchLook() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TouchControls.lookRows(this, box, null);
+        Ui.sheet(this, Tx.s(R.string.settings_touch_look), box).setPositiveButton(Tx.s(R.string.common_done), null).setOnDismissListener(d -> refreshSettings()).show();
+    }
+
+    /** Settings › In-game panel look: the panel's own size and text size (PanelLook), the same setting as the panel's General rows. It is the launcher's own panel, not a
+     *  game setting, so every game shares it (no per-game value) */
+    private void panelLook() {
+        String[] what = {Tx.s(R.string.game_size), Tx.s(R.string.game_text_size)};
+        new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_panel_look)).setItems(new String[] {what[0] + ": " + Tx.arr(R.array.arr_panel_look)[Prefs.panelSize(this)],
+                what[1] + ": " + Tx.arr(R.array.arr_panel_look)[Prefs.panelText(this)]}, (d, k) ->
+                pick(what[k], Tx.arr(R.array.arr_panel_look), k == 0 ? Prefs.panelSize(this) : Prefs.panelText(this), w -> { if (k == 0) Prefs.panelSize(this, w); else Prefs.panelText(this, w); }))
+                .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+    }
+
+    /** The gamepads connected now (GameActivity.gamepadLike): descriptor and name */
+    private static java.util.List<String[]> gamepadsNow() {
+        java.util.List<String[]> out = new java.util.ArrayList<>();
+        for (int id : android.view.InputDevice.getDeviceIds()) {
+            android.view.InputDevice d = android.view.InputDevice.getDevice(id);
+            if (GameActivity.gamepadLike(d)) out.add(new String[] {d.getDescriptor(), d.getName()});
+        }
+        return out;
+    }
+    private String playerOneLabel() {
+        String chosen = Prefs.padFirst(this);
+        if (chosen.isEmpty()) return Tx.s(R.string.game_automatic);
+        for (String[] p : gamepadsNow()) if (p[0].equals(chosen)) return p[1];
+        return Tx.s(R.string.settings_player_one_away);
+    }
+    /**
+     * Settings › Player 1 (PadOrder): Automatic or one of the gamepads connected now, kept by the device's descriptor; the same setting as the in-game panel's Player 1.
+     * It names a physical device, so every game shares it (no per-game value)
+     */
+    private void playerOne() {
+        java.util.List<String[]> pads = gamepadsNow();
+        String chosen = Prefs.padFirst(this);
+        java.util.List<String> names = new java.util.ArrayList<>(), keys = new java.util.ArrayList<>();
+        names.add(Tx.s(R.string.game_automatic)); keys.add("");
+        for (String[] p : pads) { names.add(p[1]); keys.add(p[0]); }
+        if (!chosen.isEmpty() && !keys.contains(chosen)) { names.add(Tx.s(R.string.settings_player_one_away)); keys.add(chosen); }   // the one chosen, while it is not connected
+        pick(Tx.s(R.string.game_player_1), names.toArray(new String[0]), Math.max(0, keys.indexOf(chosen)), w -> Prefs.padFirst(this, keys.get(w)));
+    }
+
     private void pick(String title, String[] items, int cur, java.util.function.IntConsumer set) {
         new PadFocus.Builder(this).setTitle(title).setSingleChoiceItems(items, cur, (d, w) -> { set.accept(w); refreshSettings(); d.dismiss(); }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
     }

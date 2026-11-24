@@ -57,6 +57,20 @@ android {
     packaging {
         // This is necessary for libadrenotools custom driver loading
         jniLibs.useLegacyPackaging = true
+        // Preserve the pinned Banana release libraries byte-for-byte.
+        jniLibs.keepDebugSymbols += listOf(
+            "**/libSPIRV-Tools-shared.so",
+            "**/libcra.so",
+            "**/libdmsh_xlate.so",
+            "**/libhook_impl.so",
+            "**/libmain_hook.so",
+            "**/libnxadreno.so",
+            "**/libnxhost_*.so",
+            "**/libnxlaunch_*.so",
+            "**/libnxpack.so",
+            "**/libpython3.14.so",
+            "**/libzbicdec.so"
+        )
     }
 
     androidResources {
@@ -64,7 +78,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.lichii.android"
+        applicationId = "dev.lichii.fusion"
         minSdk = 24
         targetSdk = 36
         versionName = getGitVersion()
@@ -190,8 +204,8 @@ android {
             isDefault = true
             minSdk = 33
 
-            manifestPlaceholders += mapOf("appNameBase" to "Hokkaido")
-            resValue("string", "app_name_suffixed", "Hokkaido")
+            manifestPlaceholders += mapOf("appNameBase" to "Hokkaido Fusion")
+            resValue("string", "app_name_suffixed", "Hokkaido Fusion")
 
             ndk {
                 abiFilters += listOf("arm64-v8a")

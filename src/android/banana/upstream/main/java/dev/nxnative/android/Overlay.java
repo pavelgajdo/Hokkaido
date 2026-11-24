@@ -67,26 +67,26 @@ final class Overlay {
     /** The three choices of the "Building shaders" label (Prefs.layerLabel, LayerStatus.LABEL_*), in that order */
     static String[] labelChoices() { return Tx.arr(R.array.arr_layer_label); }
 
-    /** The master switch and, below it, one switch per item (main screen dialog, in-game settings) */
-    static void rows(Context c, LinearLayout box, String masterNote) {
+    /** The master switch and, below it, one switch per item: the main screen's dialog (titleId null: the defaults), a game's Game settings and the in-game panel (that game's own values) */
+    static void rows(Context c, LinearLayout box, String masterNote, String titleId) {
         CheckBox master = new CheckBox(c);
         master.setText(Tx.s(R.string.game_show_overlay) + (masterNote != null ? masterNote : ""));
-        master.setChecked(Prefs.overlay(c));
+        master.setChecked(Prefs.overlay(c, titleId));
         box.addView(master);
         List<CheckBox> items = new ArrayList<>();
         int indent = Math.round(24 * c.getResources().getDisplayMetrics().density);
         for (String[] it : ITEMS) {
             CheckBox b = new CheckBox(c);
             b.setText(it[1]);
-            b.setChecked(Prefs.overlayItem(c, it[0]));
+            b.setChecked(Prefs.overlayItem(c, it[0], titleId));
             b.setEnabled(master.isChecked());
-            b.setOnCheckedChangeListener((v, on) -> Prefs.overlayItem(c, it[0], on));
+            b.setOnCheckedChangeListener((v, on) -> Prefs.overlayItem(c, it[0], titleId, on));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lp.leftMargin = indent;
             box.addView(b, lp);
             items.add(b);
         }
-        master.setOnCheckedChangeListener((v, on) -> { Prefs.overlay(c, on); for (CheckBox b : items) b.setEnabled(on); });
+        master.setOnCheckedChangeListener((v, on) -> { Prefs.overlay(c, titleId, on); for (CheckBox b : items) b.setEnabled(on); });
     }
 
     // ---- Readings ----
@@ -108,7 +108,8 @@ final class Overlay {
     private volatile long rss = -1, memTotal, memAvail;
     private volatile boolean memLow;
 
-    Overlay(Context c) { ctx = c; power = c.getSystemService(PowerManager.class); am = c.getSystemService(ActivityManager.class); }
+    private final String game;   // the running game (Prefs.gameOf): its own items, else the main screen's
+    Overlay(Context c) { ctx = c; game = Prefs.gameOf(c); power = c.getSystemService(PowerManager.class); am = c.getSystemService(ActivityManager.class); }
 
     /** On the memory thread: this process's resident set (the host and the game run in it) and the phone's memory */
     private void readMemory() {
@@ -203,8 +204,8 @@ final class Overlay {
     /** The text for the top-right view, or null when no item there is on */
     CharSequence tick() {
         ticks++;
-        boolean fps = Prefs.overlayItem(ctx, "fps"), dot = Prefs.overlayItem(ctx, "throttle"), gpu = Prefs.overlayItem(ctx, "gpu"),
-                cpu = Prefs.overlayItem(ctx, "cpu"), bat = Prefs.overlayItem(ctx, "battery"), mem = Prefs.overlayItem(ctx, "memory");
+        boolean fps = Prefs.overlayItem(ctx, "fps", game), dot = Prefs.overlayItem(ctx, "throttle", game), gpu = Prefs.overlayItem(ctx, "gpu", game),
+                cpu = Prefs.overlayItem(ctx, "cpu", game), bat = Prefs.overlayItem(ctx, "battery", game), mem = Prefs.overlayItem(ctx, "memory", game);
         if (!fps && !dot && !gpu && !cpu && !bat && !mem) return null;
         if (mem) askMemory();
         if (dot || cpu) readCpu();

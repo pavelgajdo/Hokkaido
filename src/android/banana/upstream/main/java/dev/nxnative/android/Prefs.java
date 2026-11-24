@@ -17,17 +17,69 @@ final class Prefs {
     static SharedPreferences open(Context c, String name) { return c.getSharedPreferences(name, Context.MODE_MULTI_PROCESS); }
     static SharedPreferences of(Context c) { return open(c, "launcher"); }
 
-    /** The overlay over the game (master switch: the frame rate and the other items top right, Overlay; the build tag top left is always shown); on by default. DM_OVERLAY=0 / 1 in env.txt overrides it for a run. */
-    /** Whether the check at start also offers a small fix release ("Update type: hotfix" in its notes); off: only major and critical releases (UpdateCheck.kind). Default on */
-    static boolean hotfixUpdates(Context c) { return of(c).getBoolean("hotfix_updates", true); }
-    static void hotfixUpdates(Context c, boolean on) { of(c).edit().putBoolean("hotfix_updates", on).commit(); }
+    /**
+     * The update channel (Settings › Updates › Update channel; UpdateCheck.STABLE or HOTFIX): "update_channel", else the older Small fix updates switch
+     * ("hotfix_updates", 0.3.42 to 0.3.45: on = Hotfix, off = Stable) when it was ever written, else UpdateCheck.DEFAULT_CHANNEL (UpdateCheck.channel). Read
+     * on every check, nothing is migrated at start. A choice writes both keys, so an older app installed later (a rollback) keeps the player's choice too.
+     */
+    static String updateChannel(Context c) {
+        SharedPreferences p = of(c);
+        return UpdateCheck.channel(p.getString("update_channel", null), p.contains("hotfix_updates") ? p.getBoolean("hotfix_updates", true) : null);
+    }
+    static void updateChannel(Context c, String channel) {
+        of(c).edit().putString("update_channel", channel).putBoolean("hotfix_updates", !UpdateCheck.skipsHotfix(channel)).commit();
+    }
 
+    /** Settings › Updates › Back up saves before updating (UpdateBackupUi): every changed save is backed up before an in-app update installs; on by default, written only when toggled */
+    /** The update tag the player last saw in Settings (the update dot on Home's Settings button goes until a newer one comes) */
+    static String updateSeen(Context c) { return of(c).getString("update_seen", ""); }
+    static void updateSeen(Context c, String tag) { of(c).edit().putString("update_seen", tag).apply(); }
+    static boolean backupBeforeUpdate(Context c) { return of(c).getBoolean("backup_before_update", true); }
+    static void backupBeforeUpdate(Context c, boolean on) { of(c).edit().putBoolean("backup_before_update", on).commit(); }
+
+    /** The overlay over the game (master switch: the frame rate and the other items top right, Overlay; the build tag top left is always shown); on by default. DM_OVERLAY=0 / 1 in env.txt overrides it for a run. */
     static boolean overlay(Context c) { return of(c).getBoolean("overlay", true); }
     static void overlay(Context c, boolean on) { of(c).edit().putBoolean("overlay", on).commit(); }
+    /** A game's own overlay switch (its Game settings › Overlay, the in-game panel), else the main screen's; titleId null: the main screen's */
+    static boolean overlay(Context c, String titleId) { return titleId == null ? overlay(c) : of(c).getBoolean(gameKey("overlay", titleId), overlay(c)); }
+    static void overlay(Context c, String titleId, boolean on) { if (titleId == null) overlay(c, on); else of(c).edit().putBoolean(gameKey("overlay", titleId), on).commit(); }
+    /** The overlay's item keys (Overlay.ITEMS, in its order): the game's own values are kept per key */
+    static final String[] OVERLAY_KEYS = {"fps", "throttle", "gpu", "cpu", "battery", "tag", "memory"};
+    /** Whether the game has its own overlay settings (the switch or any item) */
+    static boolean ownOverlay(Context c, String titleId) {
+        SharedPreferences p = of(c);
+        if (p.contains(gameKey("overlay", titleId))) return true;
+        for (String k : OVERLAY_KEYS) if (p.contains(gameKey("overlay_" + k, titleId))) return true;
+        return false;
+    }
+    /** The game follows the main screen's overlay again (switch and items) */
+    static void overlayDefault(Context c, String titleId) {
+        SharedPreferences.Editor e = of(c).edit().remove(gameKey("overlay", titleId));
+        for (String k : OVERLAY_KEYS) e.remove(gameKey("overlay_" + k, titleId));
+        e.commit();
+    }
 
-    /** Home's tile order the player chose (GameOrder: game ids, one per line); empty: the order the games were added in */
+    /** The title ID of the game an activity runs (GameActivity's intent "title_id"), null for any other context: what the game's own settings are read for */
+    static String gameOf(Context c) {
+        if (!(c instanceof android.app.Activity)) return null;
+        android.content.Intent i = ((android.app.Activity) c).getIntent();
+        String id = i == null ? null : i.getStringExtra("title_id");
+        return id == null || id.isEmpty() ? null : id;
+    }
+
+    /** Whether GameActivity shows the newest log lines over the black screen until the game's first frame (on by default; crashes still show). */
+    static boolean startupLog(Context c) { return of(c).getBoolean("startup_log", false); }
+    static void startupLog(Context c, boolean on) { of(c).edit().putBoolean("startup_log", on).commit(); }
+
+    /** Home's tile order (GameOrder: game ids, one per line): a recency list (played or added last first) the player may change with Move; empty: the order the games were added in */
     static java.util.List<String> gameOrder(Context c) { return GameOrder.decode(of(c).getString("game_order", "")); }
     static void gameOrder(Context c, java.util.List<String> ids) { of(c).edit().putString("game_order", GameOrder.encode(ids)).commit(); }
+    /** The names the player gave games (GameNames: one line per game); empty: none */
+    static String gameNames(Context c) { return of(c).getString("game_names", ""); }
+    static void gameNames(Context c, String v) { of(c).edit().putString("game_names", v).commit(); }
+    /** Whether Home's order was stored once as it was shown (MainActivity.orderRecent: the games already there keep their places; only games added later go first) */
+    static boolean orderRecent(Context c) { return of(c).getBoolean("game_order_recent", false); }
+    static void orderRecent(Context c, boolean on) { of(c).edit().putBoolean("game_order_recent", on).commit(); }
     /** Home's layout (HomeLayout): 0 the sideways row of tiles (default), 1 a grid with the names, 2 a list */
     static int homeLayout(Context c) { return of(c).getInt("home_layout", 0); }
     static void homeLayout(Context c, int v) { of(c).edit().putInt("home_layout", v).commit(); }
@@ -43,6 +95,9 @@ final class Prefs {
     /** One item of the overlay (Overlay.ITEMS); all on by default, shown only while the overlay is on */
     static boolean overlayItem(Context c, String key) { return of(c).getBoolean("overlay_" + key, true); }
     static void overlayItem(Context c, String key, boolean on) { of(c).edit().putBoolean("overlay_" + key, on).commit(); }
+    /** A game's own value of an item, else the main screen's; titleId null: the main screen's */
+    static boolean overlayItem(Context c, String key, String titleId) { return titleId == null ? overlayItem(c, key) : of(c).getBoolean(gameKey("overlay_" + key, titleId), overlayItem(c, key)); }
+    static void overlayItem(Context c, String key, String titleId, boolean on) { if (titleId == null) overlayItem(c, key, on); else of(c).edit().putBoolean(gameKey("overlay_" + key, titleId), on).commit(); }
 
     /**
      * The "Building shaders (N)" label over the game (LayerStatus.shown): Off, the count alone (default: tiny, it says the game is still filling its shaders and no more), or the full words.
@@ -55,6 +110,17 @@ final class Prefs {
         return Math.max(LayerStatus.LABEL_OFF, Math.min(LayerStatus.LABEL_FULL, p.getInt("layer_label", LayerStatus.LABEL_NUMBER)));
     }
     static void layerLabel(Context c, int v) { of(c).edit().putInt("layer_label", v).commit(); }
+    /** A game's own label choice (Game settings, the in-game panel), else the main screen's; titleId null: the main screen's */
+    static int layerLabel(Context c, String titleId) {
+        if (titleId == null || !of(c).contains(gameKey("layer_label", titleId))) return layerLabel(c);
+        return Math.max(LayerStatus.LABEL_OFF, Math.min(LayerStatus.LABEL_FULL, of(c).getInt(gameKey("layer_label", titleId), LayerStatus.LABEL_NUMBER)));
+    }
+    static boolean ownLayerLabel(Context c, String titleId) { return of(c).contains(gameKey("layer_label", titleId)); }
+    /** null: back to the default */
+    static void layerLabel(Context c, String titleId, Integer v) {
+        if (titleId == null) { if (v != null) layerLabel(c, (int) v); return; }
+        if (v == null) of(c).edit().remove(gameKey("layer_label", titleId)).commit(); else of(c).edit().putInt(gameKey("layer_label", titleId), v).commit();
+    }
 
     /** The game's window size (Game resolution): DM_WINDOW_SIZE for the host (loader.c window_apply), "1920x1080" (Phone 1080p, the default), "original" (the game's own, 2880x1620 in Donkey Kong Bananza), "1280x720" (Phone 720p: less GPU time a frame), "2560x1440" (Phone 1440p: for QHD screens), "960x540" (Phone 540p: for weaker GPUs) or "848x480" (Phone 480p). DM_WINDOW_SIZE in env.txt overrides it for a run.
      *  A game whose profile has graphics_scale rows gets the graphics scale and operation mode that give the size instead (Profile.resolutionEnv).
@@ -74,6 +140,17 @@ final class Prefs {
     // ---- A game's own settings (its Manage sheet › Game settings, the in-game panel), stored per title ID as "<key>@<title ID>"; a game without its own value
     // takes the default (the main screen's Settings, global). DKB with nothing of its own set runs exactly as before ----
     static String gameKey(String key, String titleId) { return key + "@" + titleId; }
+    /** A settings file as OwnSetting reads it (a group of keys with a default and a game's own value each) */
+    static OwnSetting.Store store(SharedPreferences p) {
+        return new OwnSetting.Store() {
+            @Override public boolean has(String k) { return p.contains(k); }
+            @Override public boolean bool(String k, boolean d) { return p.getBoolean(k, d); }
+            @Override public int num(String k, int d) { return p.getInt(k, d); }
+            @Override public float real(String k, float d) { return p.getFloat(k, d); }
+        };
+    }
+    /** Removes the given keys (OwnSetting.ownKeys: a game's own values of a group) */
+    static void remove(SharedPreferences p, String[] keys) { SharedPreferences.Editor e = p.edit(); for (String k : keys) e.remove(k); e.commit(); }
     /** Rumble (Rumble.java): the main screen's default (on), then each game's own */
     static boolean rumble(Context c) { return of(c).getBoolean("rumble", true); }
     static void rumbleDefault(Context c, boolean on) { of(c).edit().putBoolean("rumble", on).commit(); }
@@ -126,11 +203,23 @@ final class Prefs {
         if (on == null) of(c).edit().remove(gameKey("rotation_auto", titleId)).commit(); else of(c).edit().putBoolean(gameKey("rotation_auto", titleId), on).commit();
     }
     static final String[] DISPLAY_NAMES = {"Fit (keep aspect)", "Stretch to screen"};
-    static boolean stretch(Context c, String titleId) { return of(c).getBoolean(gameKey("stretch", titleId), false); }
+    /** Fit or Stretch: the main screen's default (Fit), then each game's own (Game settings › Display, the in-game panel's Picture) */
+    static boolean stretch(Context c) { return of(c).getBoolean("stretch", false); }
+    static void stretchDefault(Context c, boolean on) { of(c).edit().putBoolean("stretch", on).commit(); }
+    static boolean stretch(Context c, String titleId) { return of(c).getBoolean(gameKey("stretch", titleId), stretch(c)); }
     static void stretch(Context c, String titleId, boolean on) { of(c).edit().putBoolean(gameKey("stretch", titleId), on).commit(); }
-    /** The in-game panel's Picture size (per game): the picture's share of its fitted or stretched size, PictureFit.SIZE_MIN..100 % (DM_VK_PICTURE_SIZE; 100, the default, is not passed) */
-    static int pictureSize(Context c, String titleId) { return PictureFit.size(of(c).getInt(gameKey("picture_size", titleId), PictureFit.SIZE_MAX)); }
+    static boolean ownStretch(Context c, String titleId) { return of(c).contains(gameKey("stretch", titleId)); }
+    /** null: back to the default */
+    static void stretchOwn(Context c, String titleId, Boolean on) { if (on == null) of(c).edit().remove(gameKey("stretch", titleId)).commit(); else stretch(c, titleId, on); }
+    /** The Picture size: the picture's share of its fitted or stretched size, PictureFit.SIZE_MIN..100 % (DM_VK_PICTURE_SIZE; 100, the built-in default, is not passed): the main
+     *  screen's default, then each game's own (Game settings › Picture size, the in-game panel) */
+    static int pictureSize(Context c) { return PictureFit.size(of(c).getInt("picture_size", PictureFit.SIZE_MAX)); }
+    static void pictureSizeDefault(Context c, int pct) { of(c).edit().putInt("picture_size", PictureFit.size(pct)).commit(); }
+    static int pictureSize(Context c, String titleId) { return PictureFit.size(of(c).getInt(gameKey("picture_size", titleId), pictureSize(c))); }
     static void pictureSize(Context c, String titleId, int pct) { of(c).edit().putInt(gameKey("picture_size", titleId), PictureFit.size(pct)).commit(); }
+    static boolean ownPictureSize(Context c, String titleId) { return of(c).contains(gameKey("picture_size", titleId)); }
+    /** null: back to the default */
+    static void pictureSizeOwn(Context c, String titleId, Integer pct) { if (pct == null) of(c).edit().remove(gameKey("picture_size", titleId)).commit(); else pictureSize(c, titleId, pct); }
 
     /** The in-game panel's own size and text size (PanelLook: 0 Small, 1 Normal, 2 Large), for every game */
     static int panelSize(Context c) { return PanelLook.of(of(c).getInt("panel_size", PanelLook.NORMAL)); }
@@ -199,11 +288,14 @@ final class Prefs {
     /** The recommended frame rate cap as the launcher stores it (Recommend.cap), null for none */
     static Integer recCap(Context c, String titleId) { return Recommend.cap(rec(c, titleId, Recommend.FPS_CAP), limited(titleId)); }
     /** Game settings › Reset to defaults: every choice of the game's own back to the main screen's default (Extra environment's lines stay) */
-    static final String[] GAME_SETTINGS = {"window", "render_pct", "gfx_quality", "fps_cap", "gpu_driver", "gpu_ts", "pause_return", "ndsr_choice2", "ndsr_sharp", "drs2", "ram_saver", "ram_saver_strong", "decouple", "hold60", "full_vegetation", "gsr2_clarity", "dlss_sharp", "dlss_mode", "scene_res", "res_preset", "aspect", "cheats", "screen_scale"};
+    static final String[] GAME_SETTINGS = {"window", "render_pct", "gfx_quality", "fps_cap", "gpu_driver", "gpu_ts", "pause_return", "ndsr_choice2", "ndsr_sharp", "drs2", "ram_saver", "ram_saver_strong", "decouple", "hold60", "vk_adpf_span_any", "full_vegetation", "gsr2_clarity", "dlss_sharp", "dlss_mode", "scene_res", "res_preset", "aspect", "cheats", "screen_scale",
+            "stretch", "picture_size", "motion_pct", "layer_label", "overlay", "lsfg", "lsfg_mult", "lsfg_target", "lsfg_flow", "lsfg_quality", "custom_card"};
     static void resetGame(Context c, String titleId) {
         SharedPreferences.Editor e = of(c).edit();
         for (String k : GAME_SETTINGS) e.remove(gameKey(k, titleId));
         e.remove(gameKey("lp_mode", titleId));   // Turn Link Play off, retaining the saved host and room for next time.
+        for (String k : OVERLAY_KEYS) e.remove(gameKey("overlay_" + k, titleId));
+        TouchControls.lookDefault(c, titleId);   // the on-screen controls' look (their own file)
         Profile p = Profile.of(titleId);
         if (p != null) {
             for (Profile.Option opt : p.options) e.remove(gameKey("opt_" + opt.env, titleId));
@@ -295,9 +387,15 @@ final class Prefs {
     }
     private static boolean own(Context c, String key, String titleId) { return of(c).contains(gameKey(key, titleId)); }
 
+    /** The player picked Custom on the Recommended / Custom card of Game settings (kept per game, so it survives leaving the page, an app update and Prepare again: the card shows
+     *  Custom while the player's own values for settings that have no recommendation, such as RAM saver, stand); only Recommended (backToRecommended) and Reset to defaults clear it */
+    static boolean customPicked(Context c, String titleId) { return of(c).getBoolean(gameKey("custom_card", titleId), false); }
+    static void customPicked(Context c, String titleId, boolean on) { if (on) of(c).edit().putBoolean(gameKey("custom_card", titleId), true).commit(); else of(c).edit().remove(gameKey("custom_card", titleId)).commit(); }
+
     /** Game settings › Use recommended (the "Recommended for this phone" card): the game's own values of the settings that have a recommendation on this phone are removed, so they take it again; the rest stays */
     static void backToRecommended(Context c, String titleId) {
         SharedPreferences.Editor e = of(c).edit();
+        e.remove(gameKey("custom_card", titleId));
         for (Recommend.State s : recStates(c, titleId))
             if (s.recommended != null) for (String k : Recommend.prefKeys(s.setting, dlssGame(titleId))) e.remove(gameKey(k, titleId));
         e.commit();
@@ -474,19 +572,29 @@ final class Prefs {
     static final String[] MOTION_NAMES = {"10%", "20%", "30%", "40%", "50%", "60%", "75%", "100%", "125%", "150%"};
     static final int MOTION_DEFAULT = 4;
     static boolean ownMotionSens(Context c, String titleId) { return of(c).contains(gameKey("motion_pct", titleId)); }
-    static int motionSens(Context c, String titleId) {
-        int pct = of(c).getInt(gameKey("motion_pct", titleId), MOTION_PCT[MOTION_DEFAULT]);
+    /** The step nearest a stored percentage */
+    static int motionStep(int pct) {
         int best = MOTION_DEFAULT;
         for (int i = 0; i < MOTION_PCT.length; i++) if (Math.abs(MOTION_PCT[i] - pct) < Math.abs(MOTION_PCT[best] - pct)) best = i;
         return best;
     }
+    /** The main screen's default (Settings › Motion sensitivity, 50 % unless set), which a game without its own value takes */
+    static int motionSens(Context c) { return motionStep(of(c).getInt("motion_pct", MOTION_PCT[MOTION_DEFAULT])); }
+    static void motionSensDefault(Context c, int step) { of(c).edit().putInt("motion_pct", MOTION_PCT[step]).commit(); }
+    static int motionSens(Context c, String titleId) { return motionStep(of(c).getInt(gameKey("motion_pct", titleId), MOTION_PCT[motionSens(c)])); }
     static float motionFactor(Context c, String titleId) { return MOTION_PCT[motionSens(c, titleId)] / 100f; }
     /** null removes the game's own choice */
     static void motionSens(Context c, String titleId, Integer v) {
         if (v == null) of(c).edit().remove(gameKey("motion_pct", titleId)).commit(); else of(c).edit().putInt(gameKey("motion_pct", titleId), MOTION_PCT[v]).commit();
     }
-    static boolean pauseOnReturn(Context c, String titleId) { return of(c).getBoolean(gameKey("pause_return", titleId), true); }
+    /** Pause when the game comes back from the background: the main screen's default (on), then each game's own (Game settings, the in-game panel's General) */
+    static boolean pauseOnReturn(Context c) { return of(c).getBoolean("pause_return", true); }
+    static void pauseOnReturnDefault(Context c, boolean on) { of(c).edit().putBoolean("pause_return", on).commit(); }
+    static boolean pauseOnReturn(Context c, String titleId) { return of(c).getBoolean(gameKey("pause_return", titleId), pauseOnReturn(c)); }
     static void pauseOnReturn(Context c, String titleId, boolean on) { of(c).edit().putBoolean(gameKey("pause_return", titleId), on).commit(); }
+    static boolean ownPauseOnReturn(Context c, String titleId) { return of(c).contains(gameKey("pause_return", titleId)); }
+    /** null: back to the default */
+    static void pauseOnReturnOwn(Context c, String titleId, Boolean on) { if (on == null) of(c).edit().remove(gameKey("pause_return", titleId)).commit(); else pauseOnReturn(c, titleId, on); }
     /** Game settings › Speedhack: Turn off hidden layers (experimental), for a game whose profile names such layers (game.tsv skip_layers): draws of those pixel shaders are
      *  dropped (DM_VK_SKIP_FS). Off by default: the layers were judged hidden by eye in a few places only */
     static boolean skipLayersGame(String titleId) { Profile p = Profile.of(titleId); return p != null && !p.skipLayers.isEmpty(); }
@@ -534,6 +642,13 @@ final class Prefs {
     /** Game settings › Classic render passes (DM_VK_CLASSIC_RP): VkRenderPasses with imageless framebuffers instead of dynamic rendering. Off by default (a GPU loss on Adreno 830 with Turnip, open) */
     static boolean classicPasses(Context c, String titleId) { return of(c).getBoolean(gameKey("vk_classic_rp", titleId), false); }
     static void classicPasses(Context c, String titleId, boolean on) { of(c).edit().putBoolean(gameKey("vk_classic_rp", titleId), on).commit(); }
+    /**
+     * Game settings › Speed › Keep GPU clock up (DM_VK_ADPF_SPAN_ANY=1): the performance hint session's reports measure each frame against the game's shortest
+     * period whenever any GPU clock floor is on, so a system that caps the GPU from the reports (a host-DCVS Adreno) does not walk the cap down in a menu and keep it there.
+     * Off by default: the GPU stays at a higher clock in menus for every game, so the phone runs warmer (docs/reference/frame-rate.md "The GPU stays at a low clock after a menu")
+     */
+    static boolean keepGpuUp(Context c, String titleId) { return of(c).getBoolean(gameKey("vk_adpf_span_any", titleId), false); }
+    static void keepGpuUp(Context c, String titleId, boolean on) { of(c).edit().putBoolean(gameKey("vk_adpf_span_any", titleId), on).commit(); }
     /** Game settings › Fast FP16 shader math (TU_DEBUG=fp16, FD_MESA_DEBUG=fp16: Mesa reads them, the host reads no DM_ switch): native 16-bit half-precision ALU instructions on Turnip. Off by default */
     static boolean fp16(Context c, String titleId) { return of(c).getBoolean(gameKey("vk_fp16", titleId), false); }
     static void fp16(Context c, String titleId, boolean on) { of(c).edit().putBoolean(gameKey("vk_fp16", titleId), on).commit(); }
@@ -554,6 +669,14 @@ final class Prefs {
     /** Keep the screen on while a game is prepared (Settings › System, on by default): Home keeps it on while the job runs and its card shows (Ondevice) */
     static boolean keepScreenPreparing(Context c) { return of(c).getBoolean("keep_screen_preparing", true); }
     static void keepScreenPreparing(Context c, boolean on) { of(c).edit().putBoolean("keep_screen_preparing", on).commit(); }
+
+    /**
+     * Update a game's shaders by themselves (Settings › System, on by default): when a game's library is not this app version's and the dump can make it, Home's check
+     * and Play start the update in the background (Ondevice.autoUpdate, with its quick check first). Off: nothing starts by itself; the card says "Ready · update"
+     * and the game's page offers Update shaders
+     */
+    static boolean autoShaderUpdate(Context c) { return of(c).getBoolean("auto_shader_update", true); }
+    static void autoShaderUpdate(Context c, boolean on) { of(c).edit().putBoolean("auto_shader_update", on).commit(); }
 
     /** Game language (Game settings): a console language code (GameLanguage.CODES) passed as DM_LANG, null for the phone's language (the default) */
     static String gameLang(Context c, String titleId) { return of(c).getString(gameKey("lang", titleId), null); }
@@ -657,6 +780,9 @@ final class Prefs {
     static String buildId() {
         return Signer.buildId(BuildConfig.NX_PLAY, BuildConfig.VERSION_NAME, BuildConfig.NX_COMMIT, BuildConfig.NX_DIRTY, BuildConfig.NX_BRANCH);
     }
+
+    /** This build's kind (BuildKind.of on BuildConfig): preview, hotfix, critical, major, or "" for a test build */
+    static String buildKind() { return BuildKind.of(BuildConfig.VERSION_NAME, BuildConfig.NX_RELEASE_KIND); }
 
     private static String buildTag() { return Signer.buildTag(BuildConfig.NX_PLAY, buildId()); }
 

@@ -2,164 +2,72 @@
 # SPDX-FileCopyrightText: Copyright 2026 Hokkaido contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Moves the Banana Native that Hokkaido embeds (src/android/banana) to another release:
-#
-#   tools/android/sync_bananative.sh <BananaNative clone> <tag> <the tag's release APK> <APK URL>
-#
-# Copies the tag's Android sources into upstream/, applies patches/, reads the release's BuildConfig
-# values into buildconfig.txt and pins the APK in UPSTREAM.txt. Afterwards compare the tag's
-# android/app/src/{main,ondevice}/AndroidManifest.xml with src/main/AndroidManifest.xml, then build.
-# DEXDUMP names dexdump if it is not in the newest Android SDK build-tools.
+# Usage: sync_bananative.sh <BananaNative checkout> <tag> <matching APK> <APK URL>
+# DEXDUMP may name a build-tools dexdump outside ANDROID_HOME.
 set -euo pipefail
 
-repo=$1 tag=$2 apk=$3 url=$4
-root=$(cd "$(dirname "$0")/../.." && pwd)
+if [ "$#" -ne 4 ]; then
+    echo 'Usage: sync_bananative.sh <checkout> <tag> <apk> <apk-url>' >&2
+    exit 2
+fi
+repo=$(cd -- "$1" && pwd)
+tag=$2
+apk=$(realpath -- "$3")
+url=$4
+root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 module=$root/src/android/banana
 
-sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/AppData/Local/Android/Sdk}}
-dexdump=${DEXDUMP:-}
-if [ -z "$dexdump" ]; then
-    tools=$(ls -d "$sdk"/build-tools/*/ | sort -V | tail -1)
-    dexdump=$tools/dexdump
-    [ -x "$dexdump" ] || dexdump=$tools/dexdump.exe
+commit=$(git -C "$repo" rev-parse --verify "$tag^{commit}")
+apk_sha=$(sha256sum "$apk" | cut -d ' ' -f 1)
+if [ -n "${BANANA_EXPECTED_COMMIT:-}" ] && [ "$commit" != "$BANANA_EXPECTED_COMMIT" ]; then
+    echo "Banana source commit mismatch: $commit" >&2
+    exit 1
+fi
+if [ -n "${BANANA_EXPECTED_APK_SHA256:-}" ] && [ "$apk_sha" != "$BANANA_EXPECTED_APK_SHA256" ]; then
+    echo "Banana APK SHA-256 mismatch: $apk_sha" >&2
+    exit 1
 fi
 
-# Sources: the tag's, with Hokkaido's patches.
-rm -rf "$module/upstream"
-mkdir -p "$module/upstream"
+dexdump=${DEXDUMP:-}
+if [ -z "$dexdump" ]; then
+    sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}
+    if [ -z "$sdk" ]; then
+        echo 'Set ANDROID_HOME or DEXDUMP to the Android build-tools dexdump.' >&2
+        exit 1
+    fi
+    for candidate in "$sdk"/build-tools/*/dexdump; do
+        [ ! -x "$candidate" ] || dexdump=$candidate
+    done
+fi
+if [ -z "$dexdump" ] || [ ! -x "$dexdump" ]; then
+    echo "No executable dexdump found: $dexdump" >&2
+    exit 1
+fi
+
+# Validate the whole replacement in a temporary folder before changing the embedded sources.
+work=$(mktemp -d "$module/.banana-sync.XXXXXX")
+trap 'rm -rf -- "$work"' EXIT
+mkdir "$work/upstream"
 git -C "$repo" archive "$tag" android/app/src/main/java android/app/src/main/res \
     android/app/src/main/AndroidManifest.xml android/app/src/ondevice android/app/src/variant-play |
-    tar -x -C "$module/upstream" --strip-components=3
-for patch in "$module"/patches/*.patch; do
-    if [ "$tag" = v0.3.52-preview ] && [ "$(basename "$patch")" = 0002-hokkaido-in-game.patch ]; then
-        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch" || {
-            python3 - "$module/upstream" <<'PY'
-from pathlib import Path
-import sys
-p=Path(sys.argv[1])/'main/java/dev/nxnative/android'
-def change(s,a,b):
-    assert s.count(a)==1, a
-    return s.replace(a,b)
-f=p/'GameActivity.java'
-s=f.read_text()
-for a,b in [
-('tag.setVisibility(overlayOn() &&','tag.setVisibility(!HokkaidoInGame.on() && overlayOn() &&'),
-('g = on && Prefs.overlayItem','g = on && !HokkaidoInGame.on() && Prefs.overlayItem'),
-('tag.setVisibility(hidden ||','tag.setVisibility(HokkaidoInGame.on() || hidden ||'),
-('handle.setVisibility(!clean &&','handle.setVisibility(!HokkaidoInGame.on() && !clean &&')]:
-    s=change(s,a,b)
-import re
-matches=list(re.finditer(r'(?m)^\s*boolean paused\(\)\s*\{\s*return paused;\s*\}[ \t]* and 'private void unpause()' not in s
-f.write_text(s)
-f=p/'SidePanel.java'
-s=f.read_text()
-for a,b in [
-('void back() { if (open)','void back() { if (hk != null) { if (open) close(); else openMenu(); return; } if (open)'),
-('void padToggle() { if (isOpen())','void padToggle() { if (hk != null) { if (open) close(); else { openMenu(); hk.focus(); } return; } if (isOpen())'),
-('void open() { showPage(tab); }','void open() { if (hk != null) openMenu(); else showPage(tab); }'),
-('removeCallbacks(tick);\n        drawer.animate().cancel();','removeCallbacks(tick);\n        if (hk != null) { hk.close(); return; }\n        drawer.animate().cancel();'),
-('void openMenu() {\n','void openMenu() {\n        if (hk != null) { if (!open) { open = true; if (onOpen != null) onOpen.run(); hk.open(); } return; }\n'),
-('private void look() {\n','void hokkaidoTab(int k) {\n        if (!open || k < 0 || k >= TAB_NAMES.length) return;\n        tab = k;\n        box.removeAllViews();\n        build();\n        look();\n        refresh();\n    }\n\n    private void look() {\n        if (hk != null) { hk.built(tab, box); return; }\n'),
-('if (stacked()) {   // the menu','if (hk == null && stacked()) {   // the menu'),
-("buildMenu();   // the menu's rows","if (hk == null) buildMenu();   // the menu's rows")]:
-    s=change(s,a,b)
-f.write_text(s)
-rejects=list(p.rglob('*.rej'))
-assert {f.name for f in rejects}=={'GameActivity.java.rej','SidePanel.java.rej'}
-assert all(f.read_text().count('@@ -')==4 for f in rejects)
-for f in rejects: f.unlink()
-print('Preview integration conflicts migrated')
-PY
-        }
-    else
-        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch"
-    fi
+    tar -x -C "$work/upstream" --strip-components=3
+for patch_file in "$module"/patches/*.patch; do
+    patch --batch --fuzz=0 --no-backup-if-mismatch -d "$work/upstream" -p1 < "$patch_file"
 done
 
-# BuildConfig: the values the release was built with (they match its native libraries).
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
-unzip -q -o "$apk" 'classes*.dex' -d "$work"
-{
-    echo "# BuildConfig fields of the Banana Native release this module embeds, read from its classes.dex (tools/android/sync_bananative.sh): name, Java type and Java literal, separated by the first two spaces"
-    for dex in "$work"/classes*.dex; do "$dexdump" "$dex" 2>/dev/null; done | awk '
-        /Class descriptor  : .Ldev\/nxnative\/android\/BuildConfig;/ { p = 1 }
-        p && /Instance fields/ { exit }
-        p && /^ *name *: / { n = $0; sub(/^ *name *: \x27/, "", n); sub(/\x27$/, "", n) }
-        p && /^ *type *: / { t = $0; sub(/^ *type *: \x27/, "", t); sub(/\x27$/, "", t) }
-        p && /^ *value *: / {
-            v = $0; sub(/^ *value *: /, "", v)
-            ty = (t == "Z") ? "boolean" : (t == "I") ? "int" : (t == "Ljava/lang/String;") ? "String" : t
-            if (n != "APPLICATION_ID" && n != "BUILD_TYPE" && n != "DEBUG") printf "%s %s %s\n", n, ty, v
-        }'
-} > "$module/buildconfig.txt"
-
-cat > "$module/UPSTREAM.txt" <<EOF
+python3 "$root/tools/android/extract_banana_buildconfig.py" \
+    "$apk" "$dexdump" "$work/buildconfig.txt" --expected-version "${tag#v}"
+cat > "$work/UPSTREAM.txt" <<EOF
 # The Banana Native release this module embeds (tools/android/sync_bananative.sh writes this file).
 repo = https://git.eden-emu.dev/moceure/BananaNative
 tag = $tag
-commit = $(git -C "$repo" rev-parse "$tag^{commit}")
+commit = $commit
 apk_url = $url
-apk_sha256 = $(sha256sum "$apk" | cut -d' ' -f1)
+apk_sha256 = $apk_sha
 EOF
 
-echo "Banana Native $tag synced: $(grep -c . "$module/buildconfig.txt") BuildConfig lines; check the manifests, then build."
-,s))
-assert len(matches)==2, 'Expected two identical paused accessors'
-m=matches[-1]
-s=s[:m.start()]+s[m.end():]
-assert 'void unpause()' in s and 'private void unpause()' not in s
-f.write_text(s)
-f=p/'SidePanel.java'
-s=f.read_text()
-for a,b in [
-('void back() { if (open)','void back() { if (hk != null) { if (open) close(); else openMenu(); return; } if (open)'),
-('void padToggle() { if (isOpen())','void padToggle() { if (hk != null) { if (open) close(); else { openMenu(); hk.focus(); } return; } if (isOpen())'),
-('void open() { showPage(tab); }','void open() { if (hk != null) openMenu(); else showPage(tab); }'),
-('removeCallbacks(tick);\n        drawer.animate().cancel();','removeCallbacks(tick);\n        if (hk != null) { hk.close(); return; }\n        drawer.animate().cancel();'),
-('void openMenu() {\n','void openMenu() {\n        if (hk != null) { if (!open) { open = true; if (onOpen != null) onOpen.run(); hk.open(); } return; }\n'),
-('private void look() {\n','void hokkaidoTab(int k) {\n        if (!open || k < 0 || k >= TAB_NAMES.length) return;\n        tab = k;\n        box.removeAllViews();\n        build();\n        look();\n        refresh();\n    }\n\n    private void look() {\n        if (hk != null) { hk.built(tab, box); return; }\n'),
-('if (stacked()) {   // the menu','if (hk == null && stacked()) {   // the menu'),
-("buildMenu();   // the menu's rows","if (hk == null) buildMenu();   // the menu's rows")]:
-    s=change(s,a,b)
-f.write_text(s)
-rejects=list(p.rglob('*.rej'))
-assert {f.name for f in rejects}=={'GameActivity.java.rej','SidePanel.java.rej'}
-assert all(f.read_text().count('@@ -')==4 for f in rejects)
-for f in rejects: f.unlink()
-print('Preview integration conflicts migrated')
-PY
-        }
-    else
-        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch"
-    fi
-done
-
-# BuildConfig: the values the release was built with (they match its native libraries).
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
-unzip -q -o "$apk" 'classes*.dex' -d "$work"
-{
-    echo "# BuildConfig fields of the Banana Native release this module embeds, read from its classes.dex (tools/android/sync_bananative.sh): name, Java type and Java literal, separated by the first two spaces"
-    for dex in "$work"/classes*.dex; do "$dexdump" "$dex" 2>/dev/null; done | awk '
-        /Class descriptor  : .Ldev\/nxnative\/android\/BuildConfig;/ { p = 1 }
-        p && /Instance fields/ { exit }
-        p && /^ *name *: / { n = $0; sub(/^ *name *: \x27/, "", n); sub(/\x27$/, "", n) }
-        p && /^ *type *: / { t = $0; sub(/^ *type *: \x27/, "", t); sub(/\x27$/, "", t) }
-        p && /^ *value *: / {
-            v = $0; sub(/^ *value *: /, "", v)
-            ty = (t == "Z") ? "boolean" : (t == "I") ? "int" : (t == "Ljava/lang/String;") ? "String" : t
-            if (n != "APPLICATION_ID" && n != "BUILD_TYPE" && n != "DEBUG") printf "%s %s %s\n", n, ty, v
-        }'
-} > "$module/buildconfig.txt"
-
-cat > "$module/UPSTREAM.txt" <<EOF
-# The Banana Native release this module embeds (tools/android/sync_bananative.sh writes this file).
-repo = https://git.eden-emu.dev/moceure/BananaNative
-tag = $tag
-commit = $(git -C "$repo" rev-parse "$tag^{commit}")
-apk_url = $url
-apk_sha256 = $(sha256sum "$apk" | cut -d' ' -f1)
-EOF
-
-echo "Banana Native $tag synced: $(grep -c . "$module/buildconfig.txt") BuildConfig lines; check the manifests, then build."
+rm -rf -- "$module/upstream"
+mv -- "$work/upstream" "$module/upstream"
+mv -- "$work/buildconfig.txt" "$module/buildconfig.txt"
+mv -- "$work/UPSTREAM.txt" "$module/UPSTREAM.txt"
+echo "Banana Native $tag synced from $commit; all patches applied without fuzz."

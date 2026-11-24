@@ -1,4 +1,3 @@
-# Builds the Hokkaido Android app (arm64 APK) on every push and on demand.
 name: Fusion Android
 
 on:
@@ -7,30 +6,44 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: fusion-android-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     name: Android APK
     runs-on: ubuntu-24.04
     timeout-minutes: 340
+    defaults:
+      run:
+        shell: bash
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPRESS: "true"
       CCACHE_MAXSIZE: 3G
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      CPM_SOURCE_CACHE: ${{ github.workspace }}/.cache/cpm
+      BANANA_EXPECTED_COMMIT: a15d676bab584acc1f139af78a7efb16bc361454
+      BANANA_EXPECTED_APK_SHA256: cf5fef4d6fb5529aceef769c4e8877df728c5822077f5e6c422601def69a0e4a
+      GIT_TAG_NAME: 0.7.1-fusion.0.3.52-preview
     steps:
       - name: Check out source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Check synchronization scripts
+        run: |
+          bash -n tools/android/sync_bananative.sh
+          python3 -m py_compile tools/android/extract_banana_buildconfig.py tools/android/verify_fusion_apk.py
+          python3 -m unittest discover -s tools/android -p 'test_extract_banana_buildconfig.py' -v
+
       - name: Free disk space
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk/2* /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk/2* /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
           df -h /
 
       - name: Set up Java 17
@@ -39,65 +52,100 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install NDK and CMake
+      - name: Install Android toolchain
         run: |
           SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" "ndk;28.2.13676358" "cmake;3.31.5" "platforms;android-36" "build-tools;36.0.0"
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          echo "DEXDUMP=$ANDROID_HOME/build-tools/36.0.0/dexdump" >> "$GITHUB_ENV"
 
-      - name: Install build tools
-        # Runner package mirrors fail now and then (exit code 100): retry before failing a release.
+      - name: Install native build tools
         run: |
           for attempt in 1 2 3; do
             if sudo apt-get update && sudo apt-get install -y ccache glslang-tools ninja-build; then
               exit 0
             fi
-            echo "apt-get failed (attempt $attempt); retrying in 30 s"
-            sleep 30
+            echo "apt-get attempt $attempt failed; retrying in 20 seconds"
+            sleep 20
           done
           exit 1
 
-      - name: Restore ccache
+      - name: Restore compiler cache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: android-ccache-${{ github.sha }}
-          restore-keys: android-ccache-
+          key: fusion-android-ccache-${{ github.sha }}
+          restore-keys: |
+            fusion-android-ccache-
+            android-ccache-
 
-      - name: Restore CPM downloads
+      - name: Restore native dependencies
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.cache/cpm
           key: android-cpm-${{ hashFiles('cpmfile.json', 'externals/cpmfile.json', 'src/**/cpmfile.json') }}
           restore-keys: android-cpm-
 
-      - name: Sync Banana Native preview
+      - name: Synchronize and verify Banana Native preview
         run: |
-          URL=https://git.eden-emu.dev/moceure/BananaNative/releases/download/v0.3.52-preview/banana-native-v0.3.52-preview.apk
-          curl --fail --location --retry 3 "$URL" -o /tmp/banana.apk
-          echo 'cf5fef4d6fb5529aceef769c4e8877df728c5822077f5e6c422601def69a0e4a  /tmp/banana.apk' | sha256sum -c -
-          git clone --depth 1 --branch v0.3.52-preview https://git.eden-emu.dev/moceure/BananaNative.git /tmp/banana-source
-          bash tools/android/sync_bananative.sh /tmp/banana-source v0.3.52-preview /tmp/banana.apk "$URL"
-          sed -i 's/applicationId = "dev.lichii.android"/applicationId = "dev.lichii.fusion"/; s/"appNameBase" to "Hokkaido"/"appNameBase" to "Hokkaido Fusion"/' src/android/app/build.gradle.kts
+          url=https://git.eden-emu.dev/moceure/BananaNative/releases/download/v0.3.52-preview/banana-native-v0.3.52-preview.apk
+          apk="$RUNNER_TEMP/banana-native-v0.3.52-preview.apk"
+          source_dir="$RUNNER_TEMP/banana-native-source"
+          curl --fail --location --retry 3 "$url" -o "$apk"
+          git clone --depth 1 --branch v0.3.52-preview https://git.eden-emu.dev/moceure/BananaNative.git "$source_dir"
+          bash tools/android/sync_bananative.sh "$source_dir" v0.3.52-preview "$apk" "$url"
+          echo "BANANA_APK=$apk" >> "$GITHUB_ENV"
+          mkdir -p artifacts
+          cp src/android/banana/UPSTREAM.txt artifacts/Banana-UPSTREAM.txt
+          git diff --binary -- src/android/banana/upstream src/android/banana/buildconfig.txt src/android/banana/UPSTREAM.txt > artifacts/banana-source-sync.patch
 
-      - name: Build APK
-        env:
-          CCACHE: "true"
-          CPM_SOURCE_CACHE: ${{ github.workspace }}/.cache/cpm
+      - name: Compile Java and Kotlin integration
+        working-directory: src/android
         run: |
-          chmod +x .ci/android/build.sh
-          .ci/android/build.sh -t standard -b Release
+          chmod +x gradlew
+          ./gradlew :banana:compileReleaseJavaWithJavac :app:compileMainlineReleaseKotlin :app:processMainlineReleaseManifest \
+            --no-daemon --stacktrace --max-workers=2 \
+            -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
+            -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/frontend-build.log"
 
-      - name: ccache stats
-        if: always()
-        run: ccache -s || true
+      - name: Build Fusion APK
+        working-directory: src/android
+        run: |
+          ./gradlew :app:assembleMainlineRelease --no-daemon --stacktrace --max-workers=2 \
+            -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
+            -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/apk-build.log"
 
-      - name: Upload APK
+      - name: Verify APK identity, signature and native libraries
+        run: |
+          built=src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$built" > artifacts/apk-signature.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$built" > artifacts/apk-badging.txt
+          python3 tools/android/verify_fusion_apk.py "$built" "$BANANA_APK" artifacts/apk-badging.txt | tee artifacts/apk-payload-verification.txt
+          cp "$built" artifacts/Hokkaido-Fusion-0.3.52-preview.apk
+          (cd artifacts && sha256sum Hokkaido-Fusion-0.3.52-preview.apk > SHA256SUMS.txt)
+          echo '### Fusion APK built and verified' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Download the APK artifact below. Device installation and gameplay still need testing.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: hokkaido-android-${{ github.sha }}
-          path: artifacts/*.apk
+          name: Hokkaido-Fusion-APK-${{ github.run_number }}
+          path: |
+            artifacts/Hokkaido-Fusion-0.3.52-preview.apk
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 30
 
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hokkaido-Fusion-diagnostics-${{ github.run_number }}
+          path: |
+            artifacts/*.log
+            artifacts/*.txt
+            artifacts/*.patch
+          if-no-files-found: ignore
+          retention-days: 14

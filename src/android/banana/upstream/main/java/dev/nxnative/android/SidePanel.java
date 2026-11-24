@@ -21,42 +21,66 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 /**
- * The in-game panel: slides in from the right over the running game, which goes on behind it, in four tabs (TAB_NAMES: Performance, Display, Controls, General;
- * a tab bar at its top with a close button, switched by a tap or a controller's L / R) so that each fits the screen of a phone held in landscape. It holds the frame rate cap (Native.fpsCapSet), frame generation
- * (Lsfg.rows, Native.frameGenSet), the Upscaler and the dynamic resolution (GameUpscaler.rows, DrsSlider), Game resolution (resolutionRow, in Display: live for a game with graphics_scale rows), the picture (Fit / Stretch, its size and position: GameActivity.picture, TouchControls.positionRows),
- * the overlay's items (Overlay.rows), which gamepad is Player 1 (PadOrder), the on-screen controls' rows (TouchControls.controlRows), the panel's own size and text size (PanelLook), a shortcut to this
- * game's Button mapping (which applies at the next start) and Stop. Every other change applies at once, without going back to the launcher, and is
- * kept for the next start. Opened by Back (the phone's button or its edge swipe), a long press on the on-screen controls'
- * show / hide button, a swipe in from the right edge, or a controller (PadPanel: Home, or − and + held; Settings › Controller: in-game panel); closed the same
- * ways, by a tap beside it or its ✕, or by the controller's B. With a controller (padKey, padMotion) the D-pad and the left stick move the focus (held: repeated),
- * left / right also step a radio group or a slider, A presses, L / R switch tabs; A and B are the buttons that are the Switch's A and B in this game
- * (PadPanel.confirmBack, the game's Button mapping). The focused row has a yellow frame (focusMoved): the theme's own focus highlight is hard to see on the panel.
+ * The in-game menu: one drawer from the left over the running game, which goes on behind it, as Eden's in-game drawer. Its left column is a pinned side menu (buildMenu): the
+ * game's name and GPU driver over Pause (Resume while the game is paused), the four sections (TAB_NAMES: Performance, Display, Controls, General), and Stop. Picking a section
+ * shows its rows in a second column to its right, inside the same drawer (showPage); the section stays marked in the menu. On a screen too narrow for both columns (a phone
+ * held upright: stacked) the section takes the menu's place. There is no tab bar: the side menu is the only way between sections (and a controller's L / R).
+ * The sections hold the frame rate cap (Native.fpsCapSet), frame generation (Lsfg.rows, Native.frameGenSet), the Upscaler and the dynamic resolution (GameUpscaler.rows, DrsSlider),
+ * Game resolution (resolutionRow, in Display: live for a game with graphics_scale rows), the picture (Fit / Stretch, its size and position: GameActivity.picture,
+ * TouchControls.positionRows), the overlay's items (Overlay.rows), which gamepad is Player 1 (PadOrder), the on-screen controls' rows (TouchControls.controlRows), the panel's own
+ * size and text size (PanelLook), and a shortcut to this game's Button mapping (which applies at the next start). Every other change applies at once, without going back to the
+ * launcher, and is kept for the next start.
+ * Back (the phone's button or its edge swipe) and a controller (PadPanel: Home, or − and + held; Settings › Controller: in-game panel) open the menu (openMenu). A long press on
+ * the on-screen controls' show / hide button and a swipe in from the right edge open the drawer on the section that showed last (open). Back and the controller's B go one level
+ * up: from a section to the menu (showMenu), from the menu back to the game (close); a tap beside the drawer closes it at once. With a controller (padKey, padMotion) the D-pad
+ * and the left stick move (held: repeated): in the menu up / down select a row and A (or right, on a section) picks it; in a section they move the focus, and moving never
+ * changes a setting: A presses (on a slider it starts adjusting: left / right change it, A keeps, B undoes: adjustEnd), L / R switch sections. A and B are the buttons that are
+ * the Switch's A and B in this game (PadPanel.confirmBack, the game's Button mapping). The focused row has a yellow frame (focusMoved): the theme's own focus highlight is hard
+ * to see on the panel.
  */
 final class SidePanel extends FrameLayout {
     private final Activity act;
-    private final LinearLayout box, tabs;
-    private final View sheet;
+    private final LinearLayout box;
+    // The drawer: one card at the left holding the menu's column (menuScroll) and the section's (sheet: a divider and the section's rows, scroll / box)
+    private final LinearLayout drawer, sheet;
     private final ScrollView scroll;
     private final Rows rows;
     private TextView fpsNow, lsfgNow, layerNow;
     private RadioGroup caps;
+    // open: a section shows (sheet); menuOpen: the drawer shows (the menu, and the section beside it when open). open never holds without menuOpen
     private boolean open;
+    private final LinearLayout menu;
+    private final ScrollView menuScroll;
+    private boolean menuOpen;
+    // The menu's rows (menuRow), the section each is (-1: an action, Pause or Stop), and the one a controller has selected (-1: none, touch). The menu steps through them
+    // itself (menuStep), outside Android's focus, so a controller moves in it whatever has the focus and whether or not the window is in touch mode
+    private final java.util.ArrayList<View> menuRows = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Integer> menuSection = new java.util.ArrayList<>();
+    private int menuSel = -1;
+    // Holds the focus while the menu has it (focusable in touch mode, no size): in touch mode the window's first D-pad press would otherwise go to leaving touch
+    // mode and focusing some view (ViewRootImpl.leaveTouchMode), never reaching padKey; with a plain view focused Android lets it through
+    private final View menuSink;
+    // The icon of each section's row in the menu
+    private static final int[] TAB_ICONS = {R.drawable.ic_speed, R.drawable.ic_display, R.drawable.ic_gamepad, R.drawable.ic_tune};
+    private static final int MENU_TEXT = 0xFFE6E1E5, MENU_TEXT2 = 0xFFCAC4D0;   // Material 3's dark on-surface and on-surface-variant, as Eden's drawer
+    private static final int MENU_ACTIVE = 0x3DFFD54F;   // the section that shows: a faint banana pill (a controller's selection is the full one)
     private final Runnable tick = this::refresh;
 
-    // The tabs: each a builder of its own (build); Performance's rows refresh twice a second while it shows
+    // The sections: each a builder of its own (build); Performance's rows refresh twice a second while it shows
     static final String[] TAB_NAMES = {"Performance", "Display", "Controls", "General"};
     private static final int TAB_PERF = 0, TAB_DISPLAY = 1, TAB_CONTROLS = 2, TAB_GENERAL = 3;
     private int tab = TAB_PERF;
-    private static final int FOCUS = 0xFFFFD54F;   // the tab bar's selected tab and the focus frame: a banana yellow, dark text on it
+    private static final int FOCUS = 0xFFFFD54F;   // a controller's selection in the menu and the focus frame: a banana yellow, dark text on it
+    private static final int FRAME_RADIUS_DP = 14;   // the focus frame's corners, and the press highlight's of a row (rowRipple): one shape
 
     // A controller: its confirm and back keys (padButtons), the held direction and its repeat
     private int confirm = KeyEvent.KEYCODE_BUTTON_B, back = KeyEvent.KEYCODE_BUTTON_A;
     private int heldDir = PadPanel.NONE, stickHeld = PadPanel.NONE, repeats;
     private final Runnable repeat = this::repeatTick;
     private View lit;   // the view with the focus frame
-    /** GameActivity: the game's held buttons released when the panel opens (releaseGameInput) */
+    /** GameActivity: the game's held buttons released when the drawer opens (releaseGameInput) */
     Runnable onOpen;
-    /** Hokkaido's in-game menu (HokkaidoInGame), which shows the tabs' rows in its own look; null: this panel shows them */
+    /** Hokkaido owns the visible menu and page navigation; this panel still builds the settings rows. */
     private final HokkaidoInGame.Menu hk;
 
     /** The rows GameActivity adds from its on-screen controls (TouchControls) */
@@ -77,39 +101,51 @@ final class SidePanel extends FrameLayout {
         scrim.setBackgroundColor(0x66000000);
         scrim.setOnClickListener(v -> close());
         addView(scrim, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        drawer = new LinearLayout(a);
+        drawer.setOrientation(LinearLayout.HORIZONTAL);
+        drawer.setClickable(true);   // a tap on the drawer's empty parts is not the scrim's
+        final float rad = 24 * dp;   // the launcher's card corner: the drawer is a rounded card whose left side is off screen
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0xF81C1C1F);
+        bg.setCornerRadii(new float[]{0, 0, rad, rad, rad, rad, 0, 0});
+        drawer.setBackground(bg);
+        drawer.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override public void getOutline(View v, android.graphics.Outline o) { o.setRoundRect(-Math.round(rad), 0, v.getWidth(), v.getHeight(), rad); }
+        });
+        drawer.setClipToOutline(true);
+        menu = new LinearLayout(a);
+        menu.setOrientation(LinearLayout.VERTICAL);
+        int p = Math.round(16 * dp);
+        menu.setPadding(0, 0, 0, p);
+        menuScroll = new ScrollView(a);
+        menuScroll.setVerticalScrollBarEnabled(false);
+        menuScroll.setFocusable(false);
+        menuScroll.addView(menu);
+        drawer.addView(menuScroll, new LinearLayout.LayoutParams(menuWidth(), LinearLayout.LayoutParams.MATCH_PARENT));
+        sheet = new LinearLayout(a);   // the section's column: a hairline against the menu, then its rows
+        sheet.setOrientation(LinearLayout.HORIZONTAL);
+        View rule = new View(a);
+        rule.setBackgroundColor(0x1FFFFFFF);
+        sheet.addView(rule, new LinearLayout.LayoutParams(Math.max(1, Math.round(dp)), LinearLayout.LayoutParams.MATCH_PARENT));
         box = new LinearLayout(a);
         box.setOrientation(LinearLayout.VERTICAL);
-        int p = Math.round(16 * dp);
         box.setPadding(p, p, p, p);
         scroll = new ScrollView(a);
         scroll.addView(box);
-        LinearLayout sh = new LinearLayout(a);   // the tab bar fixed at the top, the tab's rows scrolling under it
-        sh.setOrientation(LinearLayout.VERTICAL);
-        final float rad = 24 * dp;   // the launcher's card corner: the sheet is a rounded card whose right side is off screen
-        android.graphics.drawable.GradientDrawable shBg = new android.graphics.drawable.GradientDrawable();
-        shBg.setColor(0xF01C1C1F);
-        shBg.setCornerRadii(new float[]{rad, rad, 0, 0, 0, 0, rad, rad});
-        sh.setBackground(shBg);
-        sh.setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override public void getOutline(View v, android.graphics.Outline o) { o.setRoundRect(0, 0, v.getWidth() + Math.round(rad), v.getHeight(), rad); }
-        });
-        sh.setClipToOutline(true);
-        tabs = new LinearLayout(a);
-        tabs.setOrientation(LinearLayout.HORIZONTAL);
-        tabs.setGravity(Gravity.CENTER_VERTICAL);
-        int tp = Math.round(6 * dp);
-        tabs.setPadding(tp, tp, tp, tp);
-        android.graphics.drawable.GradientDrawable tabsBg = new android.graphics.drawable.GradientDrawable();
-        tabsBg.setColor(0xFF2A2A2E);
-        tabs.setBackground(tabsBg);
-        sh.addView(tabs, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        sh.addView(scroll, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-        addView(sh, new LayoutParams(PanelLook.widthPx(Prefs.panelSize(a), dp, a.getResources().getDisplayMetrics().widthPixels), LayoutParams.MATCH_PARENT, Gravity.END));
-        sheet = sh;
+        sheet.addView(scroll, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+        sheet.setVisibility(GONE);   // showPage shows it
+        drawer.addView(sheet, new LinearLayout.LayoutParams(PanelLook.widthPx(Prefs.panelSize(a), dp, a.getResources().getDisplayMetrics().widthPixels), LinearLayout.LayoutParams.MATCH_PARENT));
+        drawer.setVisibility(GONE);
+        addView(drawer, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT, Gravity.START));
+        menuSink = new View(a);
+        menuSink.setFocusable(true);
+        menuSink.setFocusableInTouchMode(true);
+        menuSink.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        addView(menuSink, new LayoutParams(1, 1));
         getViewTreeObserver().addOnGlobalFocusChangeListener(this::focusMoved);
         setVisibility(GONE);
         hk = a instanceof GameActivity ? HokkaidoInGame.menu((GameActivity) a, this) : null;
-        if (hk != null) {   // the rows are built as before, never shown here: Hokkaido's menu shows them (look)
+        if (hk != null) {
             removeAllViews();
             addView(hk.view(), new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
             setVisibility(VISIBLE);
@@ -119,50 +155,300 @@ final class SidePanel extends FrameLayout {
     /** The controller's confirm and back keys (PadPanel.confirmBack: the buttons that are the Switch's A and B in this game) */
     void padButtons(int[] cb) { confirm = cb[0]; back = cb[1]; }
 
-    boolean isOpen() { return open; }
-    void toggle() { if (open) close(); else open(); }
-    /** Opened or closed by a controller (GameActivity: Home, or − and + held): opened, the focus on its first row, out of touch mode */
-    void padToggle() { if (open) close(); else { open(); if (hk != null) hk.focus(); else post(this::ensureFocus); } }
+    /** The drawer shows: the game gets no pad input (GameActivity) */
+    boolean isOpen() { return open || menuOpen; }
+    /** Back (GameActivity.onBackPressed): one level up. A section goes back to the menu, the menu back to the game; with nothing showing the menu opens */
+    void back() {
+        if (hk != null) { if (isOpen()) hk.back(); else openMenu(); return; }
+        if (open) showMenu(); else if (menuOpen) close(); else openMenu();
+    }
+    /** Opened or closed by a controller (GameActivity: Home, or − and + held): the menu, its first row selected, out of touch mode */
+    void padToggle() { if (isOpen()) close(); else { openMenu(); if (hk != null) hk.focus(); else menuSelect(0); } }
 
-    void open() {
-        if (open) return;
-        open = true;
+    /** The drawer on the section that showed last (the on-screen controls' long press, the right edge's swipe) */
+    void open() { if (hk != null) openMenu(); else showPage(tab); }
+
+    /** The drawer slides out: back to the game */
+    void close() {
+        if (!isOpen()) return;
+        open = menuOpen = false;
+        adjusting = null;
+        heldDir = stickHeld = PadPanel.NONE;
+        removeCallbacks(repeat);
+        removeCallbacks(tick);
+        if (hk != null) { hk.close(); return; }
+        drawer.animate().cancel();
+        drawer.animate().translationX(-drawer.getWidth()).setDuration(150)
+                .withEndAction(() -> { if (!menuOpen) { sheet.setVisibility(GONE); drawer.setVisibility(GONE); setVisibility(GONE); } }).start();
+    }
+
+    /** The menu (Back, a controller's Home): the drawer slides in with no section, or a section that showed goes back to it */
+    void openMenu() {
+        if (hk != null) {
+            if (isOpen()) return;
+            open = menuOpen = true;   // Hokkaido tracks which of its drawers shows
+            if (onOpen != null) onOpen.run();
+            hk.open();
+            return;
+        }
+        if (open) { showMenu(); return; }
+        if (menuOpen) return;
+        slideIn();
+        menuSelect(touchNav() ? -1 : 0);
+    }
+
+    /** The drawer slides in, the menu built anew (the game's name, its driver, Pause or Resume), no section yet; the menu holds the focus */
+    private void slideIn() {
         if (onOpen != null) onOpen.run();
-        if (hk != null) { hk.open(); return; }   // its quick settings ask for a tab (hokkaidoTab)
-        box.removeAllViews();
-        build();
-        look();
+        menuOpen = true;
+        heldDir = stickHeld = PadPanel.NONE;
+        removeCallbacks(repeat);
+        buildMenu();
+        sheet.setVisibility(GONE);
+        menuScroll.setVisibility(VISIBLE);
+        sizes();
         setVisibility(VISIBLE);
-        sheet.setTranslationX(sheet.getLayoutParams().width);
-        sheet.animate().translationX(0).setDuration(180).start();
-        post(() -> { if (open && !isInTouchMode()) focusFirst(); });
+        drawer.setVisibility(VISIBLE);
+        menuScroll.scrollTo(0, 0);
+        drawer.animate().cancel();
+        drawer.setTranslationX(-(menuWidth() + sheetWidth()));   // the widest it gets: open() adds the section right after
+        drawer.animate().translationX(0).setDuration(180).start();
+        menuSink.requestFocus();
+    }
+
+    /** A section to the menu (Back, B): its column goes, the menu has the focus again with that section selected for a controller */
+    private void showMenu() {
+        if (!open) return;
+        open = false;
+        adjusting = null;
+        heldDir = stickHeld = PadPanel.NONE;
+        removeCallbacks(repeat);
+        removeCallbacks(tick);
+        sheet.setVisibility(GONE);
+        menuScroll.setVisibility(VISIBLE);
+        sizes();
+        menuSink.requestFocus();
+        menuSelect(touchNav() ? -1 : menuSection.indexOf(tab));
+    }
+
+    /**
+     * Section k shows to the right of the menu (picked there, a controller's L / R, or open()): the drawer slides in first if it was closed; its rows built, scrolled
+     * to its top; with a controller the focus on its first row. On a stacked screen the section takes the menu's place
+     */
+    private void showPage(int k) {
+        boolean was = menuOpen;
+        if (!menuOpen) slideIn();
+        boolean same = open && k == tab;
+        tab = k;
+        if (!open) {
+            open = true;
+            sheet.setVisibility(VISIBLE);
+            if (was) { sheet.setAlpha(0f); sheet.animate().alpha(1f).setDuration(150).start(); } else sheet.setAlpha(1f);
+        }
+        if (!same) {
+            padMade.clear();   // (the old rows go)
+            box.removeAllViews();
+            build();
+            if (padNav && isInTouchMode()) padRows(box);
+            look();
+            scroll.scrollTo(0, 0);
+        }
+        sizes();
+        menuSel = -1;   // a controller works in the section now; the menu marks which one shows
+        paintMenu();
+        if (!touchNav()) post(() -> { if (open) focusFirst(); });
         removeCallbacks(tick);
         refresh();
     }
 
-    void close() {
-        if (!open) return;
-        open = false;
-        heldDir = stickHeld = PadPanel.NONE;
-        removeCallbacks(repeat);
-        if (hk != null) { hk.close(); return; }
-        sheet.animate().translationX(sheet.getLayoutParams().width).setDuration(150).withEndAction(() -> { if (!open) setVisibility(GONE); }).start();
+    /** The menu's column: 300 dp, at most 35 % of the screen but 240 dp when there is room for it (a phone held upright) */
+    private int menuWidth() {
+        float dp = getResources().getDisplayMetrics().density;
+        int sw = getResources().getDisplayMetrics().widthPixels;
+        return Math.min(Math.round(300 * dp), Math.max(Math.round(sw * 0.35f), Math.min(Math.round(240 * dp), Math.round(sw * 0.6f))));
+    }
+    /** Room for the scrim beside the drawer, where a tap closes it */
+    private int scrimPx() { return Math.round(48 * getResources().getDisplayMetrics().density); }
+    /** A screen too narrow for the menu and a section side by side (a section needs 320 dp): the section shows in the menu's place */
+    private boolean stacked() {
+        float dp = getResources().getDisplayMetrics().density;
+        return getResources().getDisplayMetrics().widthPixels < menuWidth() + Math.round(320 * dp) + scrimPx();
+    }
+    /** The section's column: the panel's width (PanelLook: Settings' Size), within what the screen leaves beside the menu */
+    private int sheetWidth() {
+        float dp = getResources().getDisplayMetrics().density;
+        int sw = getResources().getDisplayMetrics().widthPixels;
+        return Math.max(0, Math.min(PanelLook.widthPx(Prefs.panelSize(act), dp, sw), sw - scrimPx() - (stacked() ? 0 : menuWidth())));
+    }
+    private int drawerWidth() {
+        boolean menuShows = !open || !stacked();
+        return (menuShows ? menuWidth() : 0) + (open ? sheetWidth() : 0);
+    }
+    /** The columns' widths now (the panel's size may have changed, or the screen turned), and the menu hidden while a section shows on a stacked screen */
+    private void sizes() {
+        menuScroll.setVisibility(open && stacked() ? GONE : VISIBLE);
+        int mw = menuWidth(), sw = sheetWidth();
+        if (menuScroll.getLayoutParams().width != mw) { menuScroll.getLayoutParams().width = mw; menuScroll.requestLayout(); }
+        if (sheet.getLayoutParams().width != sw) { sheet.getLayoutParams().width = sw; sheet.requestLayout(); }
+        sheet.getChildAt(0).setVisibility(menuScroll.getVisibility());   // the hairline only beside the menu
     }
 
     /**
-     * A controller key while the panel is open (GameActivity.dispatchKeyEvent): back closes it, confirm presses what has the focus, the D-pad moves the focus (held:
-     * repeated; left / right step a radio group or a slider), L / R switch tabs. Each acts on its press. Every key but Back is the panel's: false lets Back through
+     * The menu, laid out as Eden's drawer (a Material 3 navigation drawer): the game's name large at the top, the GPU driver and the title ID under it, then one
+     * line per row with its icon: Pause (Resume while the game is paused), the four sections and Stop. Rows 56 dp high (the panel's row height when that is more),
+     * text in the panel's text size
+     */
+    private void buildMenu() {
+        menu.removeAllViews();
+        menuRows.clear();
+        menuSection.clear();
+        menuSel = -1;
+        float dp = getResources().getDisplayMetrics().density, ts = PanelLook.textScale(Prefs.panelText(act));
+        int p = Math.round(24 * dp);
+        LinearLayout header = new LinearLayout(act);
+        header.setOrientation(LinearLayout.VERTICAL);
+        header.setPadding(p, p, p, Math.round(16 * dp));
+        TextView title = new TextView(act);
+        String name = act.getIntent().getStringExtra("name");
+        title.setText(name != null ? name : game());
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24 * ts);
+        title.setTextColor(MENU_TEXT);
+        title.setMaxLines(3);
+        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        header.addView(title);
+        TextView sub = new TextView(act);
+        GpuDriver.Info drv = GpuDriver.selected(act, game());   // what the launcher passed at the start (a DM_VK_DRIVER line in env.txt would win: the log's [vk] driver line says)
+        sub.setText(Tx.s(R.string.game_menu_gpu_driver, drv == null ? Tx.s(R.string.game_menu_system_driver) : drv.label()) + "\n" + game());
+        sub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14 * ts);
+        sub.setTextColor(MENU_TEXT2);
+        sub.setPadding(0, Math.round(8 * dp), 0, 0);
+        header.addView(sub);
+        menu.addView(header, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        GameActivity ga = act instanceof GameActivity ? (GameActivity) act : null;
+        if (ga != null) {   // the game suspended (clock, graphics, threads, audio) until a tap on the screen, A / Start, or Resume here: GameActivity.pause
+            if (ga.paused()) menuRow(R.drawable.ic_play, Tx.s(R.string.game_resume_the_game), -1, () -> { close(); ga.unpause(); });
+            else menuRow(R.drawable.ic_pause, Tx.s(R.string.game_pause_the_game), -1, () -> { close(); ga.pause(); });
+        }
+        String[] names = Tx.arr(R.array.arr_panel_tabs);
+        for (int i = 0; i < TAB_NAMES.length; i++) { int k = i; menuRow(TAB_ICONS[i], names[i], k, () -> showPage(k)); }
+        menuRow(R.drawable.ic_exit, Tx.s(R.string.game_stop_the_game), -1, this::stopDialog);
+        paintMenu();
+    }
+
+    /** One menu row: its icon and name on one line, a pill behind it (paintMenu), a ripple on a tap. Not focusable: menuStep moves. section: the section it shows, or -1 */
+    private void menuRow(int icon, String label, int section, Runnable click) {
+        float dp = getResources().getDisplayMetrics().density, ts = PanelLook.textScale(Prefs.panelText(act));
+        LinearLayout r = new LinearLayout(act);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setPadding(Math.round(16 * dp), 0, Math.round(24 * dp), 0);
+        r.setFocusable(false);
+        android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable(), mask = new android.graphics.drawable.GradientDrawable();
+        pill.setCornerRadius(999 * dp);
+        pill.setColor(0);
+        mask.setCornerRadius(999 * dp);
+        mask.setColor(Color.WHITE);
+        r.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33FFFFFF), pill, mask));
+        r.setTag(pill);
+        android.widget.ImageView iv = new android.widget.ImageView(act);
+        iv.setImageResource(icon);
+        iv.setImageTintList(android.content.res.ColorStateList.valueOf(MENU_TEXT2));
+        int is = Math.round(24 * dp);
+        LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(is, is);
+        il.setMarginEnd(Math.round(12 * dp));
+        r.addView(iv, il);
+        TextView t = new TextView(act);
+        t.setText(label);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15 * ts);
+        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTextColor(MENU_TEXT);
+        t.setMaxLines(1);
+        t.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        r.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        r.setContentDescription(label);
+        r.setOnClickListener(v -> click.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Math.max(Math.round(56 * dp), PanelLook.rowPx(Prefs.panelSize(act), dp)));
+        lp.setMarginStart(Math.round(12 * dp));
+        lp.setMarginEnd(Math.round(12 * dp));
+        menu.addView(r, lp);
+        menuRows.add(r);
+        menuSection.add(section);
+    }
+
+    /** The row a controller has selected (-1: none): the banana pill; kept in sight */
+    private void menuSelect(int i) {
+        menuSel = i < 0 || menuRows.isEmpty() ? -1 : Math.min(i, menuRows.size() - 1);
+        paintMenu();
+        if (menuSel >= 0) {
+            View r = menuRows.get(menuSel);
+            menuScroll.post(() -> {
+                int top = r.getTop(), bottom = r.getBottom(), y = menuScroll.getScrollY(), h = menuScroll.getHeight();
+                if (top < y) menuScroll.smoothScrollTo(0, menuSel == 0 ? 0 : top);
+                else if (bottom > y + h) menuScroll.smoothScrollTo(0, bottom - h);
+            });
+        }
+    }
+
+    /** Each menu row's look: a controller's selection a banana pill with dark text and icon; the section that shows a faint banana pill with banana text; the rest plain */
+    private void paintMenu() {
+        for (int k = 0; k < menuRows.size(); k++) {
+            LinearLayout r = (LinearLayout) menuRows.get(k);
+            boolean sel = k == menuSel, shows = open && menuSection.get(k) == tab;
+            ((android.graphics.drawable.GradientDrawable) r.getTag()).setColor(sel ? FOCUS : shows ? MENU_ACTIVE : 0);
+            int fg = sel ? 0xFF000000 : shows ? FOCUS : 0;
+            ((android.widget.ImageView) r.getChildAt(0)).setImageTintList(android.content.res.ColorStateList.valueOf(fg != 0 ? fg : MENU_TEXT2));
+            ((TextView) r.getChildAt(1)).setTextColor(fg != 0 ? fg : MENU_TEXT);
+            r.setSelected(sel || shows);
+            String label = ((TextView) r.getChildAt(1)).getText().toString();
+            r.setContentDescription(shows ? label + Tx.s(R.string.game_selected) : label);
+        }
+    }
+
+    /** Up / down in the menu: the next row that way, stopping at the ends; the first press with none selected selects the first */
+    private void menuStep(int delta) {
+        menuSelect(menuSel < 0 ? 0 : Math.max(0, Math.min(menuRows.size() - 1, menuSel + delta)));
+    }
+
+    /** Stop (the menu's): asks first, the safe choice focused */
+    private void stopDialog() {
+        padDialog(new AlertDialog.Builder(act).setTitle(Tx.s(R.string.game_stop_the_game_2)).setMessage(Tx.s(R.string.game_the_game_ends_unsaved_progress))
+                .setPositiveButton(Tx.s(R.string.common_stop), (d, w) -> {
+                    if (act instanceof GameActivity) { ((GameActivity) act).stop(); return; }   // its screen and task go, and the process with them (GameActivity.endProcess)
+                    Native.note("stopped by the user"); ExitWatch.stopped(); android.os.Process.killProcess(android.os.Process.myPid());
+                })
+                .setNegativeButton(Tx.s(R.string.game_keep_running), null).show());
+    }
+
+    /**
+     * A controller key while the drawer is open (GameActivity.dispatchKeyEvent): back goes one level up (a section to the menu, the menu to the game), confirm presses what has
+     * the focus or the menu's selected row, the D-pad moves (held: repeated; a slider being adjusted takes left / right), L / R switch sections. Each acts on its press.
+     * Every key but Back is the drawer's: false lets Back through
      */
     boolean padKey(KeyEvent e) {
-        if (hk != null) return hk.padKey(e, confirm, back);
+        if (hk != null) { padNav = true; return hk.padKey(e, confirm, back); }
         int k = e.getKeyCode();
-        if (k == KeyEvent.KEYCODE_BACK) return false;   // the activity's Back closes the panel
+        if (k == KeyEvent.KEYCODE_BACK) return false;   // the activity's Back (back())
+        padUse();
         boolean press = e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0, up = e.getAction() == KeyEvent.ACTION_UP;
         int dir = PadPanel.ofKey(k);
         if (dir != PadPanel.NONE) { if (press) press(dir); else if (up) release(dir); return true; }
         if (!press) return true;
-        boolean lost = findFocus() == null || isInTouchMode();
-        if (k == back) close();
+        if (!open) {   // the menu's own selection: back closes the drawer, confirm presses the selected row (the first press with none only selects)
+            if (k == back) close();
+            else if (k == confirm || k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) {
+                if (menuSel < 0) { menuSelect(0); return true; }
+                menuRows.get(menuSel).performClick();
+                if (open) post(this::ensureFocus);   // a section picked with the controller: its focus out of touch mode, on its first row
+            }
+            return true;
+        }
+        boolean lost = findFocus() == null || touchNav() || !inside(findFocus());
+        if (adjusting != null) {   // a slider being adjusted: confirm keeps its value, back puts the one it had back; L / R keep it and switch sections
+            if (k == back) { adjustEnd(true); return true; }
+            if (k == confirm || k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) { adjustEnd(false); return true; }
+            if (k == KeyEvent.KEYCODE_BUTTON_L1 || k == KeyEvent.KEYCODE_BUTTON_R1) adjustEnd(false);
+        }
+        if (k == back) showMenu();
         else if (k == KeyEvent.KEYCODE_BUTTON_L1 || k == KeyEvent.KEYCODE_BUTTON_R1) { if (lost) ensureFocus(); showTab(PadPanel.tab(tab, k == KeyEvent.KEYCODE_BUTTON_L1 ? -1 : 1, TAB_NAMES.length)); }
         else if (k == confirm || k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) { if (lost) ensureFocus(); else activate(); }   // the first press only shows where the focus is
         return true;
@@ -170,8 +456,9 @@ final class SidePanel extends FrameLayout {
 
     /** A controller's sticks and hat while the panel is open: the hat or the left stick as a direction (PadPanel.stick), held like a D-pad key. The game gets none */
     boolean padMotion(MotionEvent e) {
-        if (hk != null) return hk.padMotion(e);
+        if (hk != null) { padNav = true; return hk.padMotion(e); }
         if (e.getAction() != MotionEvent.ACTION_MOVE) return true;
+        padUse();
         int d = PadPanel.stick(e.getAxisValue(MotionEvent.AXIS_HAT_X), e.getAxisValue(MotionEvent.AXIS_HAT_Y), stickHeld);
         if (d == PadPanel.NONE) d = PadPanel.stick(e.getAxisValue(MotionEvent.AXIS_X), e.getAxisValue(MotionEvent.AXIS_Y), stickHeld);
         if (d != stickHeld) {
@@ -192,75 +479,137 @@ final class SidePanel extends FrameLayout {
     }
     private void release(int dir) { if (dir == heldDir) { heldDir = PadPanel.NONE; removeCallbacks(repeat); } }
     private void repeatTick() {
-        if (!open || heldDir == PadPanel.NONE) return;
+        if (!isOpen() || heldDir == PadPanel.NONE) return;
         move(heldDir);
         postDelayed(repeat, PadPanel.repeatDelay(++repeats));
     }
 
-    /** One step: left / right on a slider or a radio group change it, otherwise the focus moves to the nearest row that way (the ScrollView keeps it in sight) */
+    /**
+     * One step: the focus moves to the nearest row or choice that way (the ScrollView keeps it in sight). Moving never changes a setting: a choice is made by
+     * confirm (activate), and a slider changes only while it is being adjusted (confirm starts and ends that: adjustStart), by left / right
+     */
     private void move(int dir) {
+        if (!open) {   // the menu: up / down select, right opens the selected section (as confirm does)
+            if (dir == PadPanel.UP || dir == PadPanel.DOWN) menuStep(dir == PadPanel.UP ? -1 : 1);
+            else if (dir == PadPanel.RIGHT && menuSel >= 0 && menuSection.get(menuSel) >= 0) { showPage(menuSection.get(menuSel)); post(this::ensureFocus); }
+            return;
+        }
         View f = findFocus();
-        if (f == null || isInTouchMode()) { ensureFocus(); return; }
-        if (dir == PadPanel.LEFT || dir == PadPanel.RIGHT) {
-            int code = dir == PadPanel.LEFT ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
-            if (f instanceof SeekBar) { f.onKeyDown(code, new KeyEvent(KeyEvent.ACTION_DOWN, code)); return; }   // its own step, as the user's change (keyProgressIncrement)
-            if (f instanceof RadioButton && f.getParent() instanceof RadioGroup && stepRadio((RadioGroup) f.getParent(), f, dir == PadPanel.RIGHT ? 1 : -1)) return;
+        if (f == null || touchNav() || !inside(f)) { adjusting = null; ensureFocus(); return; }   // (the menu's sink still has it when a section was picked by touch)
+        if (adjusting != null) {
+            if (f != adjusting) { adjusting = null; frame(f); }
+            else {
+                if (dir == PadPanel.LEFT || dir == PadPanel.RIGHT) {   // its own step, as the user's change (keyProgressIncrement)
+                    int code = dir == PadPanel.LEFT ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+                    f.onKeyDown(code, new KeyEvent(KeyEvent.ACTION_DOWN, code));
+                }
+                return;   // up / down stay on it until confirm or back ends the adjusting
+            }
         }
         int fd = dir == PadPanel.UP ? View.FOCUS_UP : dir == PadPanel.DOWN ? View.FOCUS_DOWN : dir == PadPanel.LEFT ? View.FOCUS_LEFT : View.FOCUS_RIGHT;
         View n = f.focusSearch(fd);
-        if (n != null && inside(n)) n.requestFocus();
+        if (n != null && (fd == View.FOCUS_LEFT || fd == View.FOCUS_RIGHT) && !sameLine(f, n)) return;   // left / right stay in the line: from a slider or a lone row Android's search went off to another row
+        if (n != null && inside(n)) focusOn(n);
         else if (fd == View.FOCUS_UP || fd == View.FOCUS_DOWN) scroll.smoothScrollBy(0, (fd == View.FOCUS_UP ? -1 : 1) * scroll.getHeight() / 3);   // the notes past the last row
     }
 
-    /** Left / right on a radio group: the next choice that can be chosen, from the checked one in a list (vertical), from the focused one in a row */
-    private boolean stepRadio(RadioGroup g, View f, int delta) {
-        boolean[] can = new boolean[g.getChildCount()];
-        for (int i = 0; i < can.length; i++) { View c = g.getChildAt(i); can[i] = c instanceof RadioButton && c.isEnabled() && c.getVisibility() == VISIBLE; }
-        View checked = g.getCheckedRadioButtonId() != View.NO_ID ? g.findViewById(g.getCheckedRadioButtonId()) : null;
-        int cur = g.getOrientation() == LinearLayout.VERTICAL && checked != null ? g.indexOfChild(checked) : g.indexOfChild(f);
-        int t = PadPanel.step(can, cur, delta);
-        if (t == cur) return g.getOrientation() == LinearLayout.VERTICAL;   // a list's ends: stay; a row's ends: on to what is beside it
-        View c = g.getChildAt(t);
-        c.requestFocus();
-        c.performClick();
-        return true;
+    /** a and b overlap vertically on the screen (the choices of one row) */
+    private static boolean sameLine(View a, View b) {
+        int[] pa = new int[2], pb = new int[2];
+        a.getLocationOnScreen(pa);
+        b.getLocationOnScreen(pb);
+        return pa[1] < pb[1] + b.getHeight() && pb[1] < pa[1] + a.getHeight();
     }
 
-    /** Confirm: presses what has the focus (a slider takes left / right instead) */
+    /** Confirm: presses what has the focus; on a slider it starts adjusting it */
     private void activate() {
         View f = findFocus();
-        if (f != null && !(f instanceof SeekBar)) f.performClick();
+        if (f instanceof SeekBar) { adjusting = (SeekBar) f; adjustFrom = adjusting.getProgress(); frame(f); }
+        else if (f != null) f.performClick();
     }
 
+    // The slider being adjusted with a controller (activate), and its value before
+    private SeekBar adjusting;
+    private int adjustFrom;
+    /** The adjusting ends: the value kept, or (back) the one it had before, set back by the slider's own steps so that its listener applies it as the user's change */
+    private void adjustEnd(boolean undo) {
+        SeekBar s = adjusting;
+        adjusting = null;
+        if (s == null) return;
+        if (undo) {
+            int inc = Math.max(1, s.getKeyProgressIncrement()), code = s.getProgress() > adjustFrom ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+            for (int n = Math.abs(s.getProgress() - adjustFrom) / inc + 1; n > 0 && s.getProgress() != adjustFrom; n--) s.onKeyDown(code, new KeyEvent(KeyEvent.ACTION_DOWN, code));
+        }
+        if (s.isFocused()) frame(s);
+    }
+
+    /** In the section's column (the menu has no focus of its own: menuSelect) */
     private boolean inside(View v) {
         for (Object p = v; p instanceof View; p = ((View) p).getParent()) if (p == sheet) return true;
         return false;
     }
 
-    /** Out of touch mode (a controller is in use: requestFocusFromTouch), the focus on the panel: kept where it is, else on the tab's first row */
+    /** Out of touch mode (a controller is in use: requestFocusFromTouch), the focus on the section: kept where it is, else on its first row; in the menu its first row selected */
     private void ensureFocus() {
-        if (!open) return;
+        if (!open) { if (menuOpen && menuSel < 0) menuSelect(0); return; }
         View f = findFocus();
-        if (f != null && !isInTouchMode()) return;
-        View t = tabs.getChildAt(tab);
-        if (t != null) t.requestFocusFromTouch();
-        focusFirst();
+        if (f != null && !touchNav() && inside(f)) return;
+        View r = firstRow();
+        if (r != null) r.requestFocusFromTouch();
     }
     private void focusFirst() {
+        View f = firstRow();
+        if (f != null) focusOn(f);
+    }
+    private void focusOn(View v) { v.requestFocus(); }
+
+    // A controller is in use in the panel (padNav, touchNav): set by its keys and its sticks and hat (padUse), cleared by a touch. Android's touch mode alone does
+    // not say it: only keys end touch mode, and stick or hat motion (the left stick; the AYN Thor's controller's D-pad hat) leaves the window in it, where
+    // requestFocusFromTouch cannot end it either (Android 13: the window manager refuses the change). The panel took every such move for a touch user's and
+    // put the focus back on the section's first row, and a row that is not focusable in touch mode refused the focus. So while a controller is in use, the
+    // section's focusable rows are made focusable in touch mode too (padRows), and a touch puts them back before it reaches them, so a tap still clicks at once
+    private boolean padNav;
+    private final java.util.ArrayList<View> padMade = new java.util.ArrayList<>();
+    private boolean touchNav() { return isInTouchMode() && !padNav; }
+    private void padUse() {
+        padNav = true;
+        if (isInTouchMode()) padRows(box);   // (each time: a section adds rows as its choices change; one already made is passed over)
+    }
+    private void padRows(View v) {
+        if (v.isFocusable() && !v.isFocusableInTouchMode()) { v.setFocusableInTouchMode(true); padMade.add(v); }
+        if (v instanceof android.view.ViewGroup) { android.view.ViewGroup g = (android.view.ViewGroup) v; for (int i = 0; i < g.getChildCount(); i++) padRows(g.getChildAt(i)); }
+    }
+    private void padRowsOff() {
+        for (View v : padMade) v.setFocusableInTouchMode(false);
+        padMade.clear();
+    }
+    @Override public boolean dispatchTouchEvent(MotionEvent e) {
+        if (e.getActionMasked() == MotionEvent.ACTION_DOWN && padNav) { padNav = false; padRowsOff(); }
+        return super.dispatchTouchEvent(e);
+    }
+    /** The first row of the section (null: it has none) */
+    private View firstRow() {
         java.util.ArrayList<View> l = box.getFocusables(View.FOCUS_FORWARD);
-        View f = l.isEmpty() ? tabs.getChildAt(tab) : l.get(0);
-        if (f != null) f.requestFocus();
+        return !l.isEmpty() ? l.get(0) : null;
     }
 
-    /** The focus frame: a yellow outline on the focused row of the panel (not in touch mode, where nothing has the focus) */
+    /** The focus frame: a yellow outline on the focused row of the section (not in touch mode, where nothing has the focus) */
     private void focusMoved(View old, View now) {
+        if (now != adjusting) adjusting = null;
         if (lit != null) { lit.setForeground(null); lit = null; }
-        if (now == null || !inside(now) || isInTouchMode()) return;
+        if (now == null || !inside(now) || touchNav()) return;
+        frame(now);
+    }
+    /** The frame on v: a slider being adjusted gets a stronger fill and a thicker line */
+    private void frame(View now) {
+        if (lit != null && lit != now) lit.setForeground(null);
         float dp = getResources().getDisplayMetrics().density;
+        boolean adj = now == adjusting;
         android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
-        d.setColor(0x26FFD54F);
-        d.setStroke(Math.round(2.5f * dp), FOCUS);
-        d.setCornerRadius(14 * dp);
+        d.setColor(adj ? 0x55FFD54F : 0x26FFD54F);
+        d.setStroke(Math.round((adj ? 4f : 2.5f) * dp), FOCUS);
+        d.setCornerRadius(FRAME_RADIUS_DP * dp);
+        now.setDefaultFocusHighlightEnabled(false);   // Android's own (square) focus highlight would show past the frame's corners
         now.setForeground(d);
         lit = now;
     }
@@ -279,118 +628,47 @@ final class SidePanel extends FrameLayout {
             return true;
         });
         Button no = d.getButton(AlertDialog.BUTTON_NEGATIVE);
-        if (no != null && !isInTouchMode()) no.requestFocus();
+        if (no != null && !touchNav()) focusOn(no);
         return d;
     }
 
-    /** The tab bar: one button per tab (the selected one filled), then ✕; large enough to tap (the panel's row height, 48 dp at least), named for TalkBack */
-    private void tabBar() {
-        tabs.removeAllViews();
-        float dp = getResources().getDisplayMetrics().density;
-        int h = Math.max(Math.round(48 * dp), PanelLook.rowPx(Prefs.panelSize(act), dp)), pad = Math.round(4 * dp);
-        for (int i = 0; i < TAB_NAMES.length; i++) {
-            int k = i;
-            boolean on = i == tab;
-            TextView t = new TextView(act);
-            t.setText(Tx.arr(R.array.arr_panel_tabs)[i]);
-            t.setGravity(Gravity.CENTER);
-            t.setMaxLines(1);
-            t.setIncludeFontPadding(false);
-            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);   // one size for every tab, set once the bar is laid out (tabTextSize)
-            t.setPadding(pad, 0, pad, 0);
-            t.setTypeface(on ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-            t.setTextColor(on ? 0xFF000000 : 0xFFE8EAED);
-            android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();   // the selected tab is a banana pill
-            pill.setColor(on ? FOCUS : 0);
-            pill.setCornerRadius(999 * dp);
-            t.setBackground(pill);
-            t.setSelected(on);
-            t.setFocusable(true);
-            t.setOnClickListener(v -> showTab(k));
-            t.setContentDescription(Tx.s(R.string.game_tab_n_of_m, Tx.arr(R.array.arr_panel_tabs)[i], i + 1, TAB_NAMES.length) + (on ? Tx.s(R.string.game_selected) : ""));
-            LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, h, 1f);
-            tl.setMarginStart(Math.round(2 * dp)); tl.setMarginEnd(Math.round(2 * dp));
-            tabs.addView(t, tl);
-        }
-        TextView x = new TextView(act);
-        x.setText("✕");
-        x.setGravity(Gravity.CENTER);
-        x.setTextSize(18);
-        x.setTextColor(0xFFE8EAED);
-        x.setFocusable(true);
-        x.setOnClickListener(v -> close());
-        x.setContentDescription(Tx.s(R.string.game_close_the_panel_back_to));
-        tabs.addView(x, new LinearLayout.LayoutParams(h, h));
-        tabs.post(this::tabTextSize);
-    }
-
-    /** One text size for all tab labels, and each tab as wide as its word needs: the largest size (16 sp at most, 9 at least) at which the four words, in bold as when
-     *  selected, fit the bar together. A language with longer words (French, Polish ...) gets a smaller size and its longest word the most room; only below 9 sp
-     *  is a word cut with an ellipsis. Auto-sizing each label on its own shrank "Performance" alone and set it lower than the others */
-    private void tabTextSize() {
-        if (tabs.getChildCount() <= TAB_NAMES.length) return;
-        float sp = getResources().getDisplayMetrics().scaledDensity;
-        android.graphics.Paint p = new android.graphics.Paint();
-        p.setTypeface(Typeface.DEFAULT_BOLD);
-        p.setTextSize(16 * sp);
-        String[] names = Tx.arr(R.array.arr_panel_tabs);
-        float[] w = new float[TAB_NAMES.length];
-        float words = 0, room = 0, chrome = 0;
-        for (int i = 0; i < TAB_NAMES.length; i++) {
-            TextView t = (TextView) tabs.getChildAt(i);
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) t.getLayoutParams();
-            w[i] = p.measureText(names[i]);
-            words += w[i];
-            room += t.getWidth();
-            chrome += t.getPaddingLeft() + t.getPaddingRight() + lp.getMarginStart() + lp.getMarginEnd();
-        }
-        float fit = words > 0 && room > 0 ? 16 * Math.max(0, room - chrome) / words : 16;
-        float size = Math.max(9, Math.min(16, (float) Math.floor(fit * 2) / 2));
-        for (int i = 0; i < TAB_NAMES.length; i++) {
-            TextView t = (TextView) tabs.getChildAt(i);
-            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, size);
-            t.setEllipsize(android.text.TextUtils.TruncateAt.END);   // the last resort, below 9 sp
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) t.getLayoutParams();
-            lp.weight = Math.max(1f, w[i]);   // as wide as the word is (the words' widths at one size are in proportion at any size)
-            t.setLayoutParams(lp);
-        }
-    }
-
-    /** Another tab: its rows built, scrolled to its top; with a controller the focus on its first row */
+    /** Another section from a controller's L / R: as picked in the menu */
     private void showTab(int k) {
         if (!open || k == tab) return;
-        tab = k;
-        box.removeAllViews();
-        build();
-        look();
-        scroll.scrollTo(0, 0);
-        if (!isInTouchMode()) focusFirst();
-        refresh();
+        showPage(k);
     }
 
-    /** Hokkaido's quick settings show a tab: its rows built for it (look), while the menu is open */
+    /** Hokkaido's quick settings request one section's rows while its menu is open. */
     void hokkaidoTab(int k) {
-        if (!open) return;
+        if (hk == null || !open || k < 0 || k >= TAB_NAMES.length) return;
         tab = k;
+        padMade.clear();
         box.removeAllViews();
         build();
         look();
         refresh();
     }
 
-    /** The panel's size and text size (Prefs.panelSize / panelText): its width, and every row's least height and text size, over what build() made */
+    /** The panel's size and text size (Prefs.panelSize / panelText): the section's width, and every row's least height and text size, over what build() made */
     private void look() {
         if (hk != null) { hk.built(tab, box); return; }
         float dp = getResources().getDisplayMetrics().density;
-        int size = Prefs.panelSize(act), w = PanelLook.widthPx(size, dp, getResources().getDisplayMetrics().widthPixels);
-        if (sheet.getLayoutParams().width != w) { sheet.getLayoutParams().width = w; sheet.requestLayout(); }
-        look(box, PanelLook.textScale(Prefs.panelText(act)), PanelLook.rowPx(size, dp));
+        sizes();
+        look(box, PanelLook.textScale(Prefs.panelText(act)), PanelLook.rowPx(Prefs.panelSize(act), dp));
     }
     private static void look(View v, float text, int row) {
         if (v instanceof TextView) {
             TextView t = (TextView) v;
             if (text != 1f) t.setTextSize(TypedValue.COMPLEX_UNIT_PX, t.getTextSize() * text);
             if (v instanceof Button || v instanceof CompoundButton) t.setMinHeight(row);
+            if (v instanceof CompoundButton && !(v.getBackground() instanceof RowRipple)) {
+                // a check box or radio button: its press highlight in the focus frame's shape over the whole choice (its own was a small circle
+                // around the box), and room after its text so that the frame does not touch it
+                v.setBackground(rowRipple(v.getResources()));
+                v.setDefaultFocusHighlightEnabled(false);
+                int ph = Math.round(12 * v.getResources().getDisplayMetrics().density);
+                v.setPaddingRelative(v.getPaddingStart(), v.getPaddingTop(), ph, v.getPaddingBottom());
+            }
         } else if (v instanceof SeekBar) v.setMinimumHeight(row);
         if (v instanceof ViewGroup) for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++) look(((ViewGroup) v).getChildAt(i), text, row);
     }
@@ -399,7 +677,9 @@ final class SidePanel extends FrameLayout {
     private void restyle(int focusId) {
         post(() -> {
             if (!open) return;
+            if (hk != null) { hokkaidoTab(tab); return; }
             int y = scroll.getScrollY();
+            buildMenu();   // the menu's rows in the panel's new size and text size too
             box.removeAllViews();
             build();
             look();
@@ -434,9 +714,13 @@ final class SidePanel extends FrameLayout {
     /** The running game's title ID (GameActivity's intent): the panel's settings are that game's own */
     private String game() { return String.valueOf(act.getIntent().getStringExtra("title_id")); }
 
-    /** The tab's rows (TAB_NAMES); Performance's here: the frame rate cap, the Upscaler (with a render_cfg game's Upscaling quality and Graphics quality), the dynamic resolution and frame generation */
+    /** The section's rows (TAB_NAMES); Performance's here: the frame rate cap, the Upscaler (with a render_cfg game's Upscaling quality and Graphics quality), the dynamic resolution and frame generation */
     private void build() {
-        tabBar();
+        if (hk == null && stacked()) {   // Hokkaido has its own tab bar; standalone needs the section's heading when stacked
+            TextView t = head(Tx.arr(R.array.arr_panel_tabs)[tab]);
+            t.setTextSize(20);
+            t.setPadding(0, 0, 0, 0);
+        }
         fpsNow = lsfgNow = layerNow = null;
         caps = null;
         if (tab == TAB_DISPLAY) { display(); return; }
@@ -498,6 +782,11 @@ final class SidePanel extends FrameLayout {
             GameUpscaler.rows(act, game(), box);
             note(act instanceof GameActivity && ((GameActivity) act).live() ? Tx.s(R.string.game_applies_from_the_next_frame)
                     : Tx.s(R.string.game_applies_at_the_next_start));
+            if (Prefs.dlssGame(game())) {   // a game on the DLSS stand-in: Screen scaling (the window to the screen) right under its Game upscaler, the two stages together
+                GameUpscaler.screenRows(act, game(), box);
+                note(act instanceof GameActivity && ((GameActivity) act).live() ? Tx.s(R.string.game_applies_from_the_next_frame_2)
+                        : Tx.s(R.string.game_applies_at_the_next_start));
+            }
         }
         Profile rp = Profile.of(game());
         if (rp != null && rp.renderCfg()) renderQuality(rp);   // a render_cfg game: Upscaling quality and Graphics quality under the Upscaler (Resolution is on Display)
@@ -506,7 +795,7 @@ final class SidePanel extends FrameLayout {
             box.addView(DrsSlider.view(act, Prefs.drs(act, game()), drsHead::setText, i -> { Prefs.drs(act, game(), i); Native.drsSet(Prefs.DRS[i][0], Prefs.DRS[i][1]); }));
         }
 
-        lsfgNow = Lsfg.rows(act, box, "", () -> { Lsfg.push(act); refresh(); });
+        lsfgNow = Lsfg.rows(act, box, "", () -> { Lsfg.push(act, game()); refresh(); }, game());   // the running game's own setting from now on (Settings' stays the default of the others)
 
         Profile prof = Profile.of(game());
         if (prof != null) {
@@ -562,19 +851,14 @@ final class SidePanel extends FrameLayout {
         } catch (java.io.IOException e) { Native.note("[RED] game option " + env + ": the setting could not be sent to the game (" + e.getMessage() + "); it applies at the next start"); }
     }
 
-    /** Display: Resolution (a render_cfg game: Resolution alone), Screen scaling for a game on the DLSS stand-in, the picture (Fit / Stretch, size, position) and the overlay's items */
+    /** Display: Resolution (a render_cfg game: Resolution alone), the picture (Fit / Stretch, size, position) and the overlay's items */
     private void display() {
         resolutionRow();
-        if (!Prefs.simpleRes(act, game()) && Prefs.dlssGame(game())) {   // a game on the DLSS stand-in: Screen scaling (the window to the screen), under Resolution
-            GameUpscaler.screenRows(act, game(), box);
-            note(act instanceof GameActivity && ((GameActivity) act).live() ? Tx.s(R.string.game_applies_from_the_next_frame_2)
-                    : Tx.s(R.string.game_applies_at_the_next_start));
-        }
 
         picture();
 
         head(Tx.s(R.string.settings_overlay));
-        Overlay.rows(act, box, null);
+        Overlay.rows(act, box, null, game());   // the running game's own overlay from now on
     }
 
     /** Controls: Player 1, the on-screen controls, rumble, the phone's Motion sensitivity and the Button mapping shortcut */
@@ -637,16 +921,16 @@ final class SidePanel extends FrameLayout {
         head(Tx.s(R.string.game_shaders));
         layerNow = note(((GameActivity) act).layerLine());
         note(Tx.s(R.string.game_shaders_the_game_lacks_are_3));
-        Button lab = row(ID_LABEL, Tx.s(R.string.game_building_shaders_label), Overlay.labelChoices()[Prefs.layerLabel(act)]);   // Off / the count / the words: takes effect at the label's next update
+        Button lab = row(ID_LABEL, Tx.s(R.string.game_building_shaders_label), Overlay.labelChoices()[Prefs.layerLabel(act, game())]);   // Off / the count / the words: takes effect at the label's next update
         lab.setOnClickListener(v -> padDialog(new AlertDialog.Builder(act).setTitle(Tx.s(R.string.game_building_shaders_label))
-                .setSingleChoiceItems(Overlay.labelChoices(), Prefs.layerLabel(act), (d, w) -> { Prefs.layerLabel(act, w); d.dismiss(); restyle(ID_LABEL); })
+                .setSingleChoiceItems(Overlay.labelChoices(), Prefs.layerLabel(act, game()), (d, w) -> { Prefs.layerLabel(act, game(), w); d.dismiss(); restyle(ID_LABEL); })   // the running game's own label from now on
                 .setNegativeButton(Tx.s(R.string.common_cancel), null).show()));
     }
 
-    /** General: the panel's own look, Pause, Stop and Back to the game */
+    /** General: the panel's own look, cheats, shaders, Hide everything and Pause when the game comes back */
     private void general() {
         note(Tx.s(R.string.game_the_game_runs_on_behind));
-        if (hk == null) panelRows();   // Hokkaido's menu has a look of its own
+        if (hk == null) panelRows();   // Hokkaido's menu has its own size and text style
         cheatRows();
         shaderRows();
 
@@ -661,32 +945,12 @@ final class SidePanel extends FrameLayout {
         });
         box.addView(clean);
 
-        if (hk == null) {   // Hokkaido's menu has Pause and Exit
-        Button pause = new Button(act);   // the game suspended (clock, graphics, threads, audio) until a tap on the screen, or A / Start: GameActivity.pause
-        pause.setText(Tx.s(R.string.game_pause_the_game));
-        pause.setOnClickListener(v -> { close(); if (act instanceof GameActivity) ((GameActivity) act).pause(); });
-        LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        pl.topMargin = Math.round(24 * getResources().getDisplayMetrics().density);
-        box.addView(pause, pl);
-        }
+        // Pause and Stop are the menu's (buildMenu); Pause's own setting stays here
         android.widget.CheckBox ret = new android.widget.CheckBox(act);
         ret.setText(Tx.s(R.string.game_pause_when_the_game_comes));
         ret.setChecked(Prefs.pauseOnReturn(act, game()));
         ret.setOnCheckedChangeListener((b, on) -> Prefs.pauseOnReturn(act, game(), on));
         box.addView(ret);
-        if (hk != null) return;
-        Button stop = new Button(act);
-        stop.setText(Tx.s(R.string.game_stop_the_game));
-        stop.setOnClickListener(v -> padDialog(new AlertDialog.Builder(act).setTitle(Tx.s(R.string.game_stop_the_game_2)).setMessage(Tx.s(R.string.game_the_game_ends_unsaved_progress))
-                .setPositiveButton(Tx.s(R.string.common_stop), (d, w) -> { Native.note("stopped by the user"); ExitWatch.stopped(); if (act instanceof GameActivity) ((GameActivity) act).backToFrontend(); android.os.Process.killProcess(android.os.Process.myPid()); })
-                .setNegativeButton(Tx.s(R.string.game_keep_running), null).show()));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = Math.round(24 * getResources().getDisplayMetrics().density);
-        box.addView(stop, lp);
-        Button done = new Button(act);
-        done.setText(Tx.s(R.string.game_back_to_the_game));
-        done.setOnClickListener(v -> close());
-        box.addView(done, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
     }
 
     /**
@@ -909,6 +1173,20 @@ final class SidePanel extends FrameLayout {
         map.setOnClickListener(v -> PadMapUi.forGame(act, ga.game(), () -> restyle(ID_MAP)));
     }
 
+    /** A row's press and focus highlight, in the focus frame's rounded shape (focusMoved): the theme's selectableItemBackground is square and showed past the frame's corners */
+    private static final class RowRipple extends android.graphics.drawable.RippleDrawable {
+        RowRipple(android.graphics.drawable.Drawable mask) { super(android.content.res.ColorStateList.valueOf(0x33FFFFFF), null, mask); }
+        // a check box or radio button keeps its ripple to the box (CompoundButton sets the hotspot bounds to it): here it fills the whole choice, in the frame's shape
+        @Override public void setHotspotBounds(int left, int top, int right, int bottom) {}
+    }
+    private RowRipple rowRipple() { return rowRipple(getResources()); }
+    private static RowRipple rowRipple(android.content.res.Resources r) {
+        android.graphics.drawable.GradientDrawable mask = new android.graphics.drawable.GradientDrawable();
+        mask.setColor(Color.WHITE);
+        mask.setCornerRadius(FRAME_RADIUS_DP * r.getDisplayMetrics().density);
+        return new RowRipple(mask);
+    }
+
     /**
      * One compact row: the label, then the value in grey and a chevron. A borderless Button, so that look() gives it the panel's row height and text size and the
      * D-pad can focus it.
@@ -917,9 +1195,7 @@ final class SidePanel extends FrameLayout {
         Button map = new Button(act);
         map.setId(id);
         map.setAllCaps(false);
-        TypedValue bg = new TypedValue();
-        act.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, bg, true);
-        map.setBackgroundResource(bg.resourceId);   // a list row with the focus and press highlight, not a raised default Button
+        map.setBackground(rowRipple());   // a list row with the focus and press highlight, not a raised default Button
         map.setStateListAnimator(null);
         map.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
         map.setTextColor(new TextView(act).getTextColors());   // the colour of the panel's other rows
@@ -928,8 +1204,8 @@ final class SidePanel extends FrameLayout {
         map.setEllipsize(android.text.TextUtils.TruncateAt.END);
         map.setMinWidth(0);
         map.setMinimumWidth(0);
-        int pv = Math.round(4 * getResources().getDisplayMetrics().density);
-        map.setPadding(0, pv, 0, pv);
+        int pv = Math.round(4 * getResources().getDisplayMetrics().density), ph = Math.round(12 * getResources().getDisplayMetrics().density);
+        map.setPadding(ph, pv, ph, pv);   // the text clear of the focus frame's edge
         android.text.SpannableStringBuilder t = new android.text.SpannableStringBuilder(label + "  ");
         int from = t.length();
         t.append(value).append("  ›");
@@ -969,7 +1245,7 @@ final class SidePanel extends FrameLayout {
     private void refresh() {
         if (!open) return;
         if (layerNow != null) layerNow.setText(((GameActivity) act).layerLine());   // General's Shaders line
-        if (tab != TAB_PERF) {   // only Performance and the Shaders line are live (showTab calls it again)
+        if (tab != TAB_PERF) {   // only Performance and the Shaders line are live (showPage calls it again)
             removeCallbacks(tick);
             if (layerNow != null) postDelayed(tick, 1000);
             return;

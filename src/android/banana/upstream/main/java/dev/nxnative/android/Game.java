@@ -67,8 +67,12 @@ final class Game implements GameList.View {
 
     static void save(Context c, List<Game> games) {
         JSONArray a = new JSONArray();
+        String names = Prefs.gameNames(c);
         try {
-            for (Game g : games) a.put(g.toJson());
+            for (Game g : games) {
+                String n = GameNames.apply(names, g.orderId(), g.name);   // a game added again with its own name keeps the player's name (Rename game)
+                a.put((n.equals(g.name) ? g : new Game(g.titleId, n, g.gameDir, g.packDir, g.used)).toJson());
+            }
         } catch (JSONException e) {
             throw new IllegalStateException(e);
         }
@@ -76,6 +80,25 @@ final class Game implements GameList.View {
             prefs(c).edit().putString("list", a.toString()).commit();
         }
     }
+
+    /** Renames the game (wanted from GameNames.clean); an empty name, or the game's own, gives its own name back. Every entry of the same title and pack changes */
+    static void rename(Context c, Game g, String wanted) {
+        synchronized (Game.class) {
+            String data = Prefs.gameNames(c), id = g.orderId(), own = GameNames.original(data, id, g.name), w = GameNames.clean(wanted);
+            if (w.isEmpty() || w.equals(own)) { data = GameNames.remove(data, id); w = own; }
+            else data = GameNames.put(data, id, own, w);
+            Prefs.gameNames(c, data);
+            List<Game> list = load(c);
+            for (int i = 0; i < list.size(); i++) {
+                Game x = list.get(i);
+                if (x.orderId().equals(id)) list.set(i, new Game(x.titleId, w, x.gameDir, x.packDir, x.used));
+            }
+            save(c, list);
+        }
+    }
+
+    /** True when the game carries a name the player gave it */
+    static boolean renamed(Context c, Game g) { return GameNames.renamed(Prefs.gameNames(c), g.orderId(), g.name); }
 
     // ---- One entry per game ----
 

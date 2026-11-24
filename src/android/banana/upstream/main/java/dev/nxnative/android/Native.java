@@ -102,6 +102,8 @@ final class Native {
 
     /** Frame generation's settings for the next frames (nxhost_framegen_set): on, images per game frame 2..4, target rate (0 = fixed), flow scale % (0 = auto). */
     static native void frameGenSet(boolean on, int multiplier, int targetRate, int flowPct);
+    /** Frame generation's shader set (nxhost_framegen_quality): true quality, false performance; the chain is made again at the next frame. */
+    static native void frameGenQuality(boolean quality);
 
     /** "<state> <reason>": state 0 off, 1 generating, 2 on and not generating, -1 unavailable, -2 not in this host. */
     static native String frameGenStatus();
@@ -178,4 +180,8 @@ final class Native {
     static native int ndsrStatus();
     /** The skipped-work warning (vka_exec.c nxhost_skip_status): "<percent> <causes>" once the replay skipped a large share of the game's draws for causes of the GPU driver or for shaders missing from the pack, "" before or when it is off; SkipNotice reads it */
     static native String skipStatus();
+    /** The compiling-shaders screen (vka_pso.c nxhost_pso_prepare_status): "<taken> <total> <seconds left or -1>" while the host's boot hold runs (DM_VK_PREPARE), "" otherwise or from a host without it; PrepareScreen reads it */
+    static native String prepareStatus();
+    /** Ends the boot hold: the game goes on and the rest of the pipelines are made beside it (vka_pso.c nxhost_pso_prepare_skip; nothing from a host without it) */
+    static native void prepareSkip();
 }

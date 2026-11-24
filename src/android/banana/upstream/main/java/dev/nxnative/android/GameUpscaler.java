@@ -176,7 +176,7 @@ final class GameUpscaler {
     /** A game on the DLSS stand-in: "Upscaler" (the stand-in's mode) with Motion clarity and Temporal sharpness under GSR 2, the sharpness alone ("FSR sharpness") under FSR 1. Each applied at once */
     private static void dlssRows(Context c, String titleId, LinearLayout box) {
         TextView head = new TextView(c);
-        head.setText(Tx.s(R.string.common_upscaler));
+        head.setText(Tx.s(R.string.common_game_upscaler));   // the game's own upscaler (its DLSS, the stand-in); Screen scaling follows right under it
         head.setPadding(0, 24, 0, 0);
         box.addView(head);
         RadioGroup g = new RadioGroup(c);

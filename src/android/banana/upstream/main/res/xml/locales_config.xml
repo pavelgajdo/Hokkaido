@@ -5,6 +5,7 @@
     <locale android:name="es" />
     <locale android:name="tr" />
     <locale android:name="zh-CN" />
+    <locale android:name="zh-TW" />
     <locale android:name="fr" />
     <locale android:name="ar" />
     <locale android:name="pl" />

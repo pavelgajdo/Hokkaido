@@ -77,6 +77,7 @@
     <string name="common_stop">Detener</string>
     <string name="common_system">Sistema</string>
     <string name="common_time_of_day">Hora del día</string>
+    <string name="common_game_upscaler">Escalador del juego (DLSS)</string>
     <string name="common_upscaler">Escalador</string>
     <string name="common_use_fast_cores">Usar núcleos rápidos</string>
     <string name="common_users">Usuarios</string>
@@ -178,8 +179,34 @@
     <string name="settings_on_the_controller_or_the">En el mando, o en el teléfono si no hay mando</string>
     <string name="settings_overlay">Superposición</string>
     <string name="settings_picture_from_the_release_notes">Imagen de las notas de la versión</string>
-    <string name="settings_small_fix_updates">Actualizaciones de correcciones pequeñas</string>
-    <string name="settings_small_fix_updates_help">Ofrece las versiones de correcciones pequeñas al iniciar la app. Desactivado: solo se ofrecen las actualizaciones grandes; Buscar actualizaciones sigue mostrando la más reciente. La próxima actualización grande incluye todas las correcciones.</string>
+    <string name="settings_update_channel">Canal de actualizaciones</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">Versiones semanales y correcciones críticas. Cada versión semanal incluye todas las pequeñas correcciones anteriores.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">Todas las versiones, también las pequeñas correcciones entre las semanales.</string>
+    <string name="settings_channel_preview">Vista previa</string>
+    <string name="settings_channel_preview_help">Versiones tempranas de cambios grandes, como una nueva versión de shaders, una semana antes de Estable. Pueden romper juegos; para probadores.</string>
+    <string name="settings_backup_before_update">Copia de partidas antes de actualizar</string>
+    <string name="settings_backup_before_update_note">Antes de instalar una actualización, las partidas modificadas se copian a save-backups junto a tus juegos, fuera del almacenamiento de la app.</string>
+    <string name="settings_update_backing_up">Copiando partidas…</string>
+    <string name="settings_update_backing_up_game">Copiando partidas: %1$s (%2$d de %3$d)</string>
+    <string name="settings_update_game_user">%1$s (usuario %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="one">Partidas copiadas: %1$d juego</item>
+        <item quantity="many">Partidas copiadas: %1$d juegos</item>
+        <item quantity="other">Partidas copiadas: %1$d juegos</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">Partidas sin cambios desde su última copia</string>
+    <string name="settings_update_skipped_running">Sin copia mientras el juego está abierto: %1$s</string>
+    <string name="settings_update_no_backup_title">Partidas sin copia</string>
+    <string name="settings_update_no_backup_message">Estas partidas no se pueden copiar fuera del almacenamiento de la app, y desinstalar la app borra ese almacenamiento:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: el acceso a todos los archivos está desactivado</string>
+    <string name="settings_update_reason_in_app">%1$s: su carpeta de copias está en el almacenamiento de la app</string>
+    <string name="settings_update_without_backup">Actualizar sin copia</string>
+    <string name="settings_update_backup_failed_title">La copia de partidas falló</string>
+    <string name="settings_update_backup_failed_message">No se pudieron copiar estas partidas. Tus partidas no han cambiado.</string>
+    <string name="settings_update_anyway">Actualizar igualmente</string>
+    <string name="settings_up_to_date_on_stable">Estás al día en Stable (v%1$s). Una pequeña corrección, v%2$s, ya está en el canal Hotfix.</string>
     <string name="settings_player_wiki">Wiki para jugadores</string>
     <string name="settings_remove_leftovers_and_old_files">Quita sobras y archivos antiguos; nunca partidas</string>
     <string name="settings_sample_games">Juegos de ejemplo</string>
@@ -203,6 +230,9 @@
     <string name="settings_updates">Actualizaciones</string>
     <string name="settings_what_s_new">Novedades</string>
     <string name="settings_while_home_shows_a_game">Mientras Inicio muestra un juego en preparación</string>
+    <string name="settings_update_shaders_automatically">Actualizar los shaders automáticamente</string>
+    <string name="settings_auto_shader_update_on">Un juego con shaders desactualizados los actualiza en segundo plano</string>
+    <string name="settings_auto_shader_update_off">Desactivado: la página del juego los actualiza cuando lo pidas</string>
     <string name="settings_xbox_button_label_swap">Intercambio de etiquetas de botones Xbox</string>
     <string name="game_1_player">1 jugador</string>
     <string name="game_3d_scene">Escena 3D</string>
@@ -215,13 +245,11 @@
     <string name="game_aspect_ratio">Relación de aspecto</string>
     <string name="game_back_from_the_background_paused">Al volver del segundo plano: en pausa hasta tocar</string>
     <string name="game_back_from_the_background_runs">Al volver del segundo plano: continúa al instante</string>
-    <string name="game_back_to_the_game">Volver al juego</string>
     <string name="game_background_pipelines">Pipelines en segundo plano</string>
     <string name="game_busy_threads_off_the_small">Hilos ocupados fuera de los núcleos pequeños</string>
     <string name="game_centre">Centro</string>
     <string name="game_classic_render_passes">Pasadas de render clásicas</string>
     <string name="game_clear">Borrar</string>
-    <string name="game_close_the_panel_back_to">Cerrar el panel y volver al juego</string>
     <string name="game_controller_panel">Panel del mando</string>
     <string name="game_could_not_save_link_play">No se pudieron guardar los ajustes de Link Play.</string>
     <string name="game_details">Detalles</string>
@@ -271,7 +299,9 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">Revisando el almacenamiento de la app…</string>
     <string name="game_made_when_first_drawn_may">Se crean al dibujarse por primera vez: puede haber tirones</string>
-    <string name="game_mode_performance_the_only_shader">Modo: rendimiento (el único conjunto de shaders que usa LSFG de Eden)</string>
+    <string name="game_lsfg_quality">Calidad</string>
+    <string name="game_lsfg_shaders">Shaders (Calidad: más detalle en los fotogramas generados, aprox. cuatro veces el tiempo de GPU)</string>
+    <string name="game_lsfg_screen_limit">La pantalla funciona a %1$d Hz como máximo (ajustes de pantalla de Android): no se ofrecen objetivos más rápidos ni más fotogramas por fotograma del juego</string>
     <string name="game_motion_clarity">Claridad de movimiento</string>
     <string name="game_motion_estimation_resolution_lower_i">Resolución de estimación de movimiento (menor es más rápido)</string>
     <string name="game_motion_sensitivity">Sensibilidad de movimiento</string>
@@ -282,6 +312,8 @@
     <string name="game_building_shaders_label">Etiqueta «Compilando shaders»</string>
     <string name="settings_building_shaders_label">Etiqueta «Compilando shaders»</string>
     <string name="settings_building_shaders_label_note">Un juego que compila los shaders que le faltan mientras juegas muestra un pequeño contador translúcido en la parte superior de la pantalla. Una compilación que espera a que el teléfono se enfríe o tenga más batería siempre se indica. Ocultar la etiqueta no detiene la compilación.</string>
+    <string name="settings_startup_log">Mostrar registro de inicio</string>
+    <string name="settings_startup_log_note">Muestra el registro de arranque sobre la pantalla negra hasta que el juego dibuje su primer fotograma. Los fallos se siguen mostrando y el registro siempre se guarda en disco.</string>
     <string-array name="arr_layer_label">
         <item>Desactivada</item>
         <item>Solo el número</item>
@@ -303,6 +335,7 @@
     <string name="game_open_the_in_game_panel">Abrir el panel del juego</string>
     <string name="game_pause_on_return">Pausar al volver</string>
     <string name="game_pause_the_game">Pausar el juego</string>
+    <string name="game_resume_the_game">Reanudar el juego</string>
     <string name="game_hide_everything_clean_picture">Ocultar todo (imagen limpia)</string>
     <string name="game_show_everything">Mostrar todo</string>
     <string name="game_pause_when_the_game_comes">Pausar cuando el juego vuelve del segundo plano</string>
@@ -470,6 +503,15 @@
     <string name="prepare_pack_not_imported">Paquete no importado</string>
     <string name="prepare_pack_imported">Paquete importado</string>
     <string name="ready_readiness_check">Comprobación de aptitud</string>
+    <string name="settings_update_ready">v%1$s está lista para instalar</string>
+    <string name="settings_update_elsewhere">v%1$s ya está en el canal %2$s</string>
+    <string name="settings_channel_next">Próxima actualización: v%1$s</string>
+    <string name="settings_channel_none">Nada más nuevo que esta versión</string>
+    <string name="settings_channel_preview_confirm">Las versiones preliminares son compilaciones tempranas de cambios grandes. Pueden romper un juego o necesitar reconstruir sus sombreadores. Tus partidas se conservan y la app hace una copia antes de cada actualización. ¿Cambiar a Preview?</string>
+    <string name="settings_channel_preview_switch">Cambiar a Preview</string>
+    <string name="settings_update_hotfix">Pequeña corrección entre versiones semanales (canal Hotfix).</string>
+    <string name="settings_update_important">Corrección importante: todos deberían instalar esta actualización.</string>
+    <string name="settings_update_preview">Versión de vista previa: puede tener errores. Tus partidas guardadas no cambian.</string>
     <string name="settings_update_available">Actualización disponible</string>
     <string name="game_no_backup_made">No se hizo copia de seguridad</string>
     <string name="game_the_save_could_not_be">No se pudo hacer copia de la partida. Solo se leyó, nunca se cambió.</string>
@@ -499,6 +541,7 @@
     <string name="home_copied_into_the_app">Copiado en la app: %1$s</string>
     <string name="home_game_now_uses">%1$s ahora usa %2$s.</string>
     <string name="home_lossless_dll_not_installed">Lossless.dll no instalado: %1$s</string>
+    <string name="home_tile_details">Detalles ›</string>
     <string name="home_checking_name">Comprobando %1$s…</string>
     <plurals name="home_checking_games">
         <item quantity="one">Comprobando %1$d juego…</item>
@@ -562,12 +605,14 @@
     <string name="game_save_copy_failed">No se pudo copiar tu partida en el almacenamiento de la app (%1$s). Este inicio la usa donde está, %2$s.</string>
     <string name="game_name_checking_gpu">%1$s: comprobando la GPU de este teléfono…</string>
     <string name="game_details_also_in_readiness">Los detalles también están en Ajustes › Comprobación de aptitud.</string>
+    <string name="game_name_starting">%1$s: iniciando…</string>
     <string name="game_name_starting_log">%1$s: iniciando. Registro: %2$s</string>
     <string name="err_cannot_start_name">No se puede iniciar %1$s</string>
     <string name="err_name_is_running">%1$s se está ejecutando</string>
     <string name="err_stop_it_first_then_start">Deténlo primero (el panel del juego › Detener el juego) y luego inicia %1$s. Solo se ejecuta un juego a la vez.</string>
-    <string name="game_menu_hint">Menú: desliza desde el borde derecho, o pulsa Atrás</string>
-    <string name="game_tab_n_of_m">Pestaña %1$s, %2$d de %3$d</string>
+    <string name="game_menu_hint">Menú: pulsa Atrás\nAjustes: desliza desde el borde derecho</string>
+    <string name="game_menu_gpu_driver">Controlador de GPU: %1$s</string>
+    <string name="game_menu_system_driver">Sistema</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">Tamaño %1$d %%</string>
     <string name="game_button_mapping_applies">Asignación de botones: %1$s, se aplica en el próximo inicio</string>
@@ -750,6 +795,9 @@
     <string name="game_experimental">Experimental</string>
     <string name="game_never_drops_to_30_less">Nunca baja a 30; menos uniforme por debajo de 60</string>
     <string name="game_drops_to_30_when_60">Baja a 30 cuando no se mantienen los 60</string>
+    <string name="game_keep_gpu_clock_up">Mantener alta la frecuencia de la GPU</string>
+    <string name="game_keep_gpu_clock_up_on">También tras los menús: puede arreglar un juego atascado con pocos FPS; el teléfono se calienta más</string>
+    <string name="game_keep_gpu_clock_up_off">El sistema puede bajar la frecuencia de la GPU en los menús; el teléfono se mantiene más fresco</string>
     <string name="game_normal_speed_when_the_frame">Velocidad normal cuando baja la tasa de fotogramas</string>
     <string name="game_slows_down_with_the_frame">Va más lento con la tasa de fotogramas</string>
     <string name="game_all_grass_and_foliage">Toda la hierba y el follaje</string>
@@ -763,6 +811,9 @@
     <string name="home_lossless_dll_missing">" · falta Lossless.dll"</string>
     <string name="home_why">¿Por qué?</string>
     <string name="home_shaders_need_one_update">Los shaders necesitan una actualización</string>
+    <string name="home_other_pack_has_shaders">Otro paquete tiene los shaders</string>
+    <string name="home_other_pack_has_shaders_message">El paquete que usa esta tarjeta no tiene shaders para esta versión de la app. Otro paquete de %1$s sí los tiene. ¿Usar ese paquete para esta tarjeta?</string>
+    <string name="home_use_that_pack">Usar ese paquete</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">Se aplica desde el siguiente fotograma y se guarda para este juego (el mismo ajuste que Ajustes del juego › Escalador).</string>
     <string name="game_applies_from_the_next_frame_2">Se aplica desde el siguiente fotograma y se guarda para este juego (el mismo ajuste que Ajustes del juego › Escalado de pantalla).</string>
@@ -784,6 +835,10 @@
     <string name="prepare_the_ones_it_has_stay">"Los que ya tiene se quedan como estaban; Actualizar shaders los rehace todos con esta versión. "</string>
     <string name="prepare_shaders_older_built_while_playing">Shaders: antiguos, creados mientras juegas</string>
     <string name="prepare_also_build_all_shaders_now">Crear también todos los shaders ahora</string>
+    <string name="prepare_recommended_build_all_shaders">Recomendado: compila todos los sombreadores ahora para jugar más fluido (%1$s, mejor con el cargador).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">Ya puedes jugar; los sombreadores que faltan se compilan mientras juegas.</string>
+    <string name="prepare_you_can_play_now_older">Ya puedes jugar con los sombreadores anteriores.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" Funciona con sus sombreadores anteriores."</string>
     <string name="prepare_or_finish_with_the_game">O termina solo con el código del juego: el juego se ejecuta y crea sus shaders mientras juegas; Crear todo en su página hace después el conjunto completo.</string>
     <string name="prepare_finish_without_shaders">Terminar sin shaders</string>
     <string name="prepare_ready_to_play_it_builds">Listo para jugar. Crea shaders mientras juegas.</string>
@@ -971,6 +1026,7 @@
     <string name="game_throttle_dot_green_yellow_red">Punto de limitación (verde / amarillo / rojo)</string>
     <string name="game_frame_rate_and_frame_time">Tasa de fotogramas y tiempo por fotograma</string>
     <string name="game_drag_a_control_or_the">Arrastra un control o la imagen; pellizca un control para cambiar su tamaño</string>
+    <string name="game_tap_a_control_to_hide_or_show">Toca un control para ocultarlo o mostrarlo</string>
     <string name="game_picture_drag_into_the_black">imagen: arrastra a las barras negras</string>
     <string name="game_temporal_sharpness">Nitidez temporal</string>
     <string name="game_sharpness">Nitidez</string>
@@ -1124,8 +1180,6 @@
     <string name="err_this_game">este juego</string>
     <string name="err_app_supports_only">Esta app solo admite %1$s (%2$s) %3$s.</string>
     <string name="err_or_word">" o "</string>
-    <string name="prepare_in_the_background_best_on">, en segundo plano, mejor con el cargador). Puedes pausar en cualquier momento.</string>
-    <string name="prepare_the_game_plays_now_and">El juego se ejecuta ya y crea shaders mientras juegas; esto crea ahora todo el conjunto (</string>
     <string name="prepare_build_them_there_scripts_pack">créalos allí (scripts/pack_android.py) y añade la biblioteca con Importar una biblioteca.</string>
     <string name="prepare_the_game_plays_now_on">"El juego se ejecuta ya con sus shaders antiguos; los que necesita y la biblioteca no tiene se crean mientras juegas. "</string>
     <string name="prepare_build_all_on_the_game_2">Crear todo en la página del juego hace ahora todo el conjunto, e Importar una biblioteca allí toma una creada en un ordenador.</string>
@@ -1307,7 +1361,6 @@
     <string name="settings_player_id">ID de jugador</string>
     <string name="settings_player_id_hint">Los nombres son solo etiquetas: los datos guardados siguen al ID, así que cambiar el nombre nunca mueve ni mezcla partidas.</string>
     <string name="settings_that_picture_could_not_be_read">No se pudo leer esa imagen</string>
-    <string name="home_tile_details">Detalles ›</string>
     <string name="home_move_left">Mover a la izquierda</string>
     <string name="home_move_right">Mover a la derecha</string>
     <string name="home_delete_game_menu">Quitar juego…</string>
@@ -1328,9 +1381,10 @@
         <item>Lista</item>
     </string-array>
     <string name="home_move_game">Mover</string>
+    <string name="home_rename_game">Renombrar juego</string>
+    <string name="home_reset_name">Restablecer nombre</string>
     <string name="hint_open">Abrir</string>
     <string name="hint_options_hold">Opciones (mantener)</string>
-    <string name="hint_hold_for_options">Mantén pulsado un juego para ver opciones</string>
     <string name="hint_move">Mover</string>
     <string name="hint_place">Soltar</string>
     <string name="hint_cancel">Cancelar</string>
@@ -1365,4 +1419,15 @@
     <string name="game_fast_fp16_shader_math">Matemáticas de sombreado FP16 rápidas</string>
     <string name="game_fp16_on_turnip_faster">Media precisión de 16 bits en Turnip: sombreado más rápido y menos calor</string>
     <string name="game_fp16_default_precision">Precisión predeterminada</string>
+    <string name="settings_build_preview">Estás usando una versión de vista previa (v%1$s). Las vistas previas pueden romper juegos. La versión estable v%2$s la reemplaza cuando salga.</string>
+    <string name="settings_build_preview_channel">Tu canal es %1$s: la app te pasa a la versión estable v%2$s cuando salga.</string>
+    <string name="settings_build_hotfix">Estás usando una corrección urgente (v%1$s): un arreglo pequeño entre versiones semanales. La próxima versión semanal la incluye.</string>
+    <string name="common_picture_size">Tamaño de la imagen</string>
+    <string name="game_lsfg_on_target">Activado · %1$d fps</string>
+    <string name="game_own_follows_settings">Este juego sigue los Ajustes (%1$s). Un cambio aquí será propio de este juego.</string>
+    <string name="game_own_settings_note">Estos son los ajustes propios de este juego. Usa «Valor de Ajustes» para volver a seguir los Ajustes.</string>
+    <string name="game_use_settings_default">Valor de Ajustes</string>
+    <string name="settings_touch_look">Aspecto de los controles en pantalla</string>
+    <string name="settings_panel_look">Aspecto del panel del juego</string>
+    <string name="settings_player_one_away">El mando elegido (no conectado)</string>
 </resources>

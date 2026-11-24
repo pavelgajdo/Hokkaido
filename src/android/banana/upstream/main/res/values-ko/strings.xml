@@ -71,10 +71,13 @@
     <string name="common_resolution">해상도</string>
     <string name="common_rumble">진동</string>
     <string name="common_screen_rotation">화면 회전</string>
+    <string name="common_screen_scaling">화면 확대 방식</string>
+    <string name="common_screen_sharpness">화면 선명도</string>
     <string name="common_share_log">로그 공유</string>
     <string name="common_stop">중지</string>
     <string name="common_system">시스템</string>
     <string name="common_time_of_day">시간대</string>
+    <string name="common_game_upscaler">게임 업스케일러 (DLSS)</string>
     <string name="common_upscaler">업스케일러</string>
     <string name="common_use_fast_cores">고성능 코어 사용</string>
     <string name="common_users">사용자</string>
@@ -176,8 +179,32 @@
     <string name="settings_on_the_controller_or_the">컨트롤러에서, 컨트롤러가 없으면 휴대폰에서</string>
     <string name="settings_overlay">오버레이</string>
     <string name="settings_picture_from_the_release_notes">릴리스 노트의 그림</string>
-    <string name="settings_small_fix_updates">소규모 수정 업데이트</string>
-    <string name="settings_small_fix_updates_help">앱을 시작할 때 소규모 수정 릴리스를 알려줘요. 끄면 큰 업데이트만 알려주며, 업데이트 확인에서는 여전히 최신 버전이 보여요. 다음 큰 업데이트에는 모든 수정 사항이 포함돼요.</string>
+    <string name="settings_update_channel">업데이트 채널</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">주간 릴리스와 중요 수정. 각 주간 릴리스에는 이전의 모든 작은 수정이 포함됩니다.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">모든 릴리스, 주간 릴리스 사이의 작은 수정도 포함.</string>
+    <string name="settings_channel_preview">미리보기</string>
+    <string name="settings_channel_preview_help">새 셰이더 버전 같은 큰 변경을 안정 버전보다 약 일주일 먼저 제공합니다. 게임이 망가질 수 있으니 테스터용입니다.</string>
+    <string name="settings_backup_before_update">업데이트 전에 세이브 백업</string>
+    <string name="settings_backup_before_update_note">업데이트를 설치하기 전에 바뀐 세이브를 게임 옆 save-backups 폴더, 즉 앱 저장소 밖으로 복사합니다.</string>
+    <string name="settings_update_backing_up">세이브 백업 중…</string>
+    <string name="settings_update_backing_up_game">세이브 백업 중: %1$s (%2$d/%3$d)</string>
+    <string name="settings_update_game_user">%1$s (사용자 %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="other">세이브 백업 완료: 게임 %1$d개</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">마지막 백업 이후 세이브가 바뀌지 않았습니다</string>
+    <string name="settings_update_skipped_running">게임 실행 중이라 백업하지 않음: %1$s</string>
+    <string name="settings_update_no_backup_title">세이브가 백업되지 않음</string>
+    <string name="settings_update_no_backup_message">이 세이브는 앱 저장소 밖으로 백업할 수 없으며, 앱을 제거하면 그 저장소가 삭제됩니다:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: 모든 파일 접근 권한이 꺼져 있음</string>
+    <string name="settings_update_reason_in_app">%1$s: 백업 폴더가 앱 저장소 안에 있음</string>
+    <string name="settings_update_without_backup">백업 없이 업데이트</string>
+    <string name="settings_update_backup_failed_title">세이브 백업 실패</string>
+    <string name="settings_update_backup_failed_message">이 세이브를 백업하지 못했습니다. 세이브는 바뀌지 않았습니다.</string>
+    <string name="settings_update_anyway">그래도 업데이트</string>
+    <string name="settings_up_to_date_on_stable">Stable에서 최신 버전입니다 (v%1$s). 작은 수정 v%2$s이(가) Hotfix 채널에 나왔습니다.</string>
     <string name="settings_player_wiki">플레이어 위키</string>
     <string name="settings_remove_leftovers_and_old_files">남은 파일과 오래된 파일을 삭제해요. 세이브는 절대 삭제하지 않아요</string>
     <string name="settings_sample_games">샘플 게임</string>
@@ -201,6 +228,9 @@
     <string name="settings_updates">업데이트</string>
     <string name="settings_what_s_new">새로운 기능</string>
     <string name="settings_while_home_shows_a_game">홈에 준비 중인 게임이 표시되는 동안</string>
+    <string name="settings_update_shaders_automatically">셰이더 자동 업데이트</string>
+    <string name="settings_auto_shader_update_on">셰이더가 오래된 게임은 백그라운드에서 업데이트합니다</string>
+    <string name="settings_auto_shader_update_off">끄기: 요청하면 게임 페이지에서 업데이트합니다</string>
     <string name="settings_xbox_button_label_swap">Xbox 버튼 라벨 바꾸기</string>
     <string name="game_1_player">1인 플레이</string>
     <string name="game_3d_scene">3D 장면</string>
@@ -213,13 +243,11 @@
     <string name="game_aspect_ratio">화면 비율</string>
     <string name="game_back_from_the_background_paused">백그라운드에서 돌아오면: 탭할 때까지 일시 정지</string>
     <string name="game_back_from_the_background_runs">백그라운드에서 돌아오면: 바로 실행</string>
-    <string name="game_back_to_the_game">게임으로 돌아가기</string>
     <string name="game_background_pipelines">백그라운드 파이프라인</string>
     <string name="game_busy_threads_off_the_small">바쁜 스레드를 저성능 코어에서 제외</string>
     <string name="game_centre">가운데</string>
     <string name="game_classic_render_passes">클래식 렌더 패스</string>
     <string name="game_clear">지우기</string>
-    <string name="game_close_the_panel_back_to">패널 닫고 게임으로 돌아가기</string>
     <string name="game_controller_panel">컨트롤러 패널</string>
     <string name="game_could_not_save_link_play">Link Play 설정을 저장하지 못했어요.</string>
     <string name="game_details">세부 정보</string>
@@ -269,7 +297,9 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">앱 저장 공간 확인 중…</string>
     <string name="game_made_when_first_drawn_may">처음 그릴 때 생성: 끊김이 있을 수 있음</string>
-    <string name="game_mode_performance_the_only_shader">모드: 성능(Eden의 LSFG가 사용하는 유일한 셰이더 세트)</string>
+    <string name="game_lsfg_quality">품질</string>
+    <string name="game_lsfg_shaders">셰이더(품질: 생성된 프레임의 디테일 향상, GPU 시간 약 4배)</string>
+    <string name="game_lsfg_screen_limit">화면이 최대 %1$d Hz로 동작합니다(Android 디스플레이 설정): 더 빠른 목표와 게임 프레임당 더 많은 프레임은 제외됩니다</string>
     <string name="game_motion_clarity">모션 선명도</string>
     <string name="game_motion_estimation_resolution_lower_i">모션 추정 해상도(낮을수록 빠름)</string>
     <string name="game_motion_sensitivity">모션 감도</string>
@@ -280,6 +310,8 @@
     <string name="game_building_shaders_label">셰이더 빌드 표시</string>
     <string name="settings_building_shaders_label">셰이더 빌드 표시</string>
     <string name="settings_building_shaders_label_note">플레이 중에 부족한 셰이더를 빌드하는 게임은 화면 상단에 작고 반투명한 개수를 표시해요. 휴대폰이 식거나 배터리가 충분해질 때까지 기다리는 빌드는 항상 알려줘요. 표시를 숨겨도 빌드는 멈추지 않아요.</string>
+    <string name="settings_startup_log">시작 로그 표시</string>
+    <string name="settings_startup_log_note">게임이 첫 프레임을 그릴 때까지 검은 화면 위에 부팅 로그를 표시합니다. 충돌은 계속 표시되며 로그는 항상 디스크에 저장됩니다.</string>
     <string-array name="arr_layer_label">
         <item>끔</item>
         <item>숫자만</item>
@@ -301,6 +333,7 @@
     <string name="game_open_the_in_game_panel">게임 내 패널 열기</string>
     <string name="game_pause_on_return">돌아오면 일시 정지</string>
     <string name="game_pause_the_game">게임 일시 정지</string>
+    <string name="game_resume_the_game">게임 재개</string>
     <string name="game_hide_everything_clean_picture">모두 숨기기 (깔끔한 화면)</string>
     <string name="game_show_everything">모두 표시</string>
     <string name="game_pause_when_the_game_comes">게임이 백그라운드에서 돌아오면 일시 정지</string>
@@ -468,6 +501,15 @@
     <string name="prepare_pack_not_imported">팩을 가져오지 못함</string>
     <string name="prepare_pack_imported">팩 가져옴</string>
     <string name="ready_readiness_check">준비 상태 점검</string>
+    <string name="settings_update_ready">v%1$s 설치 준비 완료</string>
+    <string name="settings_update_elsewhere">v%1$s이(가) %2$s 채널에 나왔습니다</string>
+    <string name="settings_channel_next">다음 업데이트: v%1$s</string>
+    <string name="settings_channel_none">이 버전보다 새 버전 없음</string>
+    <string name="settings_channel_preview_confirm">프리뷰는 큰 변경 사항의 초기 빌드입니다. 게임이 깨지거나 셰이더를 다시 빌드해야 할 수 있습니다. 세이브는 그대로 유지되며 앱이 업데이트마다 백업합니다. 프리뷰로 전환할까요?</string>
+    <string name="settings_channel_preview_switch">프리뷰로 전환</string>
+    <string name="settings_update_hotfix">주간 릴리스 사이의 작은 수정 (핫픽스 채널).</string>
+    <string name="settings_update_important">중요 수정: 모든 사용자에게 이 업데이트 설치를 권장합니다.</string>
+    <string name="settings_update_preview">미리보기 빌드: 버그가 있을 수 있습니다. 세이브는 그대로 유지됩니다.</string>
     <string name="settings_update_available">업데이트 있음</string>
     <string name="game_no_backup_made">백업하지 못함</string>
     <string name="game_the_save_could_not_be">세이브를 백업하지 못했어요. 세이브는 읽기만 했고 변경하지 않았어요.</string>
@@ -557,12 +599,14 @@
     <string name="game_save_copy_failed">세이브를 앱 저장 공간(%1$s)으로 복사하지 못했어요. 이번 실행에서는 원래 위치(%2$s)에서 플레이해요.</string>
     <string name="game_name_checking_gpu">%1$s: 이 휴대폰의 GPU 확인 중…</string>
     <string name="game_details_also_in_readiness">자세한 내용은 설정 › 준비 상태 점검에서도 볼 수 있어요.</string>
+    <string name="game_name_starting">%1$s: 시작하는 중…</string>
     <string name="game_name_starting_log">%1$s: 시작하는 중. 로그: %2$s</string>
     <string name="err_cannot_start_name">%1$s을(를) 시작할 수 없음</string>
     <string name="err_name_is_running">%1$s 실행 중</string>
     <string name="err_stop_it_first_then_start">먼저 중지한 뒤(게임 내 패널 › 게임 중지) %1$s을(를) 시작하세요. 한 번에 게임 하나만 실행돼요.</string>
-    <string name="game_menu_hint">메뉴: 오른쪽 가장자리에서 안쪽으로 스와이프하거나 뒤로 버튼을 누르세요</string>
-    <string name="game_tab_n_of_m">%1$s 탭, %3$d개 중 %2$d번째</string>
+    <string name="game_menu_hint">메뉴: 뒤로 버튼을 누르세요\n설정: 오른쪽 가장자리에서 안쪽으로 스와이프</string>
+    <string name="game_menu_gpu_driver">GPU 드라이버: %1$s</string>
+    <string name="game_menu_system_driver">시스템</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">크기 %1$d %%</string>
     <string name="game_button_mapping_applies">버튼 매핑: %1$s, 다음 실행부터 적용</string>
@@ -701,6 +745,14 @@
         <item>바이리니어(가장 빠름, 가장 부드러움)</item>
         <item>FSR 3.1(선명, 안정적)</item>
     </string-array>
+    <string-array name="arr_screen_scale">
+        <item>최근접 이웃</item>
+        <item>쌍선형</item>
+        <item>쌍3차</item>
+        <item>FSR 1</item>
+        <item>SGSR 1</item>
+        <item>기기(절전)</item>
+    </string-array>
     <string-array name="arr_panel_look">
         <item>작게</item>
         <item>보통</item>
@@ -733,6 +785,9 @@
     <string name="game_experimental">실험적</string>
     <string name="game_never_drops_to_30_less">30으로 떨어지지 않음. 60 미만에서는 덜 균일함</string>
     <string name="game_drops_to_30_when_60">60을 유지하지 못하면 30으로 떨어짐</string>
+    <string name="game_keep_gpu_clock_up">GPU 클럭 높게 유지</string>
+    <string name="game_keep_gpu_clock_up_on">메뉴 이후에도: 낮은 프레임에 멈춘 게임을 고칠 수 있음; 휴대폰이 더 따뜻해짐</string>
+    <string name="game_keep_gpu_clock_up_off">시스템이 메뉴에서 GPU 클럭을 낮출 수 있음; 휴대폰이 더 시원함</string>
     <string name="game_normal_speed_when_the_frame">프레임 레이트가 떨어져도 정상 속도</string>
     <string name="game_slows_down_with_the_frame">프레임 레이트에 맞춰 느려짐</string>
     <string name="game_all_grass_and_foliage">모든 풀과 나뭇잎</string>
@@ -746,8 +801,12 @@
     <string name="home_lossless_dll_missing">" · Lossless.dll 없음"</string>
     <string name="home_why">왜 그런가요?</string>
     <string name="home_shaders_need_one_update">셰이더 업데이트 1회 필요</string>
+    <string name="home_other_pack_has_shaders">다른 팩에 셰이더가 있음</string>
+    <string name="home_other_pack_has_shaders_message">이 카드가 사용하는 팩에는 이 앱 버전의 셰이더가 없습니다. %1$s의 다른 팩에 셰이더가 있습니다. 이 카드에 그 팩을 사용할까요?</string>
+    <string name="home_use_that_pack">그 팩 사용</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">다음 프레임부터 적용되며 이 게임에 유지돼요(게임 설정 › 업스케일러와 같은 설정).</string>
+    <string name="game_applies_from_the_next_frame_2">다음 프레임부터 적용되며 이 게임에 유지돼요(게임 설정 › 화면 확대 방식과 같은 설정이에요).</string>
     <string name="game_applies_at_the_next_start">다음 실행부터 적용돼요(이번 실행은 실시간 변경을 받지 않아요: DM_CTL 꺼짐).</string>
     <string name="game_applies_at_once_kept_for">바로 적용되며 이 게임에 유지돼요(게임 설정 › 고급과 같은 설정).</string>
     <string name="game_shaders_the_game_lacks_are_3">게임에 없는 셰이더는 실행 중에 빌드돼요. 스위치는 게임 페이지 › 고급 › 플레이 중 셰이더 빌드에 있어요(기본값 켬, 변경은 다음 실행부터 적용).</string>
@@ -766,6 +825,10 @@
     <string name="prepare_the_ones_it_has_stay">"이미 있는 셰이더는 만들어진 그대로 유지되고, 셰이더 업데이트를 누르면 이 버전으로 모두 다시 만들어요. "</string>
     <string name="prepare_shaders_older_built_while_playing">셰이더: 이전 버전, 플레이 중 빌드됨</string>
     <string name="prepare_also_build_all_shaders_now">지금 모든 셰이더도 빌드</string>
+    <string name="prepare_recommended_build_all_shaders">권장: 더 부드러운 플레이를 위해 지금 모든 셰이더 빌드 (%1$s, 충전 중 권장).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">지금 플레이할 수 있습니다. 없는 셰이더는 플레이 중에 빌드됩니다.</string>
+    <string name="prepare_you_can_play_now_older">지금 이전 셰이더로 플레이할 수 있습니다.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" 이전 셰이더로 실행됩니다."</string>
     <string name="prepare_or_finish_with_the_game">또는 게임 코드만으로 마칠 수도 있어요. 그러면 게임을 플레이하면서 셰이더를 빌드하고, 나중에 게임 페이지의 모두 빌드로 전체 세트를 만들 수 있어요.</string>
     <string name="prepare_finish_without_shaders">셰이더 없이 마치기</string>
     <string name="prepare_ready_to_play_it_builds">플레이 준비 완료. 플레이하는 동안 셰이더를 빌드해요.</string>
@@ -949,6 +1012,7 @@
     <string name="game_throttle_dot_green_yellow_red">스로틀 점(초록 / 노랑 / 빨강)</string>
     <string name="game_frame_rate_and_frame_time">프레임 레이트와 프레임 시간</string>
     <string name="game_drag_a_control_or_the">컨트롤이나 화면을 드래그하고, 컨트롤을 두 손가락으로 오므리거나 벌려 크기를 바꾸세요</string>
+    <string name="game_tap_a_control_to_hide_or_show">컨트롤을 탭하면 숨기거나 다시 표시합니다</string>
     <string name="game_picture_drag_into_the_black">화면: 검은 여백 쪽으로 드래그</string>
     <string name="game_temporal_sharpness">시간적 선명도</string>
     <string name="game_sharpness">선명도</string>
@@ -1100,8 +1164,6 @@
     <string name="err_this_game">이 게임</string>
     <string name="err_app_supports_only">이 앱은 %1$s(%2$s) %3$s만 지원해요.</string>
     <string name="err_or_word">" 또는 "</string>
-    <string name="prepare_in_the_background_best_on">, 백그라운드에서 진행, 충전 중일 때 가장 좋음). 언제든 일시 정지할 수 있어요.</string>
-    <string name="prepare_the_game_plays_now_and">지금 게임을 플레이하면서 셰이더를 빌드할 수 있어요. 이 작업은 지금 전체 세트를 빌드해요(</string>
     <string name="prepare_build_them_there_scripts_pack">컴퓨터에서 빌드하고(scripts/pack_android.py) 라이브러리 가져오기로 라이브러리를 추가하세요.</string>
     <string name="prepare_the_game_plays_now_on">"지금은 이전 셰이더로 게임이 플레이돼요. 필요한데 라이브러리에 없는 셰이더는 플레이 중에 빌드돼요. "</string>
     <string name="prepare_build_all_on_the_game_2">게임 페이지의 모두 빌드를 누르면 지금 전체 세트를 만들고, 같은 곳의 라이브러리 가져오기로 컴퓨터에서 빌드한 라이브러리를 가져올 수 있어요.</string>
@@ -1303,9 +1365,10 @@
         <item>목록</item>
     </string-array>
     <string name="home_move_game">이동</string>
+    <string name="home_rename_game">게임 이름 변경</string>
+    <string name="home_reset_name">이름 초기화</string>
     <string name="hint_open">열기</string>
     <string name="hint_options_hold">옵션(길게 누르기)</string>
-    <string name="hint_hold_for_options">게임을 길게 누르면 옵션이 나와요</string>
     <string name="hint_move">이동</string>
     <string name="hint_place">놓기</string>
     <string name="hint_cancel">취소</string>
@@ -1337,18 +1400,18 @@
     <string name="game_mods_remove_note">모드 파일이 이 휴대폰에서 삭제돼요. 게임 자체 파일은 남아요.</string>
     <string name="game_mods_imported">%1$s을(를) 가져왔어요(파일 %2$d개). 다음 실행부터 적용돼요.</string>
     <string name="game_mods_refused">가져오지 못함: %1$s</string>
-    <string name="common_screen_scaling">화면 확대 방식</string>
-    <string name="common_screen_sharpness">화면 선명도</string>
-    <string name="game_applies_from_the_next_frame_2">다음 프레임부터 적용되며 이 게임에 유지돼요(게임 설정 › 화면 확대 방식과 같은 설정이에요).</string>
     <string name="game_fast_fp16_shader_math">빠른 FP16 셰이더 연산</string>
-    <string name="game_fp16_default_precision">기본 정밀도</string>
     <string name="game_fp16_on_turnip_faster">Turnip에서 16비트 반정밀도: 셰이더 연산이 빨라지고 발열이 줄어요</string>
-    <string-array name="arr_screen_scale">
-        <item>최근접 이웃</item>
-        <item>쌍선형</item>
-        <item>쌍3차</item>
-        <item>FSR 1</item>
-        <item>SGSR 1</item>
-        <item>기기(절전)</item>
-    </string-array>
+    <string name="game_fp16_default_precision">기본 정밀도</string>
+    <string name="settings_build_preview">미리보기 빌드(v%1$s)를 사용 중입니다. 미리보기는 게임을 망가뜨릴 수 있습니다. 안정판 v%2$s가 나오면 대체됩니다.</string>
+    <string name="settings_build_preview_channel">현재 채널은 %1$s입니다. 안정판 v%2$s가 나오면 앱이 그 버전으로 옮겨 줍니다.</string>
+    <string name="settings_build_hotfix">핫픽스(v%1$s)를 사용 중입니다. 주간 릴리스 사이의 작은 수정입니다. 다음 주간 릴리스에 포함됩니다.</string>
+    <string name="common_picture_size">화면 크기</string>
+    <string name="game_lsfg_on_target">켬 · %1$d fps</string>
+    <string name="game_own_follows_settings">이 게임은 설정(%1$s)을 따릅니다. 여기서 바꾸면 이 게임만의 설정이 됩니다.</string>
+    <string name="game_own_settings_note">이 게임만의 설정입니다. 설정 기본값을 누르면 다시 설정을 따릅니다.</string>
+    <string name="game_use_settings_default">설정 기본값 사용</string>
+    <string name="settings_touch_look">화면 컨트롤 모양</string>
+    <string name="settings_panel_look">게임 내 패널 모양</string>
+    <string name="settings_player_one_away">선택한 컨트롤러(연결 안 됨)</string>
 </resources>

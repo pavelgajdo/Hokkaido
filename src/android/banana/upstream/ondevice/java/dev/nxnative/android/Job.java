@@ -23,7 +23,7 @@ import java.util.Locale;
  * { "format": 1, "title_id", "name", "version", "dump", "work", "pack": the pack folder the job writes,
  *   "apk": { "engine", "dmsh_chain", "dmsh_vk_chain", "xlate_source", "version_code" }: what the outputs depend on (a change restarts the translation),
  *   "state": "pending" | "running" | "paused" | "done" | "failed", "reason": why paused (user, battery, thermal, timeout) or "", "error": why failed,
- *   "step": the current step, "steps": { "&lt;step&gt;": { "state": "pending" | "running" | "done", "done", "total", "stage" } }, "code_only": true for a job with no shader translation (create / adopt codeOnly), "updated": ms }
+ *   "step": the current step, "steps": { "&lt;step&gt;": { "state": "pending" | "running" | "done", "done", "total", "stage" } }, "code_only": true for a job with no shader translation (create / adopt codeOnly), "redo_code": an adopted job that rewrites the code (adopt; redoesCode), "updated": ms }
  * </pre>
  * A "running" job whose service is gone (the process was killed, the phone rebooted) is resumed by the service (START_STICKY) or the launcher's Resume.
  */
@@ -104,6 +104,7 @@ final class Job {
         if (!shaders && !ready && Pack.libraryOf(packDir) == null) j.codeOnly(true);
         if (ready) j.o.put("state", "done");
         j.o.put("adopted", packDir.getPath());
+        j.o.put("redo_code", code);
         return j;
     }
 
@@ -192,6 +193,9 @@ final class Job {
     synchronized File pack() { return new File(o.optString("pack")); }
     /** A job with no shader translation (create / adopt codeOnly): its split and shaders steps are done as not wanted, and its pack step packs without a library when none is current */
     synchronized boolean codeOnly() { return o.optBoolean("code_only"); }
+
+    /** Whether the job makes the game's code: a whole Prepare, or an adopted pack's code update (adopt's redo_code; an adopted job from before that field: no) */
+    synchronized boolean redoesCode() { return o.optBoolean("redo_code", !o.has("adopted")); }
     synchronized void codeOnly(boolean on) {
         try {
             o.put("code_only", on);

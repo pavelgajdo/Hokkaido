@@ -73,4 +73,32 @@ final class ShaderState {
         return Words.s("prepare_it_has_no_shaders_for", "It has no shaders for this app version: the game plays and builds them as you play. ")
                 + (dump ? Words.s("prepare_build_all_on_the_game", "Build all on the game's page makes the whole set now.") : Words.s("prepare_import_a_library_on_the", "Import a library on the game's page takes a library built on a computer."));
     }
+
+    // ---- Whether shaders are optional (the maintainer's rule: a shader build is always the player's choice, recommended where it helps; it is required only when
+    // nothing can play without it: no library the host plays and a game the shader layer does not cover. android/SHADERS.md "Optional shaders") ----
+
+    /** What Prepare does for a pack that is there (Ondevice.checked): nothing, the code alone, the code with the shaders offered (recommended), the shaders offered, or required */
+    enum Need { NOTHING, CODE_ONLY, CODE_SHADERS_OPTIONAL, SHADERS_OPTIONAL, CODE_AND_SHADERS, SHADERS }
+
+    /**
+     * covered: the shader layer builds what the game asks for while it runs with no library (Pack.shadersOnDemand, or ShaderLibs.layerCovers for a pack being made);
+     * olderPlays: the pack has an older library the host plays meanwhile (Pack.playableLibrary, Pack.legacyLibrary) or one the layer fills; code: the game's code needs
+     * rewriting (another build, other tools); shaders: this APK's library is missing or stale (Pack.libraryProblem). A code update never needs new shaders: they depend on
+     * the profile's shader inputs, not on the code, so the older library or the layer plays the rewritten code
+     */
+    static Need need(boolean covered, boolean olderPlays, boolean code, boolean shaders) {
+        if (!shaders) return code ? Need.CODE_ONLY : Need.NOTHING;
+        if (covered || olderPlays) return code ? Need.CODE_SHADERS_OPTIONAL : Need.SHADERS_OPTIONAL;
+        return code ? Need.CODE_AND_SHADERS : Need.SHADERS;
+    }
+
+    /**
+     * Whether a job that stopped in its shader translation (Job.canSkipShaders) may finish with the code only (Ondevice.canSkip): the game must play without the set
+     * (covered: the layer builds it as it runs; olderLibrary: the pack has an older library the host plays), and the job must make something the pack lacks: its code
+     * (redoesCode: a whole Prepare, or a code update), or the pack does not play yet (packPlaysNow false). A shaders-only update of a pack that plays already is
+     * simply paused
+     */
+    static boolean canSkipShaders(boolean covered, boolean olderLibrary, boolean redoesCode, boolean packPlaysNow) {
+        return (covered || olderLibrary) && (redoesCode || !packPlaysNow);
+    }
 }

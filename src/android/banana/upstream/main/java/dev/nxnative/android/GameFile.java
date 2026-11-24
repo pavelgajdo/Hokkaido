@@ -37,6 +37,18 @@ final class GameFile {
         return appPack.equals(remembered) ? null : appPack;
     }
 
+    /**
+     * Whether the save folder a start would play is there but the app cannot list or write it (made or replaced outside the app: a file manager, adb). Such a start
+     * stops with {@link #saveLockedText}: it used to fall back to an empty folder of its own, so the game started with no save and the real one looked deleted
+     */
+    static boolean saveLocked(boolean isDir, boolean listable, boolean writable) { return isDir && (!listable || !writable); }
+
+    /** Play's sentence for a save folder the app cannot use (saveLocked) */
+    static String saveLockedText(String path) {
+        return "The save folder " + path + " is there, but this app cannot read or write it (it was made or replaced outside the app, by a file manager or adb). "
+                + "Nothing was changed. Move that folder out with the tool that made it, then use Import save on the game's page.";
+    }
+
     /** The card's and Play's sentence for a picked save folder that is gone */
     static String saveGoneText(String name) { return "The save folder " + name + " is gone. Use the app's save, or pick the folder again."; }
 

@@ -61,7 +61,7 @@ public final class HokkaidoBridge {
     static File workFolder(Context c, File dump, String titleId) {
         File parent = dump.getAbsoluteFile().getParentFile();
         File base = parent != null ? parent : dump;
-        File ours = new File(base, titleId + "-hokkaido-work"), shared = new File(base, titleId + "-work");
+        File ours = new File(base, titleId + "-hokkaido-fusion-work"), shared = new File(base, titleId + "-work");
         if (!ours.exists()) {
             File jf = Job.fileOf(shared);
             if (jf.isFile()) {

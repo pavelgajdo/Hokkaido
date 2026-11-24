@@ -1,20 +1,25 @@
 package dev.nxnative.android;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 
 /**
- * Opening the app from its icon while a game runs goes back to the game, not to Home.
- *
- * Home (MainActivity) is singleTask and the task's root, so the launcher's intent brings Home itself forward and Android closes the game's screen above it. The
- * game is not stopped by that (its process and its host go on, suspended), but the player landed on Home and had to tap the game's cover to get back. Here the
- * last game started is remembered, and a plain launcher start while the run's exit record (ExitWatch, last-exit.txt) says that very game runs, in a :game process
- * that is alive, starts its screen again: the game shows its Paused screen as after any return.
- *
- * Only the launcher's own intent does this (MAIN + LAUNCHER, no extras): a shortcut, a frontend or an adb start that names what it wants is left alone.
+ * The game's task and Home's (android/README.md, "The game's task"; docs/reference/threads.md, "Two game instances").
+ * <p>
+ * The game's screen (GameActivity, process :game) has a task affinity of its own (<application ID>.game, singleTask): whoever starts it (Home's Play, a
+ * frontend through FrontendLaunch, this class) it is always the one root of its own task, never stacked on Home's task. So the launcher's icon, which brings
+ * Home's task forward, no longer closes the game's screen; it only sends the game to the background (suspended, as any trip there). Here the last game started
+ * is remembered, and a plain launcher start while the run's exit record (ExitWatch, last-exit.txt) says that very game runs, in a :game process that is alive,
+ * brings its screen (its task) forward again: the game shows its Paused screen as after any return. Only the launcher's own intent does this (MAIN + LAUNCHER,
+ * no extras): a shortcut, a frontend or an adb start that names what it wants is left alone.
+ * <p>
+ * While the game's screen shows, Home's task is left out of Recents ({@link #homeInRecents}), so Recents has one Banana Native card for the game, not two; Home
+ * puts its card back each time it shows. The game's task leaves Recents when its screen finishes (autoRemoveFromRecents; GameActivity ends its process then).
  */
 final class GameReturn {
     private static final String TAG = "nxnative", PREFS = "game_return";
@@ -49,6 +54,27 @@ final class GameReturn {
         } catch (RuntimeException e) {
             Log.w(TAG, "could not go back to the running game: " + e);
             return false;
+        }
+    }
+
+    /**
+     * Home's task in Recents (shown) or out of it: GameActivity.onResume leaves it out, MainActivity.onResume and a game screen that ends put it back. Home's task is
+     * the app's task whose root is MainActivity (getAppTasks lists the app's tasks for either process); the game's own task is never touched. Best effort: a task
+     * that went meanwhile, or a system that refuses, only leaves two cards, as before
+     */
+    static void homeInRecents(Context c, boolean shown) {
+        ActivityManager am = c.getSystemService(ActivityManager.class);
+        if (am == null) return;
+        ComponentName home = new ComponentName(c, MainActivity.class);
+        try {
+            for (ActivityManager.AppTask t : am.getAppTasks()) {
+                ActivityManager.RecentTaskInfo info = t.getTaskInfo();
+                if (info == null) continue;
+                ComponentName root = info.baseActivity != null ? info.baseActivity : info.baseIntent != null ? info.baseIntent.getComponent() : null;
+                if (home.equals(root)) t.setExcludeFromRecents(!shown);
+            }
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Home's card in Recents: " + e);
         }
     }
 }

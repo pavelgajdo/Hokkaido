@@ -3,6 +3,7 @@ package dev.nxnative.android;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -65,7 +66,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     private static Boolean overlayEnv;   // DM_OVERLAY in env.txt: overrides the setting for this run (static: a screen created again keeps it)
     private TouchControls controls;
     private SidePanel panel;
-    private View handle;   // the panel's strip along the right edge (clean mode hides it too; Back still opens the panel)
+    private View handle;   // the panel's strip along the right edge (clean mode hides it too; Back still opens the menu, and the panel from it)
     private final HashSet<Integer> pads = new HashSet<>();   // the gamepads with a player: the on-screen controls hide while there is one
     private PadOrder order;   // which gamepad gets a player, and which is player 1 (hostSetup)
     // The in-game panel with a controller (PadPanel): the open / close combination; the pad keys the host holds down (released when the panel opens: releaseGameInput),
@@ -100,6 +101,13 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         setShowWhenLocked(true);
         setTurnScreenOn(true);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // A screen created for another game in a process whose host runs one (RunGuard): it shows the running game, with the same "stop it first" as onNewIntent,
+        // never Native.load of the other title or attach() to a host that is not the one asked for
+        Intent otherAsked = null;
+        if (RunGuard.otherRunning(hostRunning, runIntent != null ? runIntent.getStringExtra("title_id") : null, getIntent().getStringExtra("title_id"))) {
+            otherAsked = getIntent();
+            setIntent(runIntent);
+        }
         // This game's own host (libnxhost_<title ID>.so, with its profile compiled in): a game this APK has no profile for gets a sentence, not a crash
         String id = String.valueOf(getIntent().getStringExtra("title_id"));
         // The run's exit record and the uncaught-exception handler (ExitWatch): first, so even a failure below reaches the launcher's notice. A new record only for a new run
@@ -126,7 +134,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         tag = overlayText(Gravity.TOP | Gravity.START, 1f);
         tag.setText(Prefs.buildTag(this));
         tag.setTypeface(Typeface.DEFAULT_BOLD);
-        tag.setVisibility(!HokkaidoInGame.on() && overlayOn() && Prefs.overlayItem(this, "tag") ? View.VISIBLE : View.GONE);
+        tag.setVisibility(!HokkaidoInGame.on() && overlayOn() && Prefs.overlayItem(this, "tag", titleId()) ? View.VISIBLE : View.GONE);
         root.addView(tag, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START));
         // The log block may grow at most up to the tag's bottom edge (its top margin), so a long log never runs under the tag
         tag.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
@@ -134,7 +142,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             int top = b + ((FrameLayout.LayoutParams) tag.getLayoutParams()).topMargin;
             if (lp.topMargin != top) { lp.topMargin = top; overlay.post(overlay::requestLayout); }
         });
-        int fpsCorner = HokkaidoInGame.on() ? Gravity.TOP | Gravity.START : Gravity.TOP | Gravity.END;   // Hokkaido's overlay: the items top left, no build tag
+        int fpsCorner = HokkaidoInGame.on() ? Gravity.TOP | Gravity.START : Gravity.TOP | Gravity.END;   // Hokkaido's items: top left, no build tag
         fps = overlayText(fpsCorner, 0.85f);
         root.addView(fps, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, fpsCorner));
         // The same two blocks for the host's present, which draws them into the game's images (Overlay.Block): the views show only when it does not
@@ -158,7 +166,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         controls.onEditEnd = () -> { if (paused) pausedView.setVisibility(View.VISIBLE); };
         // The panel's handle: an invisible strip along the right edge, from a sixth to a half of the way down (over the HUD rather than the controls), that opens the panel
         // on a swipe in from the edge (a tap goes nowhere: a stray touch near the edge does not open it). Under gesture navigation the system's own Back swipe from that
-        // edge opens it too (onBackPressed). The one-time hint (panelHint) says so; TalkBack reads it as a button
+        // edge wins and opens the in-game menu instead (onBackPressed, SidePanel.openMenu), as Back does. The one-time hint (panelHint) says so; TalkBack reads it as a button
         float dp = getResources().getDisplayMetrics().density;
         handle = new View(this);
         float[] downX = {-1};
@@ -171,8 +179,9 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         });
         handle.setContentDescription(Tx.s(R.string.game_open_the_in_game_panel));
         handle.setOnClickListener(v -> panel.open());   // TalkBack's double tap
-        if (!HokkaidoInGame.on()) root.addView(handle, root.indexOfChild(panel), new FrameLayout.LayoutParams(Math.round(20 * dp), Math.round(140 * dp), Gravity.END | Gravity.TOP));   // Hokkaido's menu opens with Back
-        // Auto with a gamepad connected, or Off: the handle goes with the controls (Back or a gamepad's Home button opens the panel)
+        // Keep the handle in the hierarchy even when hidden for Hokkaido: Paused is inserted beneath it and the menu.
+        root.addView(handle, root.indexOfChild(panel), new FrameLayout.LayoutParams(Math.round(20 * dp), Math.round(140 * dp), Gravity.END | Gravity.TOP));
+        // Auto with a gamepad connected, or Off: the handle goes with the controls (Back or a gamepad's Home button opens the menu, and the panel from it)
         controls.onSwitch = v -> updateHandle(v);
         controls.setMode(TouchControls.mode(this, id));
         root.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> handle.setTranslationY((b - t) * 0.3f - 70 * dp));
@@ -199,7 +208,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         // The host starts once per process. A screen created again while it runs (Android recreated the activity: "Don't keep activities", a font or language
         // change while in the background) takes its window over; a screen restored into a new process (Android ended the old one while it was in the background)
         // has no game to show: the game was stopped, and the user starts it again
-        if (hostRunning) attach();
+        if (hostRunning) { attach(); if (otherAsked != null) otherRunning(otherAsked); }
         else if (saved == null) start();
         else {
             String why = ExitWatch.restoredCause(this);   // what Android said about the end, told here once (the launcher does not tell it again)
@@ -260,23 +269,32 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         v.requestLayout();
     }
 
-    private boolean overlayOn() { return !clean && (overlayEnv != null ? overlayEnv : Prefs.overlay(this)); }
+    private boolean overlayOn() { return !clean && (overlayEnv != null ? overlayEnv : Prefs.overlay(this, titleId())); }
+
+    private boolean logOverlayVisible() {
+        return !clean && (!drawing || failed || TouchControls.showLog(this, titleId()));
+    }
+
+    /** The overlay shows the log's tail (Show startup log, the touch controls' log switch, or a failure); otherwise, until the first frame, one "starting" line */
+    private boolean fullLog() { return failed || Prefs.startupLog(this) || TouchControls.showLog(this, titleId()); }
+    /** The game's name for the "starting" line */
+    private String bootName = "";
 
     /** The panel's one-tap clean picture: stats, tag, log, touch controls and the panel arrow, saved as one flag. The overlay and log settings are left
-     *  alone (the host's present stops drawing because overlayOn() is false); Back / Home still opens the panel, where the same button restores them. */
+     *  alone (the host's present stops drawing because overlayOn() is false); Back / Home still opens the menu and the panel from it, where the same button restores them. */
     void clean(boolean hidden) {
         clean = hidden;
         Prefs.clean(this, hidden);
         if (fps != null) fps.setVisibility(hidden || !overlayOn() ? View.GONE : View.VISIBLE);
-        if (tag != null) tag.setVisibility(hidden || !overlayOn() || !Prefs.overlayItem(this, "tag") ? View.GONE : View.VISIBLE);
-        if (overlay != null) overlay.setVisibility(!hidden && TouchControls.showLog(this) ? View.VISIBLE : View.GONE);
+        if (tag != null) tag.setVisibility(HokkaidoInGame.on() || hidden || !overlayOn() || !Prefs.overlayItem(this, "tag", titleId()) ? View.GONE : View.VISIBLE);
+        if (overlay != null) overlay.setVisibility(logOverlayVisible() ? View.VISIBLE : View.GONE);
         if (controls != null) controls.setClean(hidden);
         updateHandle(controls == null || controls.normalVisible());
     }
 
     /** The panel arrow follows the clean picture and the controls' own rule (Auto with a gamepad, On, Off). */
     private void updateHandle(boolean controlsVisible) {
-        if (handle != null) handle.setVisibility(!clean && controlsVisible ? View.VISIBLE : View.GONE);
+        if (handle != null) handle.setVisibility(!HokkaidoInGame.on() && !clean && controlsVisible ? View.VISIBLE : View.GONE);
     }
 
     /** Thread placement (Native.pinThreads): every 5 s, for threads the game and the replay start later; stops when the phone reports no clocks */
@@ -312,6 +330,114 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     private void skipStart() {
         ui.removeCallbacks(skipRun);
         if (!skipShown) ui.postDelayed(skipRun, 30000);
+    }
+
+    /**
+     * The compiling-shaders screen (PrepareScreen): the host holds the game at its first pipeline while it makes the pipelines of earlier runs and of the game's profile
+     * (vka_pso.c, DM_VK_PREPARE), and answers Native.prepareStatus() while that hold runs past a second. Polled every 300 ms over the run's first 3 minutes until it shows,
+     * then until the hold ends; it covers the picture (the game draws nothing meanwhile), a ring and the count, the time left, and Skip, which ends the hold. Once per run
+     */
+    private static boolean prepareDone;
+    private FrameLayout prepareView;
+    private ProgressRing prepareRing;
+    private TextView prepareCount, prepareLeft;
+    private static long prepareT0;   // (the run's: a recreated screen keeps counting from the start)
+    private final Runnable prepareRun = this::prepareTick;
+    private void prepareTick() {
+        if (prepareDone || rootView == null) return;
+        int[] st = PrepareScreen.parse(Native.prepareStatus());
+        if (st != null) {
+            if (prepareView == null) prepareShow();
+            prepareRing.set(PrepareScreen.fraction(st));
+            prepareCount.setText(PrepareScreen.count(st));
+            prepareLeft.setText(PrepareScreen.left(st));
+        } else if (prepareView != null) { prepareGone(); return; }
+        else if (android.os.SystemClock.elapsedRealtime() - prepareT0 > 180000) { prepareDone = true; return; }   // no hold came: nothing to make, or a host without it
+        ui.postDelayed(prepareRun, 300);
+    }
+    private void prepareStart() {
+        ui.removeCallbacks(prepareRun);
+        if (prepareDone) return;
+        if (prepareT0 == 0) prepareT0 = android.os.SystemClock.elapsedRealtime();
+        ui.post(prepareRun);
+    }
+    private void prepareGone() {
+        prepareDone = true;
+        ui.removeCallbacks(prepareRun);
+        FrameLayout v = prepareView; prepareView = null;
+        if (v != null) v.animate().alpha(0).setDuration(400).withEndAction(() -> rootView.removeView(v)).start();
+    }
+    private void prepareShow() {
+        Native.note("compiling shaders: the screen shown (" + Native.prepareStatus() + ")");
+        float dp = getResources().getDisplayMetrics().density;
+        FrameLayout scrim = new FrameLayout(this);
+        scrim.setBackgroundColor(0xF0101010);
+        scrim.setClickable(true);   // it takes the touches the game would get (the game is held anyway)
+        android.widget.LinearLayout col = new android.widget.LinearLayout(this);
+        col.setOrientation(android.widget.LinearLayout.VERTICAL);
+        col.setGravity(Gravity.CENTER_HORIZONTAL);
+        TextView title = new TextView(this);
+        title.setText(PrepareScreen.title());
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(22);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        title.setGravity(Gravity.CENTER);
+        android.widget.LinearLayout.LayoutParams tlp = new android.widget.LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        tlp.gravity = Gravity.CENTER_HORIZONTAL;   // (the column's own gravity left it at the left edge of the widest line)
+        col.addView(title, tlp);
+        prepareRing = new ProgressRing(this, Ui.col(this, R.color.bn_banana), true);
+        int rs = Math.round(112 * dp);
+        android.widget.LinearLayout.LayoutParams rlp = new android.widget.LinearLayout.LayoutParams(rs, rs);
+        rlp.topMargin = Math.round(20 * dp); rlp.bottomMargin = Math.round(16 * dp); rlp.gravity = Gravity.CENTER_HORIZONTAL;
+        col.addView(prepareRing, rlp);
+        prepareCount = new TextView(this);
+        prepareCount.setTextColor(Color.WHITE);
+        prepareCount.setTextSize(15);
+        prepareCount.setGravity(Gravity.CENTER);
+        col.addView(prepareCount);
+        prepareLeft = new TextView(this);
+        prepareLeft.setTextColor(0xB3FFFFFF);
+        prepareLeft.setTextSize(13);
+        prepareLeft.setGravity(Gravity.CENTER);
+        col.addView(prepareLeft);
+        TextView note = new TextView(this);
+        note.setText(PrepareScreen.note());
+        note.setTextColor(0x99FFFFFF);
+        note.setTextSize(12);
+        note.setGravity(Gravity.CENTER);
+        note.setMaxWidth(Math.round(420 * dp));
+        android.widget.LinearLayout.LayoutParams nlp = new android.widget.LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        nlp.topMargin = Math.round(18 * dp);
+        col.addView(note, nlp);
+        TextView skip = new TextView(this);
+        skip.setText(PrepareScreen.skip());
+        skip.setTextColor(Color.WHITE);
+        skip.setTextSize(14);
+        int p = Math.round(10 * dp);
+        skip.setPadding(3 * p, p, 3 * p, p);
+        android.graphics.drawable.GradientDrawable sb = new android.graphics.drawable.GradientDrawable();
+        sb.setColor(0x22FFFFFF);
+        sb.setStroke(Math.round(dp), 0x66FFFFFF);
+        sb.setCornerRadius(20 * dp);
+        skip.setBackground(sb);
+        skip.setOnClickListener(v -> { Native.note("compiling shaders: skipped by the player"); Native.prepareSkip(); prepareGone(); });
+        android.widget.LinearLayout.LayoutParams slp = new android.widget.LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        slp.topMargin = Math.round(24 * dp); slp.gravity = Gravity.CENTER_HORIZONTAL;
+        col.addView(skip, slp);
+        TextView skipNote = new TextView(this);
+        skipNote.setText(PrepareScreen.skipNote());
+        skipNote.setTextColor(0x80FFFFFF);
+        skipNote.setTextSize(11);
+        skipNote.setGravity(Gravity.CENTER);
+        android.widget.LinearLayout.LayoutParams klp = new android.widget.LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        klp.topMargin = Math.round(6 * dp);
+        col.addView(skipNote, klp);
+        scrim.addView(col, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        scrim.setAlpha(0f);
+        rootView.addView(scrim, panel != null ? rootView.indexOfChild(panel) : rootView.getChildCount(), new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        scrim.animate().alpha(1f).setDuration(250).start();
+        prepareView = scrim;
     }
     /**
      * The shader layer (LayerWatch): shaders the game asked for and its prepared library lacks are built while it runs; "Building shaders (N)" is shown small and see-through at the very top middle
@@ -392,7 +518,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     private void fpsTick() {
         if (stopped || paused) { ui.postDelayed(this::fpsTick, 2000); return; }   // nothing to show: no readings (thermal, battery, the host's counters) while suspended
         boolean on = overlayOn();
-        CharSequence t = on ? stats.tick() : null, g = on && !HokkaidoInGame.on() && Prefs.overlayItem(this, "tag") ? tag.getText() : null;
+        CharSequence t = on ? stats.tick() : null, g = on && !HokkaidoInGame.on() && Prefs.overlayItem(this, "tag", titleId()) ? tag.getText() : null;
         boolean host = tagBlock.host(g) & fpsBlock.host(t);   // both every time: a block that is off empties its corner
         fps.setVisibility(!host && t != null ? View.VISIBLE : View.GONE);
         tag.setVisibility(!host && g != null ? View.VISIBLE : View.GONE);
@@ -434,6 +560,9 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             File root = game.getAbsoluteFile().getParentFile();
             for (String x : new String[] {".old", ".pend1", ".pend2"})   // a commit was interrupted: the host finishes it at mount (plat_swap_recover), before anything is migrated or seeded
                 if (new File(dir.getPath() + x).exists()) { saveHow = "recovering"; return dir; }
+            // A save folder that is there but the app cannot list or write (made or replaced outside the app) stops the start: the fallback below would play an
+            // empty folder instead, and the real save would look deleted (issues 428, 451)
+            if (GameFile.saveLocked(dir.isDirectory(), dir.list() != null, dir.canWrite())) throw new SaveLocked(GameFile.saveLockedText(dir.getPath()));
             if (!dir.isDirectory() && !dir.mkdirs() || !dir.canWrite()) throw new IOException("cannot create " + dir);
             if (chosen != null) { saveHow = isEmpty(dir) ? "chosen, new" : "chosen"; return dir; }
             if (!isEmpty(dir)) { saveHow = "existing"; return dir; }
@@ -442,6 +571,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             if (!isEmpty(seed)) { copyTree(seed, dir); saveHow = "seeded"; return dir; }
             return dir;
         } catch (IOException | RuntimeException e) {
+            if (e instanceof SaveLocked) throw (SaveLocked) e;
             saveNote = "save folder " + dir + " unusable (" + e.getMessage() + "), using the app's private folder";
             saveHow = isEmpty(priv) ? "new" : "existing";
             return mkdirs(priv);
@@ -470,6 +600,12 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             default:   // the app has a save already, or there is none to copy
                 return app;
         }
+    }
+
+    /** A save folder the app cannot use (GameFile.saveLocked): the start stops with its sentence, never falling back to another folder */
+    private static final class SaveLocked extends IOException {
+        private static final long serialVersionUID = 1L;
+        SaveLocked(String m) { super(m); }
     }
 
     private static boolean isEmpty(File d) { String[] l = d.list(); return l == null || l.length == 0; }
@@ -531,7 +667,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         }
         if (prof != null && prof.vegetationDetail && !Prefs.fullVegetation(this, id)) env.add("DM_VK_VEGETATION=0");
         if (prof != null) env.addAll(prof.optionsEnv(optEnv -> Prefs.gameOption(this, id, optEnv)));
-        Lsfg.env(this, env);   // frame generation: the user's Lossless.dll and the settings
+        Lsfg.env(this, env, titleId());   // frame generation: the user's Lossless.dll and the game's settings (its own, else Settings')
         GameUpscaler.env(this, id, env);   // the Upscaler (Game settings, the in-game panel): the game's own upscaler and the present's scaling
         if (Prefs.drsGame(id)) { int[] drs = Prefs.DRS[Prefs.drs(this, id)]; env.add("DM_DRS=" + drs[0] + "," + drs[1]); }   // dynamic resolution range (Prefs.DRS)
         int cap = Prefs.fpsCap(this, id);   // the game's own frame rate cap (its in-game panel, its Game settings), else the main screen's (unset: the profile's fps_target)
@@ -552,6 +688,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         if (xb == 2) env.add("DM_PAD_LABELLED=2");
         if (Prefs.instancedDraws(this, id)) env.add("DM_VK_INSTANCE=1");   // Game settings › Instanced draws
         if (Prefs.classicPasses(this, id)) env.add("DM_VK_CLASSIC_RP=1");   // Game settings › Classic render passes
+        if (Prefs.keepGpuUp(this, id)) env.add("DM_VK_ADPF_SPAN_ANY=1");   // Game settings › Keep GPU clock up (off: the ADPF reports keep the span only for the ADPF floor)
         if (!Prefs.layerBuild(this, id)) env.add("DM_VK_LAYER=0");   // Game settings › Shaders while playing off: no run-time shader layer (the game then needs a library, as before)
         if (Prefs.skipLayersGame(id) && Prefs.skipLayers(this, id)) env.add("DM_VK_SKIP_FS=" + Prefs.skipLayersKeys(id));   // Game settings › Speedhack: Turn off hidden layers
         if (Prefs.fp16(this, id)) { env.add("TU_DEBUG=fp16"); env.add("FD_MESA_DEBUG=fp16"); }   // Game settings › Fast FP16 shader math
@@ -762,6 +899,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
 
     private void start() {
         String id = getIntent().getStringExtra("title_id"), name = getIntent().getStringExtra("name");
+        bootName = name != null && !name.isEmpty() ? name : String.valueOf(id);
         File game = new File(getIntent().getStringExtra("game")), packDir = new File(getIntent().getStringExtra("pack"));
         File files = getExternalFilesDir(null);
         try {
@@ -855,6 +993,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
                     + ": window " + Prefs.startWindow(this, id) + ", scene " + (sceneName.isEmpty() ? "the game's own palette" : sceneName);
             pinStart();   // Use fast cores (Game settings, Settings)
             skipStart();
+            prepareStart();   // the compiling-shaders screen (PrepareScreen)
             layerStart();
             // DM_TEST_CRASH (a test crash, ExitWatch): the test app only
             if (!testApp() && user.removeIf(kv -> kv.startsWith("DM_TEST_CRASH="))) unknownNotes.add("[nxlaunch] DM_TEST_CRASH not taken: the test app only");
@@ -891,13 +1030,14 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             // Read once the game has run a while (the host finds the game's limiter after it starts); the in-game panel updates it too
             ui.postDelayed(this::noteOwnRate, 30000);
             hostRunning = true;
+            runIntent = new Intent(getIntent());
             if ("java".equals(testCrash)) { Native.note("[RED] DM_TEST_CRASH=java: an exception on the main thread in 10 s"); ExitWatch.testCrash(ui); }   // =native: nxlaunch.c
             if (readinessLine != null) Native.note(readinessLine + (triedAnyway ? "; the player chose Try anyway" : ""));   // the readiness check (readinessHold)
             Native.note("[nxlaunch] game: " + game + (nupFd >= 0 ? " (.nup used where it is, descriptor " + nupFd + ")" : Nup.isNup(game) ? " (.nup)" : " (folder)") + ", DM_ROMFS " + romfs
                     + ", pack " + packDir);
             Native.note("[nxlaunch] save: " + save + " (" + saveHow + ")" + (saveNote != null ? "; " + saveNote : ""));
             if (cheatNote != null) Native.note(cheatNote);
-            Native.note("nxnative " + BuildConfig.VERSION_NAME + " (" + BuildConfig.NX_COMMIT + "), host libnxhost_" + id + ".so; " + name + " " + id + " version " + pack.version);
+            Native.note("nxnative " + BuildConfig.VERSION_NAME + " (" + BuildConfig.NX_COMMIT + ")" + BuildKind.logNote(Prefs.buildKind()) + ", host libnxhost_" + id + ".so; " + name + " " + id + " version " + pack.version);
             Native.note("device " + Build.MANUFACTURER + " " + Build.MODEL + ", Android " + Build.VERSION.RELEASE + " (SDK " + Build.VERSION.SDK_INT + "), " + Build.SUPPORTED_ABIS[0]
                     + "; game " + game + "; pack " + packDir);
             if (envProblem != null) Native.note("[RED] env.txt: " + envProblem);
@@ -913,8 +1053,8 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
                 android.widget.Toast.makeText(this, Tx.s(R.string.game_environment_lines, msg), android.widget.Toast.LENGTH_LONG).show();
             }
             if (testSave != null) Native.note("[nxlaunch] test app: DM_SAVE from env-" + id + ".txt: " + testSave);
-            Native.note("frame generation: " + (Lsfg.on(this) ? "on" : "off") + "; " + Lsfg.note);
-            if (Prefs.ramSaverLevel(this, id) == 2) Native.note("RAM saver: Strong (DM_VK_RAM_SAVER=2); frame generation " + (Lsfg.on(this) ? "on" : "off"));
+            Native.note("frame generation: " + (Lsfg.on(this, titleId()) ? "on" : "off") + (Lsfg.own(this, titleId()) ? " (this game's own setting)" : " (Settings' default)") + "; " + Lsfg.note);
+            if (Prefs.ramSaverLevel(this, id) == 2) Native.note("RAM saver: Strong (DM_VK_RAM_SAVER=2); frame generation " + (Lsfg.on(this, titleId()) ? "on" : "off"));
             Native.note(gpuNote + " (picked in the launcher; a DM_VK_DRIVER line in env.txt wins, the host's [vk] driver line says which ran)");
             Native.note(Recommend.logLine(Prefs.recStates(this, id)));   // each recommended setting with its value and source (yours / recommended / default); env.txt lines come later and win
             if (resNote != null) Native.note(resNote);
@@ -924,7 +1064,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             input = Native.hasInput();
             started = true;
             hostSetup();
-            overlay.setText(Tx.s(R.string.game_name_starting_log, name, log));
+            overlay.setText(fullLog() ? Tx.s(R.string.game_name_starting_log, name, log) : Tx.s(R.string.game_name_starting, bootName));
             ui.postDelayed(this::tail, 500);
             ui.postDelayed(this::fpsTick, 500);
         } catch (IOException | RuntimeException e) {
@@ -934,6 +1074,8 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
 
     /** Native.start returned 0 in this process: the game runs (until the process ends), and a new screen attaches to it instead of starting it */
     private static boolean hostRunning;
+    /** The intent of the screen that started the host: a screen created in this process for another game shows this one instead (RunGuard) */
+    private static Intent runIntent;
     /** The run's DM_VK_STRETCH (Game settings › Display, the in-game panel) and DM_VK_PICTURE_SIZE, as the host has them now, for a screen that attaches to the running game */
     private static boolean runStretch;
     private static int runPictureSize = PictureFit.SIZE_MAX;
@@ -1030,6 +1172,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         ui.postDelayed(this::fpsTick, 500);
         pinStart();
         skipStart();
+        prepareStart();   // the compiling-shaders screen (PrepareScreen)
         layerStart();
     }
 
@@ -1045,23 +1188,46 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
                 .setPositiveButton(android.R.string.ok, (d, w) -> end()).setCancelable(false).show();
     }
 
-    private void end() {
-        ExitWatch.stopped();
+    void end() {
+        ExitWatch.stopped();   // first, as before: the launcher never takes this end for an unexpected one
         backToFrontend();
-        finish();
-        // On its own handler: onDestroy clears ui's callbacks
+        if (HokkaidoInGame.on()) finish();   // embedded: Hokkaido's screen below this one shares its task
+        else finishAndRemoveTask();   // standalone: the game's own task leaves Recents with it
+        endProcess();   // now, not at onDestroy: Android may hold a finishing screen's destroy until the next one is idle
+    }
+
+    /** Stop (the in-game panel): as the player asked, the game ends with its screen */
+    void stop() {
+        Native.note("stopped by the user");
+        end();
+    }
+
+    /**
+     * The game ends with its screen: end() (Stop, Back at a start that cannot go on) and onDestroy of a screen that goes for good (RunGuard.endsProcess: any
+     * other finish, such as its task removed from Recents or a system finish). The process ends as Stop always ended it, so no host runs on without a screen
+     * (holding the save's lock and its memory, and catching the next Play of another game: Native.load refuses it). Saves are as safe as at Stop: each commit is
+     * journaled by the host (plat_android.c) and recovered at the next start (SaveStore.recover). Home's card comes back to Recents (GameReturn.homeInRecents)
+     * for a frontend's game, whose end shows no Home to do it. Twice (end(), then its onDestroy) is harmless
+     */
+    private void endProcess() {
+        ExitWatch.stopped();   // once per process: the player's end, not one to tell as unexpected
+        GameReturn.homeInRecents(this, true);
+        // On its own handler: onDestroy clears ui's callbacks. The delay lets Android take the finish first, as end() always did
         new Handler(Looper.getMainLooper()).postDelayed(() -> android.os.Process.killProcess(android.os.Process.myPid()), 300);
     }
 
     /** A game a frontend started (FrontendLaunch): the app's task goes behind the frontend, so its stop shows the frontend, not Home */
-    void backToFrontend() { if (getIntent().getBooleanExtra("frontend", false)) moveTaskToBack(true); }
+    void backToFrontend() { if (!HokkaidoInGame.on() && getIntent().getBooleanExtra("frontend", false)) moveTaskToBack(true); }
 
     /**
      * The screen goes (Stop, or Android recreating the activity while the game runs, which then attaches a new one): what hostSetup registered is let go, and the
      * overlay and log loops stop, so a screen created again does not double them (two deviceAdded per pad, two route resets per change) or keep this one alive.
-     * The game itself is left as it is: onStop has suspended it
+     * A screen recreated leaves the game as it is (onStop has suspended it); a screen that goes for good ends the process (endProcess)
      */
+    private Runnable lsfgFollow;   // stops Lsfg.follow (frame generation's choices following the screen while the game runs)
+
     @Override protected void onDestroy() {
+        if (lsfgFollow != null) { lsfgFollow.run(); lsfgFollow = null; }
         if (layer != null) { layer.stop(); layer = null; }
         TextInput.gone(this);
         UserPicker.gone(this);
@@ -1074,7 +1240,9 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             if (focus != null) audio.abandonAudioFocusRequest(focus);
             if (route != null) { audio.unregisterAudioDeviceCallback(route); route = null; }
         }
+        boolean ends = RunGuard.endsProcess(isFinishing(), isChangingConfigurations());
         super.onDestroy();
+        if (ends) endProcess();
     }
 
     /** Play on another game while this one runs reaches this activity (singleTask, the same :game process): this game stays, and the user is told to stop it first */
@@ -1082,6 +1250,11 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         super.onNewIntent(i);
         String want = i.getStringExtra("title_id"), have = getIntent().getStringExtra("title_id");
         if (want == null || want.equals(have)) return;
+        otherRunning(i);
+    }
+
+    /** Another game asked for (i) while this one runs: this game stays, and the user is told to stop it first */
+    private void otherRunning(Intent i) {
         new AlertDialog.Builder(this).setTitle(Tx.s(R.string.err_name_is_running, getIntent().getStringExtra("name")))
                 .setMessage(Tx.s(R.string.err_stop_it_first_then_start, i.getStringExtra("name")))
                 .setPositiveButton(android.R.string.ok, null).show();
@@ -1188,17 +1361,18 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             String text = new String(b, StandardCharsets.UTF_8);
             if (text.contains("[nvn] frame ") || text.contains("[longframe]") || text.contains("window frame rate")) drawing = true;   // the host logs these once frames are presented
             if (text.contains("CRASH sig=") || text.contains("FATAL")) failed = true;
-            overlay.setVisibility(!clean && (!drawing || failed || TouchControls.showLog(this)) ? View.VISIBLE : View.GONE);
+            overlay.setVisibility(logOverlayVisible() ? View.VISIBLE : View.GONE);
             String[] lines = text.split("\n");
             StringBuilder s = new StringBuilder();
             for (int i = Math.max(from > 0 ? 1 : 0, lines.length - 8); i < lines.length; i++) s.append(lines[i]).append('\n');
-            overlay.setText(s.toString().trim());
+            overlay.setText(fullLog() ? s.toString().trim() : Tx.s(R.string.game_name_starting, bootName));
         } catch (IOException ignored) { /* next time */ }
         ui.postDelayed(this::tail, 1000);
     }
 
     // ---- The host's side of the Activity: input devices, audio focus and route, motion, lifecycle ----
     private void hostSetup() {
+        if (lsfgFollow == null) lsfgFollow = Lsfg.follow(this, ui, titleId());   // the screen's refresh set higher or lower while the game runs: frame generation's choices follow
         inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputManager.registerInputDeviceListener(this, ui);
         padMotion = new PadMotion();
@@ -1287,7 +1461,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
             if (order != null && order.plays(d.getKey()) && d.getValue().length > 0) Native.axes(d.getKey(), d.getValue(), new float[d.getValue().length]);
     }
 
-    /** The in-game panel's Pause */
+    /** The in-game menu's Pause */
     void pause() {
         if (!started || paused) return;
         paused = true;
@@ -1298,6 +1472,10 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
         pausedView.setVisibility(View.VISIBLE);
     }
 
+    /** The game is paused (the in-game menu offers Resume instead of Pause) */
+    boolean paused() { return paused; }
+
+    /** Continues a paused game: a tap on Paused, A or Start, or the in-game menu's Resume */
     void unpause() {
         if (!paused) return;
         paused = false;
@@ -1367,6 +1545,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     }
     @Override protected void onResume() {
         super.onResume();
+        GameReturn.homeInRecents(this, false);   // one card in Recents while the game shows: the game's (Home puts its own back when it shows)
         resumedNow = true;   // also before the start: start() can come after the first onResume (the readiness check), and hostSetup() then starts the sensors
         if (!started) return;
         Native.lifecycle(3);
@@ -1400,7 +1579,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     }
 
     /** Gamepads and joysticks only: a keyboard with arrow keys (SOURCE_DPAD) gets a player from its first pad key, if it ever sends one (PadOrder.active) */
-    private static boolean gamepadLike(InputDevice d) {
+    static boolean gamepadLike(InputDevice d) {   // (Settings › Player 1 lists the same devices)
         return d != null && !d.isVirtual() && (d.supportsSource(InputDevice.SOURCE_GAMEPAD) || d.supportsSource(InputDevice.SOURCE_JOYSTICK));
     }
     /** What PadOrder ranks a device by: external, gamepad buttons with a stick, a vendor ID; never its name */
@@ -1452,7 +1631,7 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
 
     @Override public boolean dispatchKeyEvent(KeyEvent e) {
         if (panel == null) return super.dispatchKeyEvent(e);   // no host for this game (onCreate): only the message is shown
-        // A controller opens and closes the in-game panel (PadPanel.Combo: Home, or − and + held; Settings › Controller: in-game panel); while it is open the pad moves
+        // A controller opens the in-game menu and closes it or the panel (PadPanel.Combo: Home, or − and + held; Settings › Controller: in-game panel); while it is open the pad moves
         // through it and the game gets no pad keys. A key the panel took a press of stays the panel's until it comes up
         int k = e.getKeyCode();
         boolean down = e.getAction() == KeyEvent.ACTION_DOWN, up = e.getAction() == KeyEvent.ACTION_UP;
@@ -1519,16 +1698,18 @@ public final class GameActivity extends Activity implements SurfaceHolder.Callba
     }
 
 
-    /** Back (the phone's button or its edge swipe) opens and closes the in-game panel, which has Stop; while the controller applet's join screen shows, it cancels that */
+    /**
+     * Back (the phone's button or its edge swipe) opens the in-game menu (SidePanel.openMenu: Pause or Resume, the four sections, Stop) and goes one level up in it (SidePanel.back);
+     * while the controller applet's join screen shows, it cancels that
+     */
     @SuppressWarnings("deprecation")
-    @Override public void onBackPressed() { if (panel != null && !panel.isOpen() && CtrlScreen.back()) return; if (panel != null) panel.toggle(); else end(); }
+    @Override public void onBackPressed() { if (panel != null && !panel.isOpen() && CtrlScreen.back()) return; if (panel != null) panel.back(); else end(); }
 
     // For CtrlScreen: the view tree it goes into (under the in-game panel), and whether a gamepad is connected (then the on-screen controls are hidden and cannot join)
     FrameLayout rootView() { return rootView; }
     View panelView() { return panel; }
     boolean gamepadConnected() { return !pads.isEmpty(); }
 
-    // For Hokkaido's in-game menu (HokkaidoInGame.Screen)
-    boolean paused() { return paused; }
+    // The existing paused(), pause() and unpause() also serve HokkaidoInGame.Screen.
     TouchControls touchControls() { return controls; }
 }
