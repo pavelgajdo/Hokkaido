@@ -180,9 +180,9 @@
     <string name="settings_overlay">浮层</string>
     <string name="settings_picture_from_the_release_notes">来自更新说明的图片</string>
     <string name="settings_update_channel">更新渠道</string>
-    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable">稳定版</string>
     <string name="settings_channel_stable_help">每周版本和关键修复。每个每周版本都包含之前的所有小修复。</string>
-    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix">热修复版</string>
     <string name="settings_channel_hotfix_help">所有版本，也包括每周版本之间的小修复。</string>
     <string name="settings_channel_preview">预览</string>
     <string name="settings_channel_preview_help">较大改动（例如新的着色器版本）的早期版本，比稳定版早约一周发布。可能导致游戏出错，适合测试者。</string>
@@ -294,7 +294,7 @@
     <string name="game_join_a_world_hosted_in">加入在 PC 上的 Recompia 中创建的世界。输入主机的 IPv4 地址；如使用互联网 / Tailscale，还需输入其房间码。</string>
     <string name="game_keep_running">继续运行</string>
     <string name="game_less_cpu_a_pass_on">在 Qualcomm 驱动上每个通道减少 CPU 占用</string>
-    <string name="game_link_play">Link Play</string>
+    <string name="game_link_play">联机游玩</string>
     <string name="game_looking_at_the_app_s">正在查看应用存储…</string>
     <string name="game_made_when_first_drawn_may">首次绘制时生成：可能卡顿</string>
     <string name="game_lsfg_quality">质量</string>
@@ -375,7 +375,7 @@
     <string name="game_skips_layers_drawn_over_later">跳过之后被覆盖的层</string>
     <string name="game_stop_the_game">停止游戏</string>
     <string name="game_stop_the_game_2">停止游戏？</string>
-    <string name="game_switch_2_edition">Switch 2 Edition</string>
+    <string name="game_switch_2_edition">Switch 2 增强版</string>
     <string name="game_target_frame_rate">目标帧率</string>
     <string name="game_texture_data_in_a_file">纹理数据存放在文件中（需要数 GB 可用空间）、纹理缓存更小、近处纹理略模糊</string>
     <string name="game_texture_data_in_compressed_ram">纹理数据存放在压缩内存中</string>
@@ -607,7 +607,7 @@
     <string name="game_menu_hint">菜单：按返回键\n设置：从右边缘向内滑动</string>
     <string name="game_menu_gpu_driver">GPU 驱动：%1$s</string>
     <string name="game_menu_system_driver">系统</string>
-    <string name="game_n_fps">%1$d fps</string>
+    <string name="game_n_fps">%1$d 帧/秒</string>
     <string name="game_size_percent">大小 %1$d %%</string>
     <string name="game_button_mapping_applies">按键映射：%1$s，下次启动生效</string>
     <string name="game_whole_frames">此游戏以整帧运行：%1$d fps 将以 %2$d fps 运行，保持完整游戏速度。</string>

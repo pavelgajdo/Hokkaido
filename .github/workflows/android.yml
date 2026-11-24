@@ -24,6 +24,7 @@ jobs:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPRESS: "true"
       CCACHE_MAXSIZE: 3G
+      CCACHE_COMPILERCHECK: content
       CMAKE_BUILD_PARALLEL_LEVEL: "2"
       CPM_SOURCE_CACHE: ${{ github.workspace }}/.cache/cpm
       BANANA_EXPECTED_COMMIT: a15d676bab584acc1f139af78a7efb16bc361454
@@ -77,8 +78,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: fusion-android-ccache-${{ github.sha }}
+          key: fusion-android-ccache-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
+            fusion-android-ccache-${{ github.sha }}-
             fusion-android-ccache-
             android-ccache-
 
@@ -108,6 +110,7 @@ jobs:
           python3 tools/android/check_fusion_locales.py --json artifacts/fusion-language-coverage.json
 
       - name: Configure native dependencies and SDL Java sources
+        id: configure-native
         working-directory: src/android
         run: |
           chmod +x gradlew
@@ -126,15 +129,29 @@ jobs:
             -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
             -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/frontend-build.log"
 
-      - name: Build Fusion APK
+      - name: Check release lint before native compilation
         working-directory: src/android
         run: |
+          ./gradlew :app:lintVitalMainlineRelease --no-daemon --stacktrace --max-workers=2 \
+            -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
+            -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/release-lint.log"
+
+      - name: Build Fusion APK
+        id: apk-build
+        working-directory: src/android
+        run: |
+          ccache --zero-stats
           ./gradlew :app:assembleMainlineRelease --no-daemon --stacktrace --max-workers=2 \
             -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
             -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/apk-build.log"
 
-      - name: Save compiler cache after successful compilation
-        if: steps.compiler-cache.outputs.cache-hit != 'true'
+      - name: Report compiler cache after compilation
+        if: ${{ !cancelled() && (steps.apk-build.outcome == 'success' || steps.apk-build.outcome == 'failure') }}
+        continue-on-error: true
+        run: ccache --show-stats --verbose | tee artifacts/ccache-stats.txt
+
+      - name: Save compiler cache after attempted compilation
+        if: ${{ !cancelled() && (steps.apk-build.outcome == 'success' || steps.apk-build.outcome == 'failure') && steps.compiler-cache.outputs.cache-hit != 'true' }}
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
@@ -142,7 +159,7 @@ jobs:
           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
 
       - name: Save native dependencies
-        if: steps.dependency-cache.outputs.cache-hit != 'true'
+        if: ${{ !cancelled() && steps.configure-native.outcome == 'success' && steps.dependency-cache.outputs.cache-hit != 'true' }}
         continue-on-error: true
         uses: actions/cache/save@v4
         with:

@@ -125,18 +125,6 @@
     <string name="scene_memory_cap">限制場景載入記憶體</string>
     <string name="scene_memory_cap_description">載入場景時將上傳緩衝區限制在 256 MB，並逐幀釋放較大的緩衝區。可緩解記憶體不足導致的遊戲關閉，但可能降低持續載入材質的遊戲速度。「自動」僅對《時之笛》啟用。</string>
 
-    <string name="game_link_play">連線遊玩</string>
-    <string name="game_n_fps">%1$d 幀／秒</string>
-    <string name="game_switch_2_edition">Switch 2 增強版</string>
-    <string name="settings_channel_hotfix">緊急修正版</string>
-    <string name="settings_channel_stable">穩定版</string>
-    <string name="game_lsfg_quality">畫質</string>
-    <string name="game_lsfg_screen_limit">螢幕最高更新率為 %1$d Hz（由 Android 顯示設定決定）：超出此上限的目標影格率及插幀倍率選項會隱藏。</string>
-    <string name="game_lsfg_shaders">著色器（畫質模式：細節更豐富，但圖形處理器耗時約為效能模式的四倍）</string>
-    <string name="game_menu_gpu_driver">圖形驅動：%1$s</string>
-    <string name="game_menu_system_driver">系統內建</string>
-    <string name="settings_startup_log">顯示啟動記錄</string>
-    <string name="settings_startup_log_note">在第一個遊戲畫面出現前顯示啟動記錄。當機資訊仍會顯示，且記錄一律會儲存至檔案中。</string>
     <string-array name="gpuLogLevelEntries">
         <item>關閉</item><item>僅錯誤</item><item>標準</item><item>詳細</item><item>全部</item>
     </string-array>
@@ -150,30 +138,4 @@
     <string name="fusion_hokkaido_settings">設定（Hokkaido）</string>
     <string name="fusion_hokkaido_game_settings">個別遊戲設定（Hokkaido）</string>
     <string name="fusion_hokkaido_controls">控制設定（Hokkaido）</string>
-    <string name="fusion_banana_settings_title">Banana Native 設定</string>
-    <string name="fusion_banana_global_settings">所有遊戲的預設設定</string>
-    <string name="fusion_banana_settings_notice">此處設定控制 Banana Native，重新啟動遊戲後生效。如需在遊玩過程中即時修改，請使用快捷設定。</string>
-    <string name="fusion_banana_use_recommended">採用 Banana Native 建議設定</string>
-    <string name="fusion_banana_recommended_confirm">還原此遊戲的驅動、解析度及 Banana Native 建議設定，並清除舊融合版新增的相容性參數。存檔和按鍵對應會保留。修改在下次啟動遊戲時生效。</string>
-    <string name="fusion_banana_recommended_done">已還原建議設定。請重新啟動遊戲以套用。</string>
-    <string name="fusion_native_game_not_found">未找到遊戲</string>
-    <string name="fusion_native_cannot_read">無法讀取遊戲</string>
-    <string name="fusion_native_this_game">此遊戲</string>
-    <string name="fusion_native_not_supported">Banana Native 暫不支援此遊戲</string>
-    <string name="fusion_native_update">更新版本 %1$d</string>
-    <string name="fusion_native_dump_summary">%1$s%2$s，包含 %3$d 個追加內容。</string>
-    <string name="fusion_native_prepare_space">需要約 1.5 GB 可用空間（目前剩餘 %1$s GB）。</string>
-    <string name="fusion_native_prepare_full">Banana Native 會根據你匯出的遊戲檔案製作遊戲包：重新編譯遊戲程式碼（需要幾分鐘），並轉換 %1$s 個著色器（在背景處理約需 %2$s，建議連接充電器）。你可以隨時暫停。</string>
-    <string name="fusion_native_prepare_paths">遊戲：%1$s\n工作檔案：%2$s\n遊戲包：%3$s</string>
-    <string name="fusion_native_untested_version">尚未測試的版本</string>
-    <string name="fusion_native_untested_game">%1$s 的此版本尚未測試</string>
-    <string name="fusion_native_prepare_code_first">請先使用 Banana Native 啟動此遊戲一次，以準備遊戲程式碼。</string>
-    <string name="fusion_native_prepare_all_shaders">在遊玩前編譯遊戲的完整著色器集合，減少因著色器尚未編譯而出現的場景缺失。此操作需要一些時間，並會大量使用處理器，建議連接充電器。集合中未包含的著色器仍會在遊玩時編譯。</string>
-    <string name="fusion_native_cannot_create_folder">無法建立資料夾 %1$s。</string>
-    <string name="fusion_native_pack_space">遊戲包需要 %1$s 空間，手機目前剩餘 %2$s。</string>
-    <string name="fusion_banana_game_language_system">系統語言 · %1$s</string>
-    <string name="fusion_banana_motion_slower">較慢</string>
-    <string name="fusion_banana_motion_faster">較快</string>
-    <string name="fusion_banana_screen_shape">跟隨螢幕比例</string>
-    <string name="fusion_banana_screen_shape_description">跟隨螢幕比例：畫面填滿視窗，重新啟動遊戲後生效</string>
 </resources>

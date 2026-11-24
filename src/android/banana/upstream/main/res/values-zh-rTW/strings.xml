@@ -180,9 +180,9 @@
     <string name="settings_overlay">浮層</string>
     <string name="settings_picture_from_the_release_notes">來自更新說明的圖片</string>
     <string name="settings_update_channel">更新頻道</string>
-    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable">穩定版</string>
     <string name="settings_channel_stable_help">每週版本與關鍵修正。每個每週版本都包含之前的所有小修正。</string>
-    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix">緊急修正版</string>
     <string name="settings_channel_hotfix_help">所有版本，也包含每週版本之間的小修正。</string>
     <string name="settings_channel_preview">預覽</string>
     <string name="settings_channel_preview_help">較大變更（例如新的著色器版本）的早期版本，比穩定版早約一週發布。可能導致遊戲出錯，適合測試者。</string>
@@ -294,12 +294,12 @@
     <string name="game_join_a_world_hosted_in">加入在 PC 上的 Recompia 中建立的世界。輸入主機的 IPv4 地址；如使用互連線 / Tailscale，還需輸入其房間碼。</string>
     <string name="game_keep_running">繼續執行</string>
     <string name="game_less_cpu_a_pass_on">在 Qualcomm 驅動上每個通道減少 CPU 佔用</string>
-    <string name="game_link_play">Link Play</string>
+    <string name="game_link_play">連線遊玩</string>
     <string name="game_looking_at_the_app_s">正在查看應用程式儲存…</string>
     <string name="game_made_when_first_drawn_may">首次繪制時生成：可能卡頓</string>
-    <string name="game_lsfg_quality">Quality</string>
-    <string name="game_lsfg_shaders">Shaders (Quality: more detail in the generated frames, about four times the GPU time)</string>
-    <string name="game_lsfg_screen_limit">The screen runs at up to %1$d Hz (Android\'s display settings): faster targets and more frames per game frame are left out</string>
+    <string name="game_lsfg_quality">畫質</string>
+    <string name="game_lsfg_shaders">著色器（畫質模式：細節更豐富，但圖形處理器耗時約為效能模式的四倍）</string>
+    <string name="game_lsfg_screen_limit">螢幕最高更新率為 %1$d Hz（由 Android 顯示設定決定）：超出此上限的目標影格率及插幀倍率選項會隱藏。</string>
     <string name="game_motion_clarity">動態清晰度</string>
     <string name="game_motion_estimation_resolution_lower_i">運動估計解析度（越低越快）</string>
     <string name="game_motion_sensitivity">體感靈敏度</string>
@@ -310,8 +310,8 @@
     <string name="game_building_shaders_label">“正在構建著色器”標籤</string>
     <string name="settings_building_shaders_label">“正在構建著色器”標籤</string>
     <string name="settings_building_shaders_label_note">邊玩邊構建所缺著色器的遊戲,會在螢幕頂部顯示一個小的半透明數字。等待手機降溫或電量充足的構建總會提示。隱藏標籤不會停止構建。</string>
-    <string name="settings_startup_log">Show startup log</string>
-    <string name="settings_startup_log_note">Show the boot log over the black screen until the game draws its first frame. Crashes still show, and the log is always saved to disk.</string>
+    <string name="settings_startup_log">顯示啟動記錄</string>
+    <string name="settings_startup_log_note">在第一個遊戲畫面出現前顯示啟動記錄。當機資訊仍會顯示，且記錄一律會儲存至檔案中。</string>
     <string-array name="arr_layer_label">
         <item>關閉</item>
         <item>僅數字</item>
@@ -375,7 +375,7 @@
     <string name="game_skips_layers_drawn_over_later">跳過之後被覆蓋的層</string>
     <string name="game_stop_the_game">停止遊戲</string>
     <string name="game_stop_the_game_2">停止遊戲？</string>
-    <string name="game_switch_2_edition">Switch 2 Edition</string>
+    <string name="game_switch_2_edition">Switch 2 增強版</string>
     <string name="game_target_frame_rate">目標影格率</string>
     <string name="game_texture_data_in_a_file">紋理資料存放在檔案中（需要數 GB 可用空間）、紋理快取更小、近處紋理略模糊</string>
     <string name="game_texture_data_in_compressed_ram">紋理資料存放在壓縮記憶體中</string>
@@ -605,9 +605,9 @@
     <string name="err_name_is_running">%1$s 正在執行</string>
     <string name="err_stop_it_first_then_start">請先停止它（遊戲內面板 › 停止遊戲），然後再啟動 %1$s。同一時間只能執行一個遊戲。</string>
     <string name="game_menu_hint">選單：從右邊緣向內滑動，或按返回鍵</string>
-    <string name="game_menu_gpu_driver">GPU driver: %1$s</string>
-    <string name="game_menu_system_driver">System</string>
-    <string name="game_n_fps">%1$d fps</string>
+    <string name="game_menu_gpu_driver">圖形驅動：%1$s</string>
+    <string name="game_menu_system_driver">系統內建</string>
+    <string name="game_n_fps">%1$d 幀／秒</string>
     <string name="game_size_percent">大小 %1$d %%</string>
     <string name="game_button_mapping_applies">按鍵映射：%1$s，下次啟動生效</string>
     <string name="game_whole_frames">此遊戲以整影格執行：%1$d fps 將以 %2$d fps 執行，保持完整遊戲速度。</string>

@@ -40,8 +40,10 @@ uniform IDs, or saved preset names. Only files matching the bundled post-process
 fingerprints receive bundled metadata translations; imported or edited files retain
 their own metadata.
 
-`tools/android/check_fusion_locales.py` gates Chinese resource coverage, format arguments,
-container shapes, and duplicate definitions after source synchronization. Its JSON report
+`tools/android/check_fusion_locales.py` gates each module's default-resource ownership,
+Chinese resource coverage, format arguments, container shapes, and duplicate definitions
+after source synchronization. Translations stay with their owning module, including
+Banana defaults supplied by its local resource roots. Its JSON report
 also lists the incomplete upstream coverage in other languages. Resource coverage does
 not prove translation quality or complete localization of every runtime-generated string.
 Developer reference descriptions from the upstream environment registry, diagnostic
@@ -62,6 +64,8 @@ is not a verified release.
 
 Local checks cover clean patch application, locale changes without changing parameter
 values, conservative preference migration, shader readiness rules, and verification
-failures. The Android workflow compiles Java/Kotlin/native code and checks the final APK.
+failures. The Android workflow compiles Java/Kotlin, runs release lint before the full
+native build, and checks the final APK. Compiler-cache statistics are retained, and an
+attempted native build can save its completed cache entries even if a later task fails.
 Device installation, graphics correctness, stability, thermal behavior, and frame rate
 still require testing on the target phone and game version.

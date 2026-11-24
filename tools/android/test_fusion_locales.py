@@ -30,11 +30,24 @@ class FusionLocaleTests(unittest.TestCase):
     def test_app_overlay_is_allowed_and_other_locales_do_not_gate(self):
         self.write("upstream", "", '<string name="hello">Hello %1$s</string>')
         self.write("upstream", "zh-rCN", '<string name="hello">你好 %1$s</string>')
+        self.write("app", "", '<string name="hello">Welcome %1$s</string>')
         self.write("app", "zh-rCN", '<string name="hello">欢迎 %1$s</string>')
         self.write("app", "fr", '<string name="another">Autre</string>')
         report = self.report()
         self.assertTrue(report["ok"])
         self.assertEqual(len(report["locales"]["fr"]["missing"]), 1)
+
+    def test_merged_coverage_cannot_hide_translation_in_the_wrong_module(self):
+        self.write("bridge", "", '<string name="engine">Engine</string>')
+        self.write("app", "zh-rCN", '<string name="engine">运行引擎</string>')
+        report = self.report()
+        self.assertEqual(report["locales"]["zh-rCN"]["coverage_percent"], 100.0)
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["errors"][0]["code"], "translation_without_module_default")
+        self.assertEqual(report["errors"][0]["source_set"], "app:main")
+        (self.root / "app" / "values-zh-rCN" / "strings.xml").unlink()
+        self.write("bridge", "zh-rCN", '<string name="engine">运行引擎</string>')
+        self.assertTrue(self.report()["ok"])
 
     def test_duplicate_across_banana_main_roots_is_rejected(self):
         self.write("upstream", "", '<string name="hello">Hello</string>')

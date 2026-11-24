@@ -180,6 +180,16 @@ def inspect(source_sets, required=("zh-rCN", "zh-rTW")):
     errors = []
     for name, roots in source_sets:
         resources, problems = load_source_set(name, roots)
+        # Android lint checks ExtraTranslation within each module, even when the
+        # final APK could resolve a default from a dependency. Keep a translation
+        # with the module that owns its default instead of relying on APK merging.
+        module_defaults = {value.key for (qualifier, kind, _), value in resources.items()
+                           if not locale_qualifier(qualifier) and kind in TEXT_KINDS}
+        for (qualifier, kind, _), resource in resources.items():
+            if (locale_qualifier(qualifier) in required and kind in TEXT_KINDS
+                    and resource.key not in module_defaults):
+                errors.append(issue("translation_without_module_default", resource,
+                                    source_set=name, qualifier=qualifier))
         merged.update(resources)
         errors.extend(problems)
     base = {(kind, name): value for (qualifier, kind, name), value in merged.items()
@@ -302,7 +312,7 @@ def inspect(source_sets, required=("zh-rCN", "zh-rTW")):
     ok = not errors and all(not reports[locale]["missing"] and not reports[locale]["issues"]
                             for locale in required)
     return {"ok": ok, "required_locales": required, "errors": errors, "locales": reports,
-            "scope": "Merged app and Banana resource coverage, structure and format arguments; not translation quality or all runtime-generated text."}
+            "scope": "Per-module default ownership and merged app/Banana resource coverage, structure and format arguments; not translation quality or all runtime-generated text."}
 
 
 def main():
