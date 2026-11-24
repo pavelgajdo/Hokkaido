@@ -31,7 +31,48 @@ git -C "$repo" archive "$tag" android/app/src/main/java android/app/src/main/res
     android/app/src/main/AndroidManifest.xml android/app/src/ondevice android/app/src/variant-play |
     tar -x -C "$module/upstream" --strip-components=3
 for patch in "$module"/patches/*.patch; do
-    patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch"
+    if [ "$tag" = v0.3.52-preview ] && [ "$(basename "$patch")" = 0002-hokkaido-in-game.patch ]; then
+        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch" || {
+            python3 - "$module/upstream" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])/'main/java/dev/nxnative/android'
+def change(s,a,b):
+    assert s.count(a)==1, a
+    return s.replace(a,b)
+f=p/'GameActivity.java'
+s=f.read_text()
+for a,b in [
+('tag.setVisibility(overlayOn() &&','tag.setVisibility(!HokkaidoInGame.on() && overlayOn() &&'),
+('g = on && Prefs.overlayItem','g = on && !HokkaidoInGame.on() && Prefs.overlayItem'),
+('tag.setVisibility(hidden ||','tag.setVisibility(HokkaidoInGame.on() || hidden ||'),
+('handle.setVisibility(!clean &&','handle.setVisibility(!HokkaidoInGame.on() && !clean &&')]:
+    s=change(s,a,b)
+assert 'void unpause()' in s and 'private void unpause()' not in s
+f.write_text(s)
+f=p/'SidePanel.java'
+s=f.read_text()
+for a,b in [
+('void back() { if (open)','void back() { if (hk != null) { if (open) close(); else openMenu(); return; } if (open)'),
+('void padToggle() { if (isOpen())','void padToggle() { if (hk != null) { if (open) close(); else { openMenu(); hk.focus(); } return; } if (isOpen())'),
+('void open() { showPage(tab); }','void open() { if (hk != null) openMenu(); else showPage(tab); }'),
+('removeCallbacks(tick);\n        drawer.animate().cancel();','removeCallbacks(tick);\n        if (hk != null) { hk.close(); return; }\n        drawer.animate().cancel();'),
+('void openMenu() {\n','void openMenu() {\n        if (hk != null) { if (!open) { open = true; if (onOpen != null) onOpen.run(); hk.open(); } return; }\n'),
+('private void look() {\n','void hokkaidoTab(int k) {\n        if (!open || k < 0 || k >= TAB_NAMES.length) return;\n        tab = k;\n        box.removeAllViews();\n        build();\n        look();\n        refresh();\n    }\n\n    private void look() {\n        if (hk != null) { hk.built(tab, box); return; }\n'),
+('if (stacked()) {   // the menu','if (hk == null && stacked()) {   // the menu'),
+("buildMenu();   // the menu's rows","if (hk == null) buildMenu();   // the menu's rows")]:
+    s=change(s,a,b)
+f.write_text(s)
+rejects=list(p.rglob('*.rej'))
+assert {f.name for f in rejects}=={'GameActivity.java.rej','SidePanel.java.rej'}
+assert all(f.read_text().count('@@ -')==4 for f in rejects)
+for f in rejects: f.unlink()
+print('Preview integration conflicts migrated')
+PY
+        }
+    else
+        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch"
+    fi
 done
 
 # BuildConfig: the values the release was built with (they match its native libraries).
