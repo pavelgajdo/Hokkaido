@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_freedreno_cpu_memory">Debug - CPU Memory</string>
+    <string name="fusion_freedreno_cpu_memory_description">Use CPU memory (slower but more stable)</string>
+    <string name="fusion_freedreno_no_ubwc">Debug - No UBWC</string>
+    <string name="fusion_freedreno_no_ubwc_description">Disable UBWC compression for debugging</string>
+    <string name="fusion_freedreno_no_binning">Debug - No Binning</string>
+    <string name="fusion_freedreno_no_binning_description">Disable binning optimization</string>
+    <string name="fusion_freedreno_capture_renderpass">Capture - Renderpass</string>
+    <string name="fusion_freedreno_capture_renderpass_description">Capture command stream data for debugging</string>
+    <string name="fusion_freedreno_capture_frames">Capture - First 100 Frames</string>
+    <string name="fusion_freedreno_capture_frames_description">Capture command stream for first 100 frames only</string>
+    <string name="fusion_freedreno_shader_debug">Shader Debug</string>
+    <string name="fusion_freedreno_shader_debug_description">Enable IR3 shader compiler debugging</string>
+    <string name="fusion_freedreno_hang_trace">GPU Hang Trace</string>
+    <string name="fusion_freedreno_hang_trace_description">Trace GPU progress for debugging hangs</string>
+    <string name="fusion_freedreno_ubwc_hint">Dev - UBWC Flag Hint</string>
+    <string name="fusion_freedreno_ubwc_hint_description">Enable TP UBWC flag hint for development</string>
+    <string name="fusion_freedreno_performance">Performance - Default</string>
+    <string name="fusion_freedreno_performance_description">Clear all debug options for performance</string>
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_runtime_setting_value">%1$s：%2$s</string>
+    <string name="fusion_runtime_frame_limit">%1$s 上限</string>
+    <string name="fusion_runtime_approximate_size">約 %1$s</string>
+    <string name="fusion_runtime_game_dynamic_resolution">遊戲自身的動態解析度</string>
+    <string name="fusion_runtime_dynamic_minimum">動態，最低 %1$s</string>
+    <string name="fusion_runtime_resolution_detail">視窗 %1$s · 三維畫面 %2$s</string>
+    <string name="fusion_runtime_resolution_note">同時調整視窗與三維畫面的解析度。解析度越低，通常越流暢，但畫面也越模糊。遊戲執行中，視窗解析度會立即更新，三維畫面解析度在下次啟動遊戲時生效。</string>
+    <string name="fusion_runtime_recommended_preset">%1$s（建議）</string>
+    <string name="fusion_runtime_default_preset">%1$s（遊戲預設）</string>
+    <string name="fusion_runtime_step_stopped">%1$s 已停止。</string>
+    <string name="fusion_runtime_shaders_left">剩餘 %1$,d 個著色器</string>
+    <string name="fusion_runtime_shader_progress">%1$,d / %2$,d 個著色器</string>
+    <string name="fusion_runtime_shaders_to_make">需編譯 %1$,d 個著色器</string>
+    <string name="fusion_runtime_shaders_reused">其餘 %1$,d 個直接重複使用</string>
+    <string name="fusion_runtime_quiet_minutes"> · 仍在處理，上次更新於 %1$d 分鐘前</string>
+    <string name="fusion_runtime_quiet_hours"> · 仍在處理，上次更新於 %1$d 小時 %2$02d 分鐘前</string>
+    <string name="fusion_runtime_progress_count">%1$,d / %2$,d</string>
+    <string name="fusion_runtime_large_file_progress">大型檔案已處理 %1$s</string>
+    <string name="fusion_runtime_file_progress">%1$,d / %2$,d 個檔案</string>
+    <string name="fusion_runtime_files_progress">%1$,d / %2$,d 個檔案</string>
+    <string name="fusion_runtime_missing_shaders">共 %2$,d 個著色器，其中 %1$,d 個未包含在此遊戲版本中，部分物件可能無法顯示。%3$s 包含全部著色器。</string>
+    <string name="fusion_runtime_shaders_built">著色器：遊玩時編譯（已編譯 %1$,d 個）</string>
+    <string name="fusion_runtime_build_all_minutes">全部編譯（約 %1$d 至 %2$d 分鐘）</string>
+    <string name="fusion_runtime_speedhack">加速最佳化</string>
+    <string name="fusion_runtime_changed_settings">你已修改其中 %1$d 項。</string>
+    <string name="fusion_runtime_gpu_unchecked">尚未檢查（%1$s）：暫不確定此圖形處理器是否滿足遊戲要求。</string>
+    <string name="fusion_runtime_reports_value">回報值為 %1$s</string>
+    <string name="fusion_runtime_requirement_present">已具備（%1$s %2$s，需要 %3$s）。</string>
+    <string name="fusion_runtime_requirement_missing">（%1$s %2$s，需要 %3$s）</string>
+    <string name="fusion_runtime_memory_gib">記憶體容量（GiB）：</string>
+    <string name="fusion_runtime_custom_setup">自訂設定</string>
+    <string name="fusion_runtime_inherited_value">預設 · %1$s</string>
+</resources>

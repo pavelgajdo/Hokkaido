@@ -8,10 +8,14 @@ import argparse
 from collections import Counter
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import shutil
 import struct
+import subprocess
 import sys
+import tempfile
 import zipfile
 
 
@@ -50,6 +54,56 @@ def check_elf(archive, name, label):
     require(machine == 183, f"{label}: {name} is not AArch64 (e_machine={machine})")
 
 
+def check_loader_names(archive, name, expected):
+    missing = {value.encode() + b"\0" for value in expected}
+    overlap = max(map(len, missing)) - 1
+    tail = b""
+    with archive.open(name) as stream:
+        while missing:
+            chunk = stream.read(1024 * 1024)
+            if not chunk:
+                break
+            data = tail + chunk
+            missing = {value for value in missing if value not in data}
+            tail = data[-overlap:]
+    require(not missing, f"{name}: missing isolated driver hook loader names: {sorted(expected)}")
+
+
+def check_hook_libraries(archive):
+    """Check both hook sets and their actual ELF dependencies after packaging."""
+    hooks = {
+        "libhook_impl.so": None,
+        "libmain_hook.so": "libhook_impl.so",
+        "libhokkaido_hook_impl.so": None,
+        "libhokkaido_main_hook.so": "libhokkaido_hook_impl.so",
+        "libfile_redirect_hook.so": "libhokkaido_hook_impl.so",
+        "libgsl_alloc_hook.so": "libhokkaido_hook_impl.so",
+    }
+    prefix = "lib/arm64-v8a/"
+    for name in hooks:
+        require(prefix + name in archive.namelist(), f"Missing isolated driver hook: {name}")
+    readelf = os.environ.get("READELF") or shutil.which("readelf") or shutil.which("llvm-readelf")
+    require(readelf is not None, "readelf is required to verify driver hook dependencies")
+    with tempfile.TemporaryDirectory(prefix="fusion-hooks-") as directory:
+        for name, dependency in hooks.items():
+            path = Path(directory) / name
+            path.write_bytes(archive.read(prefix + name))
+            result = subprocess.run([readelf, "--dynamic", "--wide", str(path)],
+                                    capture_output=True, text=True,
+                                    env={**os.environ, "LC_ALL": "C"})
+            require(result.returncode == 0, f"Cannot inspect {name}: {result.stderr.strip()}")
+            sonames = re.findall(r"\(SONAME\).*\[([^\]]+)\]", result.stdout)
+            needed = set(re.findall(r"\(NEEDED\).*\[([^\]]+)\]", result.stdout))
+            require(sonames == [name], f"{name}: unexpected ELF SONAME: {sonames}")
+            if dependency:
+                require(dependency in needed, f"{name}: must depend on {dependency}, got {sorted(needed)}")
+                other = "libhook_impl.so" if dependency.startswith("libhokkaido_") else "libhokkaido_hook_impl.so"
+                require(other not in needed, f"{name}: links the other engine's driver hook: {other}")
+    check_loader_names(archive, prefix + "libyuzu-android.so",
+                       ["libhokkaido_hook_impl.so", "libhokkaido_main_hook.so"])
+    check_loader_names(archive, prefix + "libhokkaido_hook_impl.so", ["libhokkaido_hook_impl.so"])
+
+
 def check_badging(path):
     text = path.read_text(encoding="utf-8")
     package = re.findall(r"^package:\s+name='([^']+)'", text, re.MULTILINE)
@@ -85,6 +139,7 @@ def verify(apk, banana_apk, badging):
                 check_elf(banana, name, "Banana")
             with banana.open(name) as original, final.open(name) as embedded:
                 require(sha256(original) == sha256(embedded), f"Changed Banana payload: {name}")
+        check_hook_libraries(final)
 
     with apk.open("rb") as stream:
         apk_hash = sha256(stream)
@@ -99,6 +154,7 @@ def verify(apk, banana_apk, badging):
         "verified_elf_libraries": len(libraries),
         "unchanged_banana_assets": len(assets),
         "unchanged_banana_native_files": len(native),
+        "isolated_driver_hooks": True,
     }
 
 

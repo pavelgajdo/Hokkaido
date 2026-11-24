@@ -118,9 +118,9 @@ public final class HokkaidoInGame {
             return d == null || d.equals(GpuDriver.SYSTEM) ? null : d;
         }
 
-        /** The panel's tabs (SidePanel.TAB_NAMES). */
+        /** The panel's tabs in the current app language. */
         public String[] tabs() {
-            return SidePanel.TAB_NAMES.clone();
+            return Tx.arr(R.array.arr_panel_tabs);
         }
 
         /** Builds a tab's rows for the menu (Menu.built). */

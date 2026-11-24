@@ -321,9 +321,9 @@
     <string name="frame_gen_target_rate">目標影格率</string>
     <string name="frame_gen_target_rate_description">選擇裝置顯示器能實際呈現的影格率，之後倍率器會自動升高或降低以維持影格率。如果某個調整導致遊戲本身運作變慢，則會自動復原該設定</string>
     <string name="frame_gen_target_rate_off">使用固定倍率</string>
-    <string name="frame_gen_target_rate_60">60 FPS</string>
-    <string name="frame_gen_target_rate_90">90 FPS</string>
-    <string name="frame_gen_target_rate_120">120 FPS</string>
+    <string name="frame_gen_target_rate_60">60 幀／秒</string>
+    <string name="frame_gen_target_rate_90">90 幀／秒</string>
+    <string name="frame_gen_target_rate_120">120 幀／秒</string>
     <string name="frame_gen_on">開啟</string>
     <string name="frame_gen_off">關閉</string>
     <string name="frame_gen_fixed">固定</string>
@@ -461,7 +461,7 @@
     <string name="album_applet_description">使用系統相片檢視器查看儲存在使用者螢幕截圖資料夾中的影像</string>
     <string name="mii_edit_applet">Mii 編輯</string>
     <string name="mii_edit_applet_description">使用系統編輯器來檢視並編輯 Mii</string>
-    <string name="cabinet_applet">Cabinet</string>
+    <string name="cabinet_applet">amiibo 資料管理</string>
     <string name="cabinet_applet_description">編輯、刪除儲存在 amiibo 上的資料</string>
     <string name="cabinet_launcher">Cabinet 啟動器</string>
     <string name="cabinet_nickname_and_owner">暱稱和擁有者設定</string>
@@ -626,12 +626,12 @@
     <string name="use_auto_stub_description">自動補上缺少的服務和功能，可提高相容性但可能導致當機和穩定性問題</string>
 
     <string name="gpu">GPU</string>
-    <string name="renderer_api">API</string>
+    <string name="renderer_api">圖形介面</string>
     <string name="renderer_debug">圖形偵錯</string>
     <string name="renderer_debug_description">將圖形 API 設為慢速偵錯模式</string>
     <string name="patch_old_qcom_drivers">BCn 區塊壓縮紋理修補</string>
     <string name="patch_old_qcom_drivers_description">覆寫 Adreno GPU 的 BCn 紋理格式自動偵測。通常會根據 Android 版本自動偵測（會在 API 28 以上的裝置自動啟用）</string>
-    <string name="fastmem">Fastmem</string>
+    <string name="fastmem">快速記憶體存取</string>
 
     <string name="log">日誌</string>
     <string name="flush_by_line">按行寫入偵錯日誌</string>
@@ -672,7 +672,7 @@
     <string name="buttons">按鍵</string>
     <string name="button_plus">＋</string>
     <string name="button_minus">－</string>
-    <string name="button_home">HOME</string>
+    <string name="button_home">主頁鍵</string>
     <string name="button_capture">截圖</string>
     <string name="start_pause">開始/暫停</string>
     <string name="dpad">方向鍵</string>
@@ -1091,7 +1091,7 @@
 
     <!-- Renderer VSync -->
     <string name="renderer_vsync_immediate">即時（關閉）</string>
-    <string name="renderer_vsync_mailbox">Mailbox</string>
+    <string name="renderer_vsync_mailbox">信箱模式</string>
     <string name="renderer_vsync_fifo">FIFO（開啟）</string>
     <string name="renderer_vsync_fifo_relaxed">FIFO 寬鬆</string>
 
@@ -1130,7 +1130,7 @@
     <string name="gamepad_d_pad">方向鍵</string>
     <string name="gamepad_left_stick">左搖桿</string>
     <string name="gamepad_right_stick">右搖桿</string>
-    <string name="gamepad_home">HOME</string>
+    <string name="gamepad_home">主頁鍵</string>
     <string name="gamepad_screenshot">螢幕截圖</string>
 
     <!-- Disk shader cache -->
@@ -1154,7 +1154,7 @@
 
     <!-- App Language -->
     <string name="app_language">語言</string>
-    <string name="app_language_description">選擇Eden顯示的語言</string>
+    <string name="app_language_description">選擇整個應用程式的顯示語言。預設跟隨系統。</string>
     <string name="app_language_system">跟隨系統</string>
     <!-- Static Themes -->
     <string name="static_theme_color">主題色彩</string>

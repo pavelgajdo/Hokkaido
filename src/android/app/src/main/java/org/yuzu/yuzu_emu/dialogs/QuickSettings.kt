@@ -23,6 +23,7 @@ import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.fragments.EmulationFragment
 import org.yuzu.yuzu_emu.utils.NativeConfig
 import org.yuzu.yuzu_emu.utils.NativePostProcessing
+import org.yuzu.yuzu_emu.utils.PostProcessingText
 import org.yuzu.yuzu_emu.features.settings.model.AbstractSetting
 import org.yuzu.yuzu_emu.features.settings.model.AbstractShortSetting
 import org.yuzu.yuzu_emu.features.settings.model.AbstractIntSetting
@@ -546,6 +547,7 @@ class QuickSettings(val emulationFragment: EmulationFragment) {
 
     fun addPostProcessing(container: ViewGroup, onStructureChanged: () -> Unit) {
         val usable = NativePostProcessing.catalog().filter { it.valid }
+            .map { PostProcessingText.effect(container.context, it) }
         if (usable.isEmpty()) {
             return
         }
@@ -555,9 +557,13 @@ class QuickSettings(val emulationFragment: EmulationFragment) {
             addDivider(container)
 
             var summary = ""
-            val described = NativePostProcessing.presets().firstOrNull { it.name == preset }
+            var label = preset
+            val presets = NativePostProcessing.presets()
+            val described = presets.firstOrNull { it.name == preset }
             if (described != null) {
-                summary = described.description
+                val text = PostProcessingText.preset(container.context, described, presets)
+                label = text.name
+                summary = text.description
             }
             if (summary.isEmpty()) {
                 summary =
@@ -568,7 +574,7 @@ class QuickSettings(val emulationFragment: EmulationFragment) {
                     YuzuApplication.appContext.getString(R.string.post_processing_preset_modified)
             }
 
-            addPresetBand(container, preset, summary)
+            addPresetBand(container, label, summary)
             return
         }
 

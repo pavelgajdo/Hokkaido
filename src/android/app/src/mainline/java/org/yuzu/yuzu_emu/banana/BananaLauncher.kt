@@ -16,6 +16,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import dev.nxnative.android.HokkaidoBridge
 import dev.nxnative.android.HokkaidoInGame
+import dev.nxnative.android.HokkaidoSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,8 +26,8 @@ import org.yuzu.yuzu_emu.utils.ThemeHelper
 
 /**
  * Hokkaido's screens for the Banana Native engine: whether the game is ready, preparing it (Banana Native's
- * packer, in its own process) with Hokkaido's progress dialog, and starting it with Hokkaido's GPU driver and
- * save folder. Banana Native's own screens are never shown.
+ * packer, in its own process) with Hokkaido's progress dialog, and sharing Hokkaido's save folder.
+ * Banana Native's full settings are available without opening its separate launcher.
  */
 class BananaLauncher : NativeEngineUi {
     /** One start of one game: what it plays and with what. */
@@ -34,9 +35,7 @@ class BananaLauncher : NativeEngineUi {
         val activity: FragmentActivity,
         val path: String,
         val title: String,
-        val driverZip: String,
         val saveDir: String,
-        val window: String,
         val emulate: () -> Unit
     )
 
@@ -60,26 +59,25 @@ class BananaLauncher : NativeEngineUi {
     override fun setOption(context: Context, titleId: String, option: Int, on: Boolean) =
         HokkaidoBridge.setOption(context, titleId, option, on)
 
+    override fun openSettings(context: Context, titleId: String?, title: String?, gamePath: String?) =
+        HokkaidoSettings.open(context, titleId, title, gamePath)
+
     override fun launch(
         activity: FragmentActivity,
         gamePath: String,
         title: String,
-        driverZip: String,
         saveDir: String,
-        window: String,
         emulate: () -> Unit
-    ) = check(Start(activity, gamePath, title, driverZip, saveDir, window, emulate), false)
+    ) = check(Start(activity, gamePath, title, saveDir, emulate), false)
 
     override fun prepareShaders(
         activity: FragmentActivity,
         gamePath: String,
         title: String,
-        driverZip: String,
         saveDir: String,
-        window: String,
         emulate: () -> Unit
     ) {
-        val start = Start(activity, gamePath, title, driverZip, saveDir, window, emulate)
+        val start = Start(activity, gamePath, title, saveDir, emulate)
         activity.lifecycleScope.launch {
             val plan = withContext(Dispatchers.IO) {
                 runCatching { HokkaidoBridge.shadersPlan(activity, gamePath) }
@@ -105,9 +103,7 @@ class BananaLauncher : NativeEngineUi {
                             HokkaidoBridge.prepareStart(
                                 activity,
                                 it,
-                                start.driverZip,
-                                start.saveDir,
-                                start.window
+                                start.saveDir
                             )
                         }
                     }

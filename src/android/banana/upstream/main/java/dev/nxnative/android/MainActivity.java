@@ -56,6 +56,7 @@ public final class MainActivity extends Activity {
     /** The update dot on the dock's Settings button (Updater.dot) */
     private View updateDot; private View settingsButton;
     private boolean resumed, settingsPage;
+    private boolean hokkaidoSettings;   // the embedded settings page returns to its caller, never to Banana Home
     private boolean usersPage;   // the Users page (UsersUi) in place of Home
     private String usersEdit;   // the player whose own page it shows, else the page of all players
     private boolean advancedOpen;   // the Advanced page (AdvancedPage) is open over Settings or a game's page
@@ -68,9 +69,20 @@ public final class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle saved) {
         super.onCreate(saved);
-        if (saved != null) settingsPage = saved.getBoolean("settings");
-        if (saved != null && saved.getString("game_settings") != null)   // a fold or unfold makes the activity again: the game's settings page stays open
+        hokkaidoSettings = HokkaidoBridge.embedded();
+        if (hokkaidoSettings) {
+            settingsGame = HokkaidoSettings.game(this, getIntent());
+            settingsPage = settingsGame == null;
+        } else if (saved != null) settingsPage = saved.getBoolean("settings");
+        if (!hokkaidoSettings && saved != null && saved.getString("game_settings") != null)   // a fold or unfold makes the activity again: the game's settings page stays open
             for (Game g : Game.load(this)) if (g.gameDir.equals(saved.getString("game_settings"))) { settingsGame = g; break; }
+        if (saved != null) {
+            settingsOpen = saved.getInt("settings_section", -1);
+            defaultsOpen = saved.getBoolean("defaults_open");
+            advancedOpen = saved.getBoolean("advanced_open");
+            advancedTitleId = saved.getString("advanced_title_id");
+            advancedName = saved.getString("advanced_name");
+        }
         FrameLayout frame = new FrameLayout(this);
         bananas = new BananaBackgroundView(this);
         frame.addView(bananas, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -89,15 +101,20 @@ public final class MainActivity extends Activity {
         });   // a controller or keyboard moves the focus
         PadFocus.watch(getWindow());   // a controller: the focus frame (PadFocus)
         build();
-        if (saved == null) { setIntent(gated(getIntent())); fromIntent(getIntent()); GameReturn.back(this, getIntent()); }   // start() reads no_pause from getIntent() too; GameReturn: Home made anew by the app's icon while a game runs
+        if (!hokkaidoSettings && saved == null) { setIntent(gated(getIntent())); fromIntent(getIntent()); GameReturn.back(this, getIntent()); }   // start() reads no_pause from getIntent() too; GameReturn: Home made anew by the app's icon while a game runs
         GpuGl.probe(this, () -> { if (!isFinishing() && settingsGame != null) gameSettingsAgain(); });   // the GPU's name and, before any readiness check, the system driver's facts for the recommendations
-        Updater.changed = this::updatesChanged;
-        Updater.onStart(this);   // the release app: a newer release on GitHub opens the update popup (once per process start: not on a resume or a rotation)
+        if (!hokkaidoSettings) Updater.changed = this::updatesChanged;
+        if (!hokkaidoSettings) Updater.onStart(this);   // the release app: a newer release on GitHub opens the update popup (once per process start: not on a resume or a rotation)
     }
 
     @Override protected void onSaveInstanceState(Bundle out) {
         super.onSaveInstanceState(out);
         out.putBoolean("settings", settingsPage);
+        out.putInt("settings_section", settingsOpen);
+        out.putBoolean("defaults_open", defaultsOpen);
+        out.putBoolean("advanced_open", advancedOpen);
+        out.putString("advanced_title_id", advancedTitleId);
+        out.putString("advanced_name", advancedName);
         if (settingsGame != null) out.putString("game_settings", settingsGame.gameDir);
     }
 
@@ -146,7 +163,10 @@ public final class MainActivity extends Activity {
     void userChanged() { styleUserButton(); }
     void rebuildUsers() { build(); }
 
+    boolean hokkaidoSettings() { return hokkaidoSettings; }
+
     void page(boolean settings) {
+        if (hokkaidoSettings && !settings) { finish(); return; }
         advancedOpen = false;
         settingsOpen = -1;
         boolean wasUsers = usersPage;
@@ -208,7 +228,7 @@ public final class MainActivity extends Activity {
         }
         int step = PadFocus.tabStep(k);
         if (step != 0 && settingsGame != null) {
-            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0 && GameSettings.stepTab(settingsGame, step)) gameSettingsTop();
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0 && GameSettings.stepTab(settingsGame, step, hokkaidoSettings)) gameSettingsTop();
             return true;
         }
         return super.dispatchKeyEvent(e);
@@ -285,6 +305,7 @@ public final class MainActivity extends Activity {
 
     /** (Re)builds the current page above the bananas (Ui.page: the same gutter, width and header spacing as every screen; a game's settings page wider on a wide window, for its rail) */
     private void build() {
+        if (hokkaidoSettings && onHome()) settingsPage = true;
         FrameLayout frame = (FrameLayout) bananas.getParent();
         while (frame.getChildCount() > 1) frame.removeViewAt(1);
         if (!onHome()) { moveId = null; moveOrig = null; }   // a lifted game is put back when Home is left
@@ -665,7 +686,7 @@ public final class MainActivity extends Activity {
         body.addView(ls, new LinearLayout.LayoutParams(dp(200), ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayout top = Ui.row(this);
         top.addView(Ui.back(this, v -> page(false)));
-        TextView title = Ui.text(this, Tx.s(R.string.home_settings), 20, R.color.bn_text, 800);
+        TextView title = Ui.text(this, Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.home_settings), 20, R.color.bn_text, 800);
         title.setAccessibilityHeading(true);
         title.setPadding(dp(10), 0, 0, 0);
         top.addView(title);
@@ -695,7 +716,7 @@ public final class MainActivity extends Activity {
     private void narrowSettings(LinearLayout target, LinearLayout col, java.util.List<String> names, java.util.List<java.util.List<View>> groups, java.util.List<View> before) {
         if (settingsOpen >= groups.size()) settingsOpen = -1;
         if (settingsOpen < 0) {
-            target.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(R.string.settings_settings), null));
+            target.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.settings_settings), null));
             for (View v : before) { col.removeView(v); target.addView(v); }
             LinearLayout list = Ui.add(target, Ui.listCard(this), 10);
             for (int k = 0; k < names.size(); k++) {
@@ -728,14 +749,15 @@ public final class MainActivity extends Activity {
         Ui.Setting row = new Ui.Setting(this, "🌐", Tx.s(R.string.settings_language_title), null).chevron(this);
         row.value(Languages.current(this));
         row.view.setOnClickListener(v -> {
-            String[] names = new String[Languages.LIST.length + 1];
-            names[0] = Languages.systemLabel();
-            for (int i = 0; i < Languages.LIST.length; i++) names[i + 1] = Languages.LIST[i].label();
             Languages.Lang cur = Languages.picked(this);
-            int sel = 0;
-            for (int i = 0; i < Languages.LIST.length; i++) if (Languages.LIST[i] == cur) sel = i + 1;
+            java.util.List<Languages.Lang> choices = new ArrayList<>(java.util.Arrays.asList(Languages.LIST));
+            if (cur != null && !choices.contains(cur)) choices.add(cur);
+            String[] names = new String[choices.size() + 1];
+            names[0] = Languages.systemLabel();
+            for (int i = 0; i < choices.size(); i++) names[i + 1] = choices.get(i).label();
+            int sel = cur == null ? 0 : choices.indexOf(cur) + 1;
             new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_language_title))
-                    .setSingleChoiceItems(names, sel, (d, w) -> { d.dismiss(); Languages.apply(this, w == 0 ? null : Languages.LIST[w - 1]); })
+                    .setSingleChoiceItems(names, sel, (d, w) -> { d.dismiss(); Languages.apply(this, w == 0 ? null : choices.get(w - 1)); })
                     .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
         });
         return row;
@@ -744,70 +766,75 @@ public final class MainActivity extends Activity {
     private void buildSettingsInto(LinearLayout content) {
         accessCard = null;
         gameBox = null;
-        content.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(R.string.settings_settings), null));
+        content.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.settings_settings), null));
+        if (hokkaidoSettings) HokkaidoSettings.rows(this, content, null, this::build);
 
-        // Updates first, so the version and the check are easy to find (Updater: the release app also checks at every fresh start)
-        Ui.add(content, Ui.section(this, Tx.s(R.string.settings_updates)), 16);
-        LinearLayout upd = settingsCard(content);
-        updateRow = new Ui.Setting(this, "🔄", Tx.s(R.string.common_check_for_updates), v -> Updater.checkNow(this)).chevron(this);
-        upd.addView(updateRow.view);
-        channelRow = Updater.channelSetting(this);   // Update channel: Stable, Hotfix or Preview; names a newer release on another channel
-        upd.addView(channelRow.view);
-        String runLine = Updater.runningBuild(Prefs.updateChannel(this));   // what kind of build this is: a preview or a hotfix says so; a weekly release says nothing
-        if (!runLine.isEmpty()) Ui.add(upd, Ui.small(this, runLine), 8);
-        Updater.seen(this);   // Settings shows the waiting update: the dot goes (a critical one keeps it)
-        upd.addView(new Ui.Setting(this, "💾", Tx.s(R.string.settings_backup_before_update), null)   // UpdateBackupUi: the saves outside app storage before an update installs
-                .toggle(this, Prefs.backupBeforeUpdate(this), (b, on) -> Prefs.backupBeforeUpdate(this, on))
-                .value(Tx.s(R.string.settings_backup_before_update_note)).view);
-        upd.addView(new Ui.Setting(this, "📖", Tx.s(R.string.settings_player_wiki), v -> openLink(WIKI_URL)).chevron(this)
-                .value(Tx.s(R.string.settings_guides_what_every_setting_does)).view);
+        if (!hokkaidoSettings) {
+            // Updates first, so the version and the check are easy to find (Updater: the release app also checks at every fresh start)
+            Ui.add(content, Ui.section(this, Tx.s(R.string.settings_updates)), 16);
+            LinearLayout upd = settingsCard(content);
+            updateRow = new Ui.Setting(this, "🔄", Tx.s(R.string.common_check_for_updates), v -> Updater.checkNow(this)).chevron(this);
+            upd.addView(updateRow.view);
+            channelRow = Updater.channelSetting(this);   // Update channel: Stable, Hotfix or Preview; names a newer release on another channel
+            upd.addView(channelRow.view);
+            String runLine = Updater.runningBuild(Prefs.updateChannel(this));   // what kind of build this is: a preview or a hotfix says so; a weekly release says nothing
+            if (!runLine.isEmpty()) Ui.add(upd, Ui.small(this, runLine), 8);
+            Updater.seen(this);   // Settings shows the waiting update: the dot goes (a critical one keeps it)
+            upd.addView(new Ui.Setting(this, "💾", Tx.s(R.string.settings_backup_before_update), null)   // UpdateBackupUi: the saves outside app storage before an update installs
+                    .toggle(this, Prefs.backupBeforeUpdate(this), (b, on) -> Prefs.backupBeforeUpdate(this, on))
+                    .value(Tx.s(R.string.settings_backup_before_update_note)).view);
+            upd.addView(new Ui.Setting(this, "📖", Tx.s(R.string.settings_player_wiki), v -> openLink(WIKI_URL)).chevron(this)
+                    .value(Tx.s(R.string.settings_guides_what_every_setting_does)).view);
+        }
 
         Ui.add(content, Ui.section(this, Tx.s(R.string.common_appearance)), Ui.SECTION_GAP);
         LinearLayout look = settingsCard(content);
         look.addView(languageRow().view);
-        Ui.Setting theme = new Ui.Setting(this, "🌗", Tx.s(R.string.settings_theme), null).chevron(this);
-        theme.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_theme))
-                .setSingleChoiceItems(Tx.arr(R.array.arr_theme), Prefs.theme(this), (d, w) -> { Prefs.theme(this, w); d.dismiss(); NxApp.applyTheme(this); })
-                .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
-        theme.value(Tx.arr(R.array.arr_theme)[Prefs.theme(this)]);
-        look.addView(theme.view);
-        Ui.Setting bg = new Ui.Setting(this, "🖼️", Tx.s(R.string.settings_background), null).chevron(this);
-        bg.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_background))
-                .setSingleChoiceItems(Tx.arr(R.array.arr_background), Prefs.background(this), (d, w) -> {
-                    d.dismiss();
-                    if (w == 2) {   // a picture: pick it first, the choice is kept once it is read
-                        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
-                        startActivityForResult(i, PICK_BG);
-                        return;
-                    }
-                    Prefs.background(this, w);
-                    bananas.setLook(w);
-                    bg.value(Tx.arr(R.array.arr_background)[w]);
-                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
-        bg.value(Tx.arr(R.array.arr_background)[Prefs.background(this)]);
-        look.addView(bg.view);
-        Ui.Setting lay = new Ui.Setting(this, "\uD83D\uDDC2\uFE0F", Tx.s(R.string.settings_home_layout), null).chevron(this);
-        lay.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_home_layout))
-                .setSingleChoiceItems(Tx.arr(R.array.arr_home_layout), HomeLayout.mode(this), (d, w) -> {
-                    d.dismiss();
-                    Prefs.homeLayout(this, w);
-                    lay.value(Tx.arr(R.array.arr_home_layout)[w]);   // Home is built again when Settings closes
-                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
-        lay.value(Tx.arr(R.array.arr_home_layout)[HomeLayout.mode(this)]);
-        look.addView(lay.view);
-        look.addView(new Ui.Setting(this, "🔊", Tx.s(R.string.settings_ui_sounds), null).toggle(this, Prefs.uiSounds(this), (b, on) -> { Prefs.uiSounds(this, on); if (on) UiSound.select(this); })
-                .value(Tx.s(R.string.settings_a_tick_when_the_focus)).view);
-        Ui.Setting snd = new Ui.Setting(this, "🎵", Tx.s(R.string.settings_my_sound), null).chevron(this);
-        snd.view.setOnClickListener(v -> {
-            if (UiSound.custom(this).isFile()) new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_my_sound)).setItems(new String[]{Tx.s(R.string.settings_pick_another_sound), Tx.s(R.string.settings_use_the_built_in_sounds)}, (d, w) -> {
-                if (w == 0) pickSound(); else { UiSound.clearCustom(this); snd.value("Built-in"); }
-            }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
-            else pickSound();
-        });
-        snd.value(UiSound.custom(this).isFile() ? Tx.s(R.string.settings_your_sound) : "Built-in");
-        look.addView(snd.view);
-        if (BuildConfig.DEBUG) look.addView(new Ui.Setting(this, "🧪", Tx.s(R.string.settings_sample_games), null).toggle(this, Prefs.demoGames(this), (b, on) -> { Prefs.demoGames(this, on); refresh(); })
-                .value(Tx.s(R.string.settings_test_builds_shows_sample_tiles)).view);
+        if (!hokkaidoSettings) {
+            Ui.Setting theme = new Ui.Setting(this, "🌗", Tx.s(R.string.settings_theme), null).chevron(this);
+            theme.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_theme))
+                    .setSingleChoiceItems(Tx.arr(R.array.arr_theme), Prefs.theme(this), (d, w) -> { Prefs.theme(this, w); d.dismiss(); NxApp.applyTheme(this); })
+                    .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+            theme.value(Tx.arr(R.array.arr_theme)[Prefs.theme(this)]);
+            look.addView(theme.view);
+            Ui.Setting bg = new Ui.Setting(this, "🖼️", Tx.s(R.string.settings_background), null).chevron(this);
+            bg.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_background))
+                    .setSingleChoiceItems(Tx.arr(R.array.arr_background), Prefs.background(this), (d, w) -> {
+                        d.dismiss();
+                        if (w == 2) {   // a picture: pick it first, the choice is kept once it is read
+                            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
+                            startActivityForResult(i, PICK_BG);
+                            return;
+                        }
+                        Prefs.background(this, w);
+                        bananas.setLook(w);
+                        bg.value(Tx.arr(R.array.arr_background)[w]);
+                    }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+            bg.value(Tx.arr(R.array.arr_background)[Prefs.background(this)]);
+            look.addView(bg.view);
+            Ui.Setting lay = new Ui.Setting(this, "\uD83D\uDDC2\uFE0F", Tx.s(R.string.settings_home_layout), null).chevron(this);
+            lay.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_home_layout))
+                    .setSingleChoiceItems(Tx.arr(R.array.arr_home_layout), HomeLayout.mode(this), (d, w) -> {
+                        d.dismiss();
+                        Prefs.homeLayout(this, w);
+                        lay.value(Tx.arr(R.array.arr_home_layout)[w]);   // Home is built again when Settings closes
+                    }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+            lay.value(Tx.arr(R.array.arr_home_layout)[HomeLayout.mode(this)]);
+            look.addView(lay.view);
+            look.addView(new Ui.Setting(this, "🔊", Tx.s(R.string.settings_ui_sounds), null).toggle(this, Prefs.uiSounds(this), (b, on) -> { Prefs.uiSounds(this, on); if (on) UiSound.select(this); })
+                    .value(Tx.s(R.string.settings_a_tick_when_the_focus)).view);
+            Ui.Setting snd = new Ui.Setting(this, "🎵", Tx.s(R.string.settings_my_sound), null).chevron(this);
+            snd.view.setOnClickListener(v -> {
+                if (UiSound.custom(this).isFile()) new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_my_sound)).setItems(new String[]{Tx.s(R.string.settings_pick_another_sound), Tx.s(R.string.settings_use_the_built_in_sounds)}, (d, w) -> {
+                    if (w == 0) pickSound(); else { UiSound.clearCustom(this); snd.value("Built-in"); }
+                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+                else pickSound();
+            });
+            snd.value(UiSound.custom(this).isFile() ? Tx.s(R.string.settings_your_sound) : "Built-in");
+            look.addView(snd.view);
+            if (BuildConfig.DEBUG) look.addView(new Ui.Setting(this, "🧪", Tx.s(R.string.settings_sample_games), null).toggle(this, Prefs.demoGames(this), (b, on) -> { Prefs.demoGames(this, on); refresh(); })
+                    .value(Tx.s(R.string.settings_test_builds_shows_sample_tiles)).view);
+        }
 
         Ui.add(content, Ui.section(this, Tx.s(R.string.common_display)), Ui.SECTION_GAP);
         LinearLayout play = settingsCard(content);
@@ -904,14 +931,16 @@ public final class MainActivity extends Activity {
         advRow.view.setOnClickListener(v -> AdvancedPage.show(this, null, null, () -> advRow.value(AdvancedSettings.count(this, null) == 0 ? Tx.s(R.string.common_search_every_switch_each_starts) : Tx.n(R.plurals.common_n_set, AdvancedSettings.count(this, null), AdvancedSettings.count(this, null)))));
         advRow.value(AdvancedSettings.count(this, null) == 0 ? Tx.s(R.string.common_search_every_switch_each_starts) : Tx.n(R.plurals.common_n_set, AdvancedSettings.count(this, null), AdvancedSettings.count(this, null)));
         sys.addView(advRow.view);
-        sys.addView(new Ui.Setting(this, "📁", Tx.s(R.string.common_folders), v -> Folders.dialog(this)).value(Tx.s(R.string.common_game_pack_and_save_folders)).chevron(this).view);
-        sys.addView(new Ui.Setting(this, "🧹", Tx.s(R.string.settings_storage), v -> StorageUi.dialog(this)).value(Tx.s(R.string.settings_remove_leftovers_and_old_files)).chevron(this).view);   // (StorageUi.java)
-        // some phones stop or slow a background job once the screen is off (GitHub discussion 58): Home keeps the screen on while preparing (Ondevice), the service its wake lock
-        sys.addView(new Ui.Setting(this, "🔆", Tx.s(R.string.settings_keep_the_screen_on_while), null).toggle(this, Prefs.keepScreenPreparing(this), (b, on) -> Prefs.keepScreenPreparing(this, on))
-                .value(Tx.s(R.string.settings_while_home_shows_a_game)).view);   // the game, pack and save folders, kept across updates (Folders.java)
-        // a game whose shaders are not this version's is updated in the background at start and at Play (Ondevice.autoUpdate); off: the game's page does it when asked
-        sys.addView(new Ui.Setting(this, "🔄", Tx.s(R.string.settings_update_shaders_automatically), null).toggle(this, Prefs.autoShaderUpdate(this), (b, on) -> Prefs.autoShaderUpdate(this, on))
-                .says(Tx.s(R.string.settings_auto_shader_update_on), Tx.s(R.string.settings_auto_shader_update_off)).view);
+        if (!hokkaidoSettings) {
+            sys.addView(new Ui.Setting(this, "📁", Tx.s(R.string.common_folders), v -> Folders.dialog(this)).value(Tx.s(R.string.common_game_pack_and_save_folders)).chevron(this).view);
+            sys.addView(new Ui.Setting(this, "🧹", Tx.s(R.string.settings_storage), v -> StorageUi.dialog(this)).value(Tx.s(R.string.settings_remove_leftovers_and_old_files)).chevron(this).view);   // (StorageUi.java)
+            // some phones stop or slow a background job once the screen is off (GitHub discussion 58): Home keeps the screen on while preparing (Ondevice), the service its wake lock
+            sys.addView(new Ui.Setting(this, "🔆", Tx.s(R.string.settings_keep_the_screen_on_while), null).toggle(this, Prefs.keepScreenPreparing(this), (b, on) -> Prefs.keepScreenPreparing(this, on))
+                    .value(Tx.s(R.string.settings_while_home_shows_a_game)).view);   // the game, pack and save folders, kept across updates (Folders.java)
+            // a game whose shaders are not this version's is updated in the background at start and at Play (Ondevice.autoUpdate); off: the game's page does it when asked
+            sys.addView(new Ui.Setting(this, "🔄", Tx.s(R.string.settings_update_shaders_automatically), null).toggle(this, Prefs.autoShaderUpdate(this), (b, on) -> Prefs.autoShaderUpdate(this, on))
+                    .says(Tx.s(R.string.settings_auto_shader_update_on), Tx.s(R.string.settings_auto_shader_update_off)).view);
+        }
 
         Ui.add(content, Ui.section(this, Tx.s(R.string.common_help)), Ui.SECTION_GAP);
         LinearLayout help = settingsCard(content);
@@ -921,7 +950,7 @@ public final class MainActivity extends Activity {
         help.addView(new Ui.Setting(this, "📨", Tx.s(R.string.common_share_log), v -> shareLog()).value(Tx.s(R.string.settings_the_newest_log)).chevron(this).view);
         help.addView(new Ui.Setting(this, "🧰", Tx.s(R.string.settings_tester_settings), null).toggle(this, Prefs.testerRows(this), (b, on) -> Prefs.testerRows(this, on))
                 .says(Tx.s(R.string.settings_showing_the_rows_made_for), Tx.s(R.string.settings_hidden_a_game_with_resolution)).view);   // (Prefs.simpleRes)
-        if (BuildConfig.NX_PLAY) {   // a test build always takes adb's commands (Prefs.adbControl)
+        if (!hokkaidoSettings && BuildConfig.NX_PLAY) {   // a test build always takes adb's commands (Prefs.adbControl)
             Ui.Setting adb = new Ui.Setting(this, "🛠", Tx.s(R.string.settings_adb_control_debug), null)
                     .value(Tx.s(R.string.settings_lets_adb_commands_add_games));
             adb.toggle(this, Prefs.adbControl(this), (b, on) -> {
@@ -987,18 +1016,18 @@ public final class MainActivity extends Activity {
     /** The settings rows' current values (after a dialog, on resume) */
     private void refreshSettings() {
         if (overlayRow == null) return;
-        updateRow.value(Updater.versionText(this));
+        if (updateRow != null) updateRow.value(Updater.versionText(this));
         boolean ov = Prefs.overlay(this);
         if (overlayRow.toggle.isChecked() != ov) overlayRow.toggle.setChecked(ov);
         int n = 0;
-        for (String[] it : Overlay.ITEMS) if (Prefs.overlayItem(this, it[0])) n++;
-        overlayRow.value(ov ? Tx.s(R.string.home_on_n_of_m_items, n, Overlay.ITEMS.length) : Tx.s(R.string.game_off));
+        for (String[] it : Overlay.items()) if (Prefs.overlayItem(this, it[0])) n++;
+        overlayRow.value(ov ? Tx.s(R.string.home_on_n_of_m_items, n, Overlay.items().length) : Tx.s(R.string.game_off));
         resRow.value(resLabel());
         capRow.value(capLabel(Prefs.fpsCap(this)));
         upsRow.value(Tx.arr(R.array.arr_upscaler_modes)[GameUpscaler.mode(this)]);
         sharpRow.value(GameUpscaler.sharpName(GameUpscaler.sharp(this)));
         sharpRow.view.setVisibility(GameUpscaler.mode(this) == GameUpscaler.MODE_FSR ? View.VISIBLE : View.GONE);
-        drsRow.value(Prefs.DRS_NAMES[Prefs.drs(this)]);
+        drsRow.value(Prefs.drsNames()[Prefs.drs(this)]);
         lsfgRow.value(!BuildConfig.NX_LSFG ? Tx.s(R.string.home_not_in_this_build) : Lsfg.on(this) ? Lsfg.label(this, null) + (Lsfg.find(this) == null ? Tx.s(R.string.home_lossless_dll_missing) : "") : Tx.s(R.string.game_off));
         dispRow.value(Tx.arr(R.array.arr_display)[Prefs.stretch(this) ? 1 : 0]);
         sizeRow.value(GameSettings.sizeNames()[GameSettings.sizeIndex(Prefs.pictureSize(this))]);
@@ -1018,6 +1047,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
+        if (hokkaidoSettings) return;
         if (GameReturn.back(this, i)) return;   // the app's icon while a game runs: back to the game, not Home (the icon brought Home's task forward; the game's own task waits behind it)
         fromIntent(i);
     }
@@ -1074,13 +1104,13 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
-        GameReturn.homeInRecents(this, true);   // Home's card in Recents again (a game's screen leaves it out while it shows: one card, the game's)
+        if (!hokkaidoSettings) GameReturn.homeInRecents(this, true);   // Home's card in Recents again (a game's screen leaves it out while it shows: one card, the game's)
         if (gameBox != null && Game.load(this).size() != games.size()) refresh();   // a card FrontendLaunch added while Home was in the background
         onResumeViews();
-        Ondevice.resume(this);
-        Updater.resume(this);   // back from "Install unknown apps" with an update download waiting
-        ExitWatch.resume(this);
-        sampleTick();   // the shader check's cards (the line goes on by itself in the background)
+        if (!hokkaidoSettings) Ondevice.resume(this);
+        if (!hokkaidoSettings) Updater.resume(this);   // back from "Install unknown apps" with an update download waiting
+        if (!hokkaidoSettings) ExitWatch.resume(this);
+        if (!hokkaidoSettings) sampleTick();   // the shader check's cards (the line goes on by itself in the background)
         updateTick();   // a game that ended unexpectedly: "The game stopped unexpectedly", once (and every 2 s while a game runs and Home shows)
     }
 
@@ -2534,7 +2564,7 @@ public final class MainActivity extends Activity {
     /** Game resolution: the window size the host gives the game (DM_WINDOW), from the next start */
     private void gameRes() {
         int i = Math.max(0, java.util.Arrays.asList(Prefs.WINDOWS).indexOf(Prefs.window(this)));
-        new PadFocus.Builder(this).setTitle(Tx.s(R.string.home_game_resolution)).setSingleChoiceItems(Prefs.WINDOW_NAMES, i, (d, w) -> { Prefs.window(this, Prefs.WINDOWS[w]); refreshSettings(); d.dismiss(); })
+        new PadFocus.Builder(this).setTitle(Tx.s(R.string.home_game_resolution)).setSingleChoiceItems(Prefs.windowNames(), i, (d, w) -> { Prefs.window(this, Prefs.WINDOWS[w]); refreshSettings(); d.dismiss(); })
                 .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
     }
 

@@ -802,14 +802,14 @@ final class SidePanel extends FrameLayout {
             for (Profile.Option opt : prof.options) {
                 if (!opt.live) continue;
                 android.widget.CheckBox cb = new android.widget.CheckBox(act);
-                cb.setText(opt.label);
+                cb.setText(opt.label());
                 cb.setChecked(Prefs.gameOption(act, game(), opt.env));
                 cb.setOnCheckedChangeListener((b, on) -> {
                     Prefs.gameOption(act, game(), opt.env, on);
                     pushLiveOption(opt.env, on);   // the running game reads ctl.txt (GameActivity's DM_CTL); the stored choice applies at every start
                 });
                 box.addView(cb);
-                if (!opt.description.isEmpty()) note(opt.description);
+                if (!opt.description.isEmpty()) note(opt.description());
             }
         }
         liveChoices(box);
@@ -875,7 +875,7 @@ final class SidePanel extends FrameLayout {
         box.addView(rum);
 
         TextView motionHead = head(Tx.s(R.string.game_motion_sensitivity));   // the phone's gyro scale (Prefs.MOTION_PCT), applied at each step and kept for the game (the same setting as Game settings › Controls)
-        box.addView(StepSlider.view(act, Tx.s(R.string.game_motion_sensitivity), Prefs.MOTION_NAMES, Prefs.motionSens(act, game()), "Slower", "Faster", motionHead::setText,
+        box.addView(StepSlider.view(act, Tx.s(R.string.game_motion_sensitivity), Prefs.MOTION_NAMES, Prefs.motionSens(act, game()), Tx.s(R.string.fusion_banana_motion_slower), Tx.s(R.string.fusion_banana_motion_faster), motionHead::setText,
                 i -> { Prefs.motionSens(act, game(), i); Native.motionSens(Prefs.MOTION_PCT[i] / 100f); }));
 
         nextStartRows();
@@ -971,7 +971,7 @@ final class SidePanel extends FrameLayout {
         if (!ps.isEmpty()) {
             String rc = Prefs.resolutionChoice(act, game());
             boolean simple = Prefs.simpleRes(act, game());   // the tester rows are off (Settings › Help): the profile's choices alone
-            Button pr = row(ID_RES_PRESET, Tx.s(R.string.render_res_title), ResPresets.ADVANCED.equals(rc) && simple ? "Custom setup" : ResPresets.label(ps, rc));
+            Button pr = row(ID_RES_PRESET, Tx.s(R.string.render_res_title), ResPresets.ADVANCED.equals(rc) && simple ? Words.s("fusion_runtime_custom_setup", "Custom setup") : ResPresets.label(ps, rc));
             pr.setOnClickListener(v -> {
                 String recPreset = Prefs.rec(act, game(), Recommend.RES_PRESET);
                 String[] labels = new String[simple ? ps.size() : ps.size() + 1];   // the same choices and words as Game settings › Resolution
@@ -988,7 +988,7 @@ final class SidePanel extends FrameLayout {
                     restyle(ID_RES_PRESET);
                 }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
             });
-            note(ResPresets.NOTE + " " + Tx.s(R.string.game_kept_for_game_resolution));
+            note(ResPresets.note() + " " + Tx.s(R.string.game_kept_for_game_resolution));
             if (!ResPresets.ADVANCED.equals(rc) || simple) return;
         }
         String winTitle = ps.isEmpty() ? Tx.s(R.string.home_game_resolution) : Tx.s(R.string.game_advanced_u00b7_window);
@@ -1010,11 +1010,12 @@ final class SidePanel extends FrameLayout {
             box.addView(g);
             return;
         }
-        Button r = row(ID_RES, winTitle, (Prefs.ownWindow(act, game()) ? "" : "Default · ") + Prefs.windowName(cur, false));
+        Button r = row(ID_RES, winTitle, Prefs.ownWindow(act, game()) ? Prefs.windowName(cur, false)
+                : Words.s("fusion_runtime_inherited_value", "Default · %1$s", Prefs.windowName(cur, false)));
         r.setOnClickListener(v -> {
             String[] labels = new String[Prefs.WINDOWS.length + 1];
             labels[0] = Tx.s(R.string.game_default_value, Prefs.windowName(Prefs.defaultWindow(act, game()), false));
-            { Profile lp = Profile.of(game()); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], Prefs.WINDOW_NAMES[li]) : Prefs.WINDOW_NAMES[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
+            { Profile lp = Profile.of(game()); String[] names = Prefs.windowNames(); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], names[li]) : names[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
             int checked = Prefs.ownWindow(act, game()) ? 1 + Math.max(0, java.util.Arrays.asList(Prefs.WINDOWS).indexOf(cur)) : 0;
             new AlertDialog.Builder(act).setTitle(winTitle).setSingleChoiceItems(labels, checked, (d, w) -> {
                 Prefs.gameWindow(act, game(), w == 0 ? null : Prefs.WINDOWS[w - 1]);   // the game's own setting: the next start takes it too
@@ -1152,7 +1153,7 @@ final class SidePanel extends FrameLayout {
             for (Profile.Option opt : prof.options) {
                 if (opt.live || opt.settingsOnly) continue;   // a settings-only option is the launcher's Game options alone
                 android.widget.CheckBox cb = new android.widget.CheckBox(act);
-                cb.setText(opt.label);
+                cb.setText(opt.label());
                 Profile.Option source = Profile.findImpliedBy(prof.options, opt, env -> Prefs.gameOption(act, game(), env));
                 if (source != null) {
                     cb.setChecked(true);

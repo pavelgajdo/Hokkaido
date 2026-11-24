@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_adv_reset_all">Reset all</string>
+    <string name="fusion_adv_reset_global">Every row you set under Advanced goes back to Auto, for every game.</string>
+    <string name="fusion_adv_reset_game">Every row you set for %1$s goes back to Auto.</string>
+    <string name="fusion_adv_advanced">Advanced</string>
+    <string name="fusion_adv_global_note">Every switch starts at Auto: nothing is written and the app decides. A change applies at the next start; a line in env.txt or Extra environment wins.</string>
+    <string name="fusion_adv_game_note">For %1$s only; these win over Settings &gt; Advanced. Auto writes nothing. A change applies at the next start.</string>
+    <string name="fusion_adv_search">Search a name, a symptom or DM_...</string>
+    <string name="fusion_adv_experimental">Experimental</string>
+    <string name="fusion_adv_developer">Developer</string>
+    <string name="fusion_adv_no_match">Nothing matches.</string>
+    <string name="fusion_adv_no_match_more">Nothing matches. Turn on Developer to search every switch.</string>
+    <string name="fusion_adv_nothing">Nothing to set here.</string>
+    <string name="fusion_adv_nothing_more">Nothing to set here. Experimental shows the rest.</string>
+    <string name="fusion_adv_search_more">Search finds more switches.</string>
+    <string name="fusion_adv_auto">Auto</string>
+    <string name="fusion_adv_auto_value">Auto: %1$s</string>
+    <string name="fusion_adv_global_value">Settings: %1$s</string>
+    <string name="fusion_adv_try_if">Try this if %1$s.</string>
+    <string name="fusion_adv_from_global">%1$s (from Settings)</string>
+    <string name="fusion_adv_set_in">Set in %1$s.</string>
+    <string name="fusion_adv_own_control">This one has its own control: %1$s.</string>
+    <string name="fusion_adv_changed">Changed</string>
+    <string name="fusion_adv_number_range">A number from %1$s to %2$s%3$s. </string>
+    <string name="fusion_adv_value_after">The value after %1$s=. </string>
+    <string name="fusion_adv_empty_auto">Empty or Auto writes nothing.</string>
+    <string name="fusion_adv_save">Save</string>
+    <string name="fusion_adv_invalid_value">Not a value this row takes</string>
+    <string name="fusion_adv_cancel">Cancel</string>
+    <string name="fusion_adv_unit_fps">fps</string>
+    <string name="fusion_adv_area_graphics">Graphics</string>
+    <string name="fusion_adv_area_performance">Performance</string>
+    <string name="fusion_adv_area_memory">Memory</string>
+    <string name="fusion_adv_area_input">Input</string>
+    <string name="fusion_adv_area_audio">Audio</string>
+    <string name="fusion_adv_area_packing">Packing</string>
+    <string name="fusion_adv_area_game">Game</string>
+    <string name="fusion_adv_area_diagnostics">Diagnostics</string>
+    <string name="fusion_adv_dm_fps_limit_label" formatted="false">Frame rate cap</string>
+    <string name="fusion_adv_dm_fps_limit_owner" formatted="false">Game settings &gt; Frame rate cap</string>
+    <string name="fusion_adv_dm_fps_target_label" formatted="false">Frame rate cap</string>
+    <string name="fusion_adv_dm_fps_target_owner" formatted="false">Game settings &gt; Frame rate cap</string>
+    <string name="fusion_adv_dm_gfx_quality_label" formatted="false">Graphics quality</string>
+    <string name="fusion_adv_dm_gfx_quality_try_if" formatted="false">the game looks too plain (Quality) or runs too slowly (Performance)</string>
+    <string name="fusion_adv_dm_gfx_quality_default" formatted="false">Performance</string>
+    <string name="fusion_adv_dm_gfx_quality_option_0" formatted="false">Performance</string>
+    <string name="fusion_adv_dm_gfx_quality_option_1" formatted="false">Quality</string>
+    <string name="fusion_adv_dm_lang_label" formatted="false">Game language</string>
+    <string name="fusion_adv_dm_lang_owner" formatted="false">Game settings &gt; Game language</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_label" formatted="false">Frame generation floor</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_try_if" formatted="false">generated frames look bad when the game runs slowly (raise it); 0 always generates</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_default" formatted="false">30 fps</string>
+    <string name="fusion_adv_dm_mem_fileback_label" formatted="false">RAM saver</string>
+    <string name="fusion_adv_dm_mem_fileback_owner" formatted="false">Game settings &gt; RAM saver</string>
+    <string name="fusion_adv_dm_motion_sens_label" formatted="false">Motion sensitivity</string>
+    <string name="fusion_adv_dm_motion_sens_owner" formatted="false">Game settings &gt; Motion sensitivity</string>
+    <string name="fusion_adv_dm_nvn_gpu_ts_label" formatted="false">GPU timing</string>
+    <string name="fusion_adv_dm_nvn_gpu_ts_owner" formatted="false">Game settings &gt; GPU timing</string>
+    <string name="fusion_adv_dm_oot_draw_distance_label" formatted="false">Draw distance</string>
+    <string name="fusion_adv_dm_oot_draw_distance_try_if" formatted="false">the game is slow in a field or town (a shorter distance draws less)</string>
+    <string name="fusion_adv_dm_oot_draw_distance_default" formatted="false">Full (the game\'s own)</string>
+    <string name="fusion_adv_dm_oot_draw_distance_warn" formatted="false">Far scenery is cut off and appears as you walk; fields show a plain horizon.</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_0" formatted="false">Long (300)</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_1" formatted="false">Medium (150)</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_2" formatted="false">Short (80)</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_3" formatted="false">Very short (40)</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_label" formatted="false">Fog at the cut</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_try_if" formatted="false">a short Draw distance leaves a hard horizon where scenery is cut off (haze hides it)</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_default" formatted="false">Off (the game\'s own fog)</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_warn" formatted="false">Works only with a Draw distance set. Far scenery fades into haze; Medium and Strong make distant hills bluish and also fog reflections.</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_0" formatted="false">Light</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_1" formatted="false">Medium</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_2" formatted="false">Strong</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_label" formatted="false">Foliage distance</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_try_if" formatted="false">the game is slow where there is grass, bushes or trees (a shorter distance draws less of them)</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_default" formatted="false">Full (the game\'s own)</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_warn" formatted="false">Grass, bushes and small trees end nearer and appear as you walk.</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_0" formatted="false">Long (75%)</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_1" formatted="false">Medium (50%)</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_2" formatted="false">Short (35%)</string>
+    <string name="fusion_adv_dm_oot_lod_scale_label" formatted="false">Model detail distance</string>
+    <string name="fusion_adv_dm_oot_lod_scale_try_if" formatted="false">the game is slow in a town or field (models switch to simpler versions nearer)</string>
+    <string name="fusion_adv_dm_oot_lod_scale_default" formatted="false">Full (the game\'s own)</string>
+    <string name="fusion_adv_dm_oot_lod_scale_warn" formatted="false">Distant people, buildings and props look simpler and may change as you walk closer.</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_0" formatted="false">A little nearer (0.75)</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_1" formatted="false">Nearer (0.5)</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_2" formatted="false">Much nearer (0.3)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_label" formatted="false">Shadow range</string>
+    <string name="fusion_adv_dm_oot_shadow_range_try_if" formatted="false">the game is slow in a field or town (a shorter range draws fewer shadow casters)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_default" formatted="false">Full (the game\'s own)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_warn" formatted="false">Shadows end nearer to Link; at Short and Very short distant shadows stop at a line.</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_0" formatted="false">Long (500)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_1" formatted="false">Medium (200)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_2" formatted="false">Short (100)</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_3" formatted="false">Very short (50)</string>
+    <string name="fusion_adv_dm_render_pct_label" formatted="false">Render size</string>
+    <string name="fusion_adv_dm_render_pct_try_if" formatted="false">the picture is too soft (raise it) or the game is too slow (lower it)</string>
+    <string name="fusion_adv_dm_render_pct_default" formatted="false">50 %</string>
+    <string name="fusion_adv_dm_render_pct_option_0" formatted="false">33 %</string>
+    <string name="fusion_adv_dm_render_pct_option_1" formatted="false">50 %</string>
+    <string name="fusion_adv_dm_render_pct_option_2" formatted="false">59 %</string>
+    <string name="fusion_adv_dm_render_pct_option_3" formatted="false">67 %</string>
+    <string name="fusion_adv_dm_render_pct_option_4" formatted="false">100 %</string>
+    <string name="fusion_adv_dm_rumble_label" formatted="false">Rumble</string>
+    <string name="fusion_adv_dm_rumble_owner" formatted="false">Settings &gt; Rumble</string>
+    <string name="fusion_adv_dm_vk_adpf_span_any_label" formatted="false">Keep GPU clock up</string>
+    <string name="fusion_adv_dm_vk_adpf_span_any_owner" formatted="false">Game settings &gt; Keep GPU clock up</string>
+    <string name="fusion_adv_dm_vk_classic_rp_label" formatted="false">Classic render passes</string>
+    <string name="fusion_adv_dm_vk_classic_rp_owner" formatted="false">Game settings &gt; Classic render passes</string>
+    <string name="fusion_adv_dm_vk_driver_label" formatted="false">GPU driver</string>
+    <string name="fusion_adv_dm_vk_driver_owner" formatted="false">Settings &gt; GPU driver</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_label" formatted="false">Texture cache limit</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_try_if" formatted="false">the game is killed for memory (lower it) or textures keep reloading (raise it)</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_default" formatted="false">Measured from free memory</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_warn" formatted="false">Too high a limit lets Android kill the game.</string>
+    <string name="fusion_adv_dm_vk_img_psi_label" formatted="false">Memory pressure guard</string>
+    <string name="fusion_adv_dm_vk_img_psi_try_if" formatted="false">textures reload and stutter although the phone has free memory (Off gives the older behaviour)</string>
+    <string name="fusion_adv_dm_vk_img_psi_default" formatted="false">On: the texture cache shrinks when Android stalls on memory</string>
+    <string name="fusion_adv_dm_vk_img_psi_option_0" formatted="false">Off</string>
+    <string name="fusion_adv_dm_vk_img_psi_option_1" formatted="false">On</string>
+    <string name="fusion_adv_dm_vk_instance_label" formatted="false">Instanced draws</string>
+    <string name="fusion_adv_dm_vk_instance_owner" formatted="false">Game settings &gt; Instanced draws</string>
+    <string name="fusion_adv_dm_vk_layer_label" formatted="false">Shaders while playing</string>
+    <string name="fusion_adv_dm_vk_layer_owner" formatted="false">Game settings &gt; Shaders while playing</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_label" formatted="false">Mesh prepass workaround</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_try_if" formatted="false">the picture shows spikes or flicker on models (it is a workaround for Qualcomm\'s driver)</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_default" formatted="false">On with Qualcomm\'s driver when its mesh shaders are on, else off</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_option_0" formatted="false">Off</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_option_1" formatted="false">On</string>
+    <string name="fusion_adv_dm_vk_pso_async_label" formatted="false">Background pipelines</string>
+    <string name="fusion_adv_dm_vk_pso_async_owner" formatted="false">Game settings &gt; Background pipelines</string>
+    <string name="fusion_adv_dm_vk_skip_warn_label" formatted="false">Skipped-work notice</string>
+    <string name="fusion_adv_dm_vk_skip_warn_try_if" formatted="false">the notice \"Part of the picture is not drawn\" appears and you want it off (0) or only for larger gaps</string>
+    <string name="fusion_adv_dm_vk_skip_warn_default" formatted="false">5 %</string>
+    <string name="fusion_adv_dm_vk_tex_soft_label" formatted="false">Soft textures</string>
+    <string name="fusion_adv_dm_vk_tex_soft_try_if" formatted="false">the game runs out of memory; large textures lose their finest level and look a little softer</string>
+    <string name="fusion_adv_dm_vk_tex_soft_default" formatted="false">The game\'s profile decides</string>
+    <string name="fusion_adv_dm_vk_tex_soft_warn" formatted="false">Textures look slightly softer. Not measured on every game.</string>
+    <string name="fusion_adv_dm_vk_tex_soft_option_0" formatted="false">Off</string>
+    <string name="fusion_adv_dm_vk_tex_soft_option_1" formatted="false">On</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_label" formatted="false">Soft texture levels</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_try_if" formatted="false">the game still runs out of memory with Soft textures on (more levels save more, textures get softer)</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_default" formatted="false">1 level</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_warn" formatted="false">Textures look softer with more levels.</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_0" formatted="false">1 level</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_1" formatted="false">2 levels</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_2" formatted="false">3 levels</string>
+    <string name="fusion_adv_dm_vk_vegetation_label" formatted="false">Full vegetation</string>
+    <string name="fusion_adv_dm_vk_vegetation_owner" formatted="false">Game settings &gt; Full vegetation</string>
+</resources>

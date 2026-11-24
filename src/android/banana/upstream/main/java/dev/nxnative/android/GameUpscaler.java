@@ -183,7 +183,7 @@ final class GameUpscaler {
         for (int i = 0; i < Tx.arr(R.array.arr_dlss_modes).length; i++) { RadioButton b = new RadioButton(c); b.setText(Tx.arr(R.array.arr_dlss_modes)[i]); b.setId(3300 + i); g.addView(b); if (i == dlssMode(c, titleId)) b.setChecked(true); }
         box.addView(g);
         TextView clHead = new TextView(c); box.addView(clHead);
-        android.view.View cl = StepSlider.view(c, Tx.s(R.string.game_motion_clarity), DlssTune.clarityNames(), clarity(c, titleId), GameSettings.CLARITY_LEFT, GameSettings.CLARITY_RIGHT,
+        android.view.View cl = StepSlider.view(c, Tx.s(R.string.game_motion_clarity), DlssTune.clarityNames(), clarity(c, titleId), Tx.s(R.string.game_clarity_steady), Tx.s(R.string.game_clarity_clear),
                                                clHead::setText, i -> clarity(c, titleId, i));
         box.addView(cl);
         TextView shHead = new TextView(c); box.addView(shHead);

@@ -1,0 +1,57 @@
+--- a/main/java/dev/nxnative/android/Profile.java
++++ b/main/java/dev/nxnative/android/Profile.java
+@@ -102,6 +102,24 @@
+ 
+         public Option(String env, String label, String description, boolean live) {
+             this(env, label, description, live, "", "");
++        }
++
++        // Profile instances are cached. Resolve display text when shown so an app/system
++        // language change does not retain the language from the first profile lookup.
++        public String label() { return localized("label", label); }
++        public String description() { return localized("description", description); }
++
++        private String localized(String part, String fallback) {
++            String key;
++            switch (env) {
++                case "DM_OOT_MAX_RESOLUTION": key = "fusion_profile_oot_max_resolution"; break;
++                case "DM_OOT_TEXTURE_POOL_X2": key = "fusion_profile_oot_texture_pool"; break;
++                case "DM_OOT_FPS_UNLOCK": key = "fusion_profile_oot_fps_unlock"; break;
++                case "DM_VK_OQ_SPLIT_PASS": key = "fusion_profile_oot_cave_walls"; break;
++                case "DM_ONLINE": key = "fusion_profile_online_events"; break;
++                default: return fallback;
++            }
++            return Words.s(key + "_" + part, fallback);
+         }
+ 
+         public boolean hasImplies() { return !implies.isEmpty(); }
+--- a/main/java/dev/nxnative/android/SceneRes.java
++++ b/main/java/dev/nxnative/android/SceneRes.java
+@@ -35,6 +35,19 @@
+         Preset(String name, String label, double scale, String mode, String args) { this.name = name; this.label = label; this.scale = scale; this.mode = mode; this.args = args; }
+         /** Whether the choice is game arguments (scene_arg) rather than an overlay the pack step made */
+         boolean arg() { return mode.equals("arg"); }
++        /** Display only: names, arguments and the serialized profile keep their original values. */
++        String label() {
++            if (mode.equals("fixed") && label.startsWith("Fixed "))
++                return Words.s("fusion_scene_fixed", "Fixed %1$s", label.substring(6));
++            if (mode.equals("floor") && label.startsWith("At least ") && label.endsWith(" (dynamic)"))
++                return Words.s("fusion_scene_floor", "At least %1$s (dynamic)", label.substring(9, label.length() - 10));
++            java.util.regex.Matcher sized = java.util.regex.Pattern.compile("([0-9]+)%: 3D up to ([0-9]+x[0-9]+)").matcher(label);
++            if (arg() && sized.matches())
++                return Words.s("fusion_scene_up_to", "%1$s%%: 3D up to %2$s", sized.group(1), sized.group(2));
++            if (arg() && label.equals("The game's 50%, no dynamic resolution: 3D 960x540"))
++                return Words.s("fusion_scene_no_dynamic", "The game's 50%, no dynamic resolution: 3D 960x540");
++            return label;
++        }
+         @Override public String toString() { return name + "|" + label; }
+     }
+ 
+@@ -112,6 +125,6 @@
+     /** The choice's label in Game settings: the preset's, "Game default" for none */
+     static String label(List<Preset> presets, String choice) {
+         Preset p = of(presets, choice);
+-        return p == null ? "Game default" : p.label;
++        return p == null ? Words.s("fusion_scene_game_default", "Game default") : p.label();
+     }
+ }

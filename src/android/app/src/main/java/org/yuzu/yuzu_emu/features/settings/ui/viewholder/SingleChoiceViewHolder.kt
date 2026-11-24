@@ -10,6 +10,8 @@ import org.yuzu.yuzu_emu.features.settings.model.view.SettingsItem
 import org.yuzu.yuzu_emu.features.settings.model.view.SingleChoiceSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.StringSingleChoiceSetting
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsAdapter
+import org.yuzu.yuzu_emu.features.settings.model.IntSetting
+import org.yuzu.yuzu_emu.utils.AppLanguage
 import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
 
 class SingleChoiceViewHolder(val binding: ListItemSettingBinding, adapter: SettingsAdapter) :
@@ -25,13 +27,18 @@ class SingleChoiceViewHolder(val binding: ListItemSettingBinding, adapter: Setti
         binding.textSettingValue.setVisible(true)
         when (item) {
             is SingleChoiceSetting -> {
-                val resMgr = binding.textSettingValue.context.resources
+                val context = binding.textSettingValue.context
+                val resMgr = context.resources
                 val values = resMgr.getIntArray(item.valuesId)
+                binding.textSettingValue.text = ""
                 for (i in values.indices) {
                     if (values[i] == item.getSelectedValue()) {
                         binding.textSettingValue.text = resMgr.getStringArray(item.choicesId)[i]
                         break
                     }
+                }
+                if (item.setting == IntSetting.APP_LANGUAGE) {
+                    binding.textSettingValue.text = AppLanguage.selectedLabel(context)
                 }
             }
 

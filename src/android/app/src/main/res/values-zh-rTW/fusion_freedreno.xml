@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_freedreno_cpu_memory">偵錯：使用系統記憶體</string>
+    <string name="fusion_freedreno_cpu_memory_description">使用系統記憶體，速度較慢，但更穩定</string>
+    <string name="fusion_freedreno_no_ubwc">偵錯：關閉 UBWC</string>
+    <string name="fusion_freedreno_no_ubwc_description">關閉 UBWC 壓縮以進行偵錯</string>
+    <string name="fusion_freedreno_no_binning">偵錯：關閉分塊最佳化</string>
+    <string name="fusion_freedreno_no_binning_description">關閉圖形分塊最佳化</string>
+    <string name="fusion_freedreno_capture_renderpass">擷取繪製過程</string>
+    <string name="fusion_freedreno_capture_renderpass_description">擷取圖形命令串流資料以進行偵錯</string>
+    <string name="fusion_freedreno_capture_frames">擷取前 100 幀</string>
+    <string name="fusion_freedreno_capture_frames_description">僅擷取前 100 幀的圖形命令串流</string>
+    <string name="fusion_freedreno_shader_debug">著色器偵錯</string>
+    <string name="fusion_freedreno_shader_debug_description">啟用 IR3 著色器編譯器偵錯</string>
+    <string name="fusion_freedreno_hang_trace">圖形處理器當機追蹤</string>
+    <string name="fusion_freedreno_hang_trace_description">追蹤圖形處理進度以排查當機</string>
+    <string name="fusion_freedreno_ubwc_hint">開發：UBWC 標記提示</string>
+    <string name="fusion_freedreno_ubwc_hint_description">啟用 TP UBWC 標記提示以進行開發</string>
+    <string name="fusion_freedreno_performance">預設效能設定</string>
+    <string name="fusion_freedreno_performance_description">清除所有偵錯選項以還原預設效能設定</string>
+</resources>

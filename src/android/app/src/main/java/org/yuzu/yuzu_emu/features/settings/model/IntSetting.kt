@@ -6,6 +6,8 @@
 
 package org.yuzu.yuzu_emu.features.settings.model
 
+import org.yuzu.yuzu_emu.YuzuApplication
+import org.yuzu.yuzu_emu.utils.AppLanguage
 import org.yuzu.yuzu_emu.utils.NativeConfig
 
 enum class IntSetting(override val key: String) : AbstractIntSetting {
@@ -80,9 +82,18 @@ enum class IntSetting(override val key: String) : AbstractIntSetting {
     RENDERER_FRAME_SKIP("frame_skip")
     ;
 
-    override fun getInt(needsGlobal: Boolean): Int = NativeConfig.getInt(key, needsGlobal)
+    override fun getInt(needsGlobal: Boolean): Int =
+        if (this == APP_LANGUAGE && AppLanguage.usesPlatformLocales) {
+            AppLanguage.selectedIndex(YuzuApplication.appContext)
+        } else {
+            NativeConfig.getInt(key, needsGlobal)
+        }
 
     override fun setInt(value: Int) {
+        if (this == APP_LANGUAGE && AppLanguage.usesPlatformLocales) {
+            AppLanguage.select(YuzuApplication.appContext, value)
+            return
+        }
         if (NativeConfig.isPerGameConfigLoaded()) {
             global = false
         }
@@ -93,5 +104,8 @@ enum class IntSetting(override val key: String) : AbstractIntSetting {
 
     override fun getValueAsString(needsGlobal: Boolean): String = getInt(needsGlobal).toString()
 
-    override fun reset() = NativeConfig.setInt(key, defaultValue)
+    override fun reset() {
+        if (this == APP_LANGUAGE) setInt(defaultValue)
+        else NativeConfig.setInt(key, defaultValue)
+    }
 }

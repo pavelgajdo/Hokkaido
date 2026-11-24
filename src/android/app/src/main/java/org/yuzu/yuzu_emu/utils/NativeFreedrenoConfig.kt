@@ -3,6 +3,10 @@
 
 package org.yuzu.yuzu_emu.utils
 
+import androidx.annotation.StringRes
+import org.yuzu.yuzu_emu.R
+import org.yuzu.yuzu_emu.YuzuApplication
+
 /**
  * Provides access to Freedreno/Turnip driver configuration through JNI bindings.
  *
@@ -69,11 +73,14 @@ object NativeFreedrenoConfig {
  * Presets are commonly used debugging/profiling configurations.
  */
 data class FreedrenoPreset(
-    val name: String,           // Display name (e.g., "Debug - CPU Memory")
-    val description: String,    // Description of what this preset does
+    @StringRes val nameRes: Int,
+    @StringRes val descriptionRes: Int,
     val icon: String,           // Icon identifier
     val variables: Map<String, String> // Map of env vars to set
-)
+) {
+    val name: String get() = YuzuApplication.applyLanguage(YuzuApplication.appContext).getString(nameRes)
+    val description: String get() = YuzuApplication.applyLanguage(YuzuApplication.appContext).getString(descriptionRes)
+}
 
 /**
  * Predefined Freedreno presets for quick configuration.
@@ -81,8 +88,8 @@ data class FreedrenoPreset(
 object FreedrenoPresets {
 
     val DEBUG_CPU_MEMORY = FreedrenoPreset(
-        name = "Debug - CPU Memory",
-        description = "Use CPU memory (slower but more stable)",
+        nameRes = R.string.fusion_freedreno_cpu_memory,
+        descriptionRes = R.string.fusion_freedreno_cpu_memory_description,
         icon = "ic_debug_cpu",
         variables = mapOf(
             "TU_DEBUG" to "sysmem"
@@ -90,8 +97,8 @@ object FreedrenoPresets {
     )
 
     val DEBUG_UBWC_DISABLED = FreedrenoPreset(
-        name = "Debug - No UBWC",
-        description = "Disable UBWC compression for debugging",
+        nameRes = R.string.fusion_freedreno_no_ubwc,
+        descriptionRes = R.string.fusion_freedreno_no_ubwc_description,
         icon = "ic_debug_ubwc",
         variables = mapOf(
             "TU_DEBUG" to "noubwc"
@@ -99,8 +106,8 @@ object FreedrenoPresets {
     )
 
     val DEBUG_NO_BINNING = FreedrenoPreset(
-        name = "Debug - No Binning",
-        description = "Disable binning optimization",
+        nameRes = R.string.fusion_freedreno_no_binning,
+        descriptionRes = R.string.fusion_freedreno_no_binning_description,
         icon = "ic_debug_bin",
         variables = mapOf(
             "TU_DEBUG" to "nobin"
@@ -108,8 +115,8 @@ object FreedrenoPresets {
     )
 
     val CAPTURE_RENDERPASS = FreedrenoPreset(
-        name = "Capture - Renderpass",
-        description = "Capture command stream data for debugging",
+        nameRes = R.string.fusion_freedreno_capture_renderpass,
+        descriptionRes = R.string.fusion_freedreno_capture_renderpass_description,
         icon = "ic_capture",
         variables = mapOf(
             "FD_RD_DUMP" to "enable"
@@ -117,8 +124,8 @@ object FreedrenoPresets {
     )
 
     val CAPTURE_FRAMES = FreedrenoPreset(
-        name = "Capture - First 100 Frames",
-        description = "Capture command stream for first 100 frames only",
+        nameRes = R.string.fusion_freedreno_capture_frames,
+        descriptionRes = R.string.fusion_freedreno_capture_frames_description,
         icon = "ic_capture",
         variables = mapOf(
             "FD_RD_DUMP" to "enable",
@@ -127,8 +134,8 @@ object FreedrenoPresets {
     )
 
     val SHADER_DEBUG = FreedrenoPreset(
-        name = "Shader Debug",
-        description = "Enable IR3 shader compiler debugging",
+        nameRes = R.string.fusion_freedreno_shader_debug,
+        descriptionRes = R.string.fusion_freedreno_shader_debug_description,
         icon = "ic_shader",
         variables = mapOf(
             "IR3_SHADER_DEBUG" to "nouboopt,spillall"
@@ -136,8 +143,8 @@ object FreedrenoPresets {
     )
 
     val GPU_HANG_TRACE = FreedrenoPreset(
-        name = "GPU Hang Trace",
-        description = "Trace GPU progress for debugging hangs",
+        nameRes = R.string.fusion_freedreno_hang_trace,
+        descriptionRes = R.string.fusion_freedreno_hang_trace_description,
         icon = "ic_hang_trace",
         variables = mapOf(
             "TU_BREADCRUMBS" to "1"
@@ -145,8 +152,8 @@ object FreedrenoPresets {
     )
 
     val DEV_FEATURES_UBWC_HINT = FreedrenoPreset(
-        name = "Dev - UBWC Flag Hint",
-        description = "Enable TP UBWC flag hint for development",
+        nameRes = R.string.fusion_freedreno_ubwc_hint,
+        descriptionRes = R.string.fusion_freedreno_ubwc_hint_description,
         icon = "ic_dev_features",
         variables = mapOf(
             "FD_DEV_FEATURES" to "enable_tp_ubwc_flag_hint=1"
@@ -154,8 +161,8 @@ object FreedrenoPresets {
     )
 
     val PERFORMANCE_DEFAULT = FreedrenoPreset(
-        name = "Performance - Default",
-        description = "Clear all debug options for performance",
+        nameRes = R.string.fusion_freedreno_performance,
+        descriptionRes = R.string.fusion_freedreno_performance_description,
         icon = "ic_performance",
         variables = emptyMap()  // Clears all when applied
     )

@@ -18,7 +18,11 @@ final class Languages {
         final String tag;
         final int nameRes;
         Lang(String tag, int nameRes) { this.tag = tag; this.nameRes = nameRes; }
-        String label() { return Tx.s(nameRes); }
+        String label() {
+            if (nameRes != 0) return Tx.s(nameRes);
+            Locale locale = Locale.forLanguageTag(tag);
+            return locale.getDisplayName(locale);
+        }
     }
 
     /** English first (the source and the fallback), then the others */
@@ -44,7 +48,8 @@ final class Languages {
         if (m == null) return null;
         LocaleList l = m.getApplicationLocales();
         if (l.isEmpty()) return null;
-        return find(l.get(0));
+        Lang known = find(l.get(0));
+        return known != null ? known : new Lang(l.get(0).toLanguageTag(), 0);
     }
 
     /** Picks a language (null: System default); the screens are rebuilt by the system, which recreates the activities */

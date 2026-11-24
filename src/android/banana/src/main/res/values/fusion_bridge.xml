@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_native_game_not_found">Game not found</string>
+    <string name="fusion_native_cannot_read">Cannot read the game</string>
+    <string name="fusion_native_this_game">This game</string>
+    <string name="fusion_native_not_supported">Not supported by Banana Native</string>
+    <string name="fusion_native_update">Update %1$d</string>
+    <string name="fusion_native_dump_summary">%1$s%2$s, %3$d DLC.</string>
+    <string name="fusion_native_prepare_space">Needs about 1.5 GB of free space (%1$s GB free now).</string>
+    <string name="fusion_native_prepare_full">Banana Native makes the game\'s pack from your dump: it rewrites the game\'s code (a few minutes) and translates %1$s shaders (%2$s in the background, best on the charger). You can pause any time.</string>
+    <string name="fusion_native_prepare_paths">Game: %1$s\nWorking files: %2$s\nPack: %3$s</string>
+    <string name="fusion_native_untested_version">Untested version</string>
+    <string name="fusion_native_untested_game">Untested version of %1$s</string>
+    <string name="fusion_native_prepare_code_first">Start the game once on Banana Native first: its code is prepared then.</string>
+    <string name="fusion_native_prepare_all_shaders">Builds the game\'s full shader set before play. This can reduce incomplete scenes while shaders are compiled. It takes a while and uses the CPU heavily; keep the phone charging. Shaders missing from the set are still built while you play.</string>
+    <string name="fusion_native_cannot_create_folder">Cannot create the folder %1$s.</string>
+    <string name="fusion_native_pack_space">The pack needs %1$s, and the phone has %2$s free.</string>
+</resources>

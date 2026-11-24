@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_runtime_setting_value">%1$s: %2$s</string>
+    <string name="fusion_runtime_frame_limit">%1$s cap</string>
+    <string name="fusion_runtime_approximate_size">about %1$s</string>
+    <string name="fusion_runtime_game_dynamic_resolution">the game\'s own dynamic resolution</string>
+    <string name="fusion_runtime_dynamic_minimum">dynamic, at least %1$s</string>
+    <string name="fusion_runtime_resolution_detail">window %1$s · 3D %2$s</string>
+    <string name="fusion_runtime_resolution_note">Window and 3D picture together; lower is faster and softer. In a running game the window changes at once, the 3D picture the next time the game starts.</string>
+    <string name="fusion_runtime_recommended_preset">%1$s (recommended)</string>
+    <string name="fusion_runtime_default_preset">%1$s (the game\'s own)</string>
+    <string name="fusion_runtime_step_stopped">%1$s stopped.</string>
+    <string name="fusion_runtime_shaders_left">%1$,d shaders left</string>
+    <string name="fusion_runtime_shader_progress">%1$,d of %2$,d shaders</string>
+    <string name="fusion_runtime_shaders_to_make">%1$,d shaders to make</string>
+    <string name="fusion_runtime_shaders_reused">the other %1$,d are reused</string>
+    <string name="fusion_runtime_quiet_minutes"> · still working, last update %1$d min ago</string>
+    <string name="fusion_runtime_quiet_hours"> · still working, last update %1$d h %2$02d min ago</string>
+    <string name="fusion_runtime_progress_count">%1$,d of %2$,d</string>
+    <string name="fusion_runtime_large_file_progress">%1$s of a large file</string>
+    <string name="fusion_runtime_file_progress">%1$,d of %2$,d file</string>
+    <string name="fusion_runtime_files_progress">%1$,d of %2$,d files</string>
+    <string name="fusion_runtime_missing_shaders">%1$,d of its %2$,d shaders are not in this game version, so some things may not draw. All of them are in %3$s.</string>
+    <string name="fusion_runtime_shaders_built">Shaders: built while playing (%1$,d built)</string>
+    <string name="fusion_runtime_build_all_minutes">Build all (about %1$d-%2$d min)</string>
+    <string name="fusion_runtime_speedhack">Speedhack</string>
+    <string name="fusion_runtime_changed_settings">You changed %1$d of these.</string>
+    <string name="fusion_runtime_gpu_unchecked">Not checked (%1$s): whether this GPU has what the game needs is not known.</string>
+    <string name="fusion_runtime_reports_value">reports %1$s</string>
+    <string name="fusion_runtime_requirement_present">Present (%1$s %2$s, needs %3$s).</string>
+    <string name="fusion_runtime_requirement_missing">(%1$s %2$s, needs %3$s)</string>
+    <string name="fusion_runtime_memory_gib">memory in GiB:</string>
+    <string name="fusion_runtime_custom_setup">Custom setup</string>
+    <string name="fusion_runtime_inherited_value">Default · %1$s</string>
+</resources>

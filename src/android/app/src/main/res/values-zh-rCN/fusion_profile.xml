@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_profile_oot_max_resolution_label">最高分辨率</string>
+    <string name="fusion_profile_oot_max_resolution_description">让 3D 场景始终以完整分辨率渲染：画面更清晰，但 GPU 负载更高。建议搭配“分辨率 › 画质”使用。</string>
+    <string name="fusion_profile_oot_texture_pool_label">纹理池扩大至 2 倍</string>
+    <string name="fusion_profile_oot_texture_pool_description">将游戏启动时的图形内存池扩大至原来的 2 倍。“最高分辨率”需要开启此选项。</string>
+    <string name="fusion_profile_oot_fps_unlock_label">解锁帧率</string>
+    <string name="fusion_profile_oot_fps_unlock_description">让游戏逻辑跟随实际时间，使帧率变化时游戏速度保持正常。此选项本身不会提高帧率。</string>
+    <string name="fusion_profile_oot_cave_walls_label">修复洞穴墙壁消失（高通）</string>
+    <string name="fusion_profile_oot_cave_walls_description">修复使用高通驱动时死亡之山山道的墙壁和岩石消失问题。洞穴场景开销较小，但城堡场景会降低约 7 FPS；需要时可在游戏内面板开启，其他场景关闭。对 Turnip 驱动无效。</string>
+    <string name="fusion_profile_online_events_label">联网活动</string>
+    <string name="fusion_profile_online_events_description">让游戏认为设备已联网，以便启动需要网络连接的活动，例如“Apples to Applin”。不会发送任何数据。这是实验性功能。</string>
+    <string name="fusion_scene_fixed">固定 %1$s</string>
+    <string name="fusion_scene_floor">最低 %1$s（动态）</string>
+    <string name="fusion_scene_up_to">%1$s%%：3D 分辨率最高 %2$s</string>
+    <string name="fusion_scene_no_dynamic">游戏原始的 50%，关闭动态分辨率：3D 分辨率 960x540</string>
+    <string name="fusion_scene_game_default">游戏默认</string>
+</resources>

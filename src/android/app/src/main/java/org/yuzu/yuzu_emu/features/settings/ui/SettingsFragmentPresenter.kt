@@ -32,6 +32,7 @@ import org.yuzu.yuzu_emu.utils.InputHandler
 import org.yuzu.yuzu_emu.utils.LosslessScalingHelper
 import org.yuzu.yuzu_emu.utils.NativeConfig
 import org.yuzu.yuzu_emu.utils.NativePostProcessing
+import org.yuzu.yuzu_emu.utils.PostProcessingText
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FullscreenHelper
 import androidx.core.content.edit
@@ -208,6 +209,7 @@ class SettingsFragmentPresenter(
         }
 
         val usable = NativePostProcessing.catalog().filter { it.valid }
+            .map { PostProcessingText.effect(context, it) }
 
         sl.apply {
             if (usable.isEmpty()) {
@@ -240,6 +242,7 @@ class SettingsFragmentPresenter(
 
             val chain = NativePostProcessing.chain()
             val active = NativePostProcessing.getActivePreset()
+            val presets = NativePostProcessing.presets()
 
             var addLabel = R.string.post_processing_add
             if (chain.isNotEmpty()) {
@@ -251,7 +254,9 @@ class SettingsFragmentPresenter(
 
             var presetLabel = context.getString(R.string.post_processing_presets)
             if (active.isNotEmpty()) {
-                presetLabel = active
+                presetLabel = presets.firstOrNull { it.name == active }?.let {
+                    PostProcessingText.preset(context, it, presets).name
+                } ?: active
             }
 
             val createPreset = StringInputSetting(
@@ -321,11 +326,12 @@ class SettingsFragmentPresenter(
                         }
                     )
                 )
-                for (preset in NativePostProcessing.presets()) {
+                for (preset in presets) {
+                    val text = PostProcessingText.preset(context, preset, presets)
                     add(
                         FxPresetSetting(
-                            titleString = preset.name,
-                            descriptionString = preset.description,
+                            titleString = text.name,
+                            descriptionString = text.description,
                             deletable = !preset.bundled,
                             onApply = {
                                 NativePostProcessing.applyPreset(preset.name)

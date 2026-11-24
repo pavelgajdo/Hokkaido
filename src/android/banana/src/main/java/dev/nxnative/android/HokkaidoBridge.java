@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -51,6 +52,9 @@ public final class HokkaidoBridge {
         Readiness.minSdk = BuildConfig.NX_MIN_SDK;
         UpdateCheck.android12 = BuildConfig.NX_MIN_SDK < 33;
         DumpCheck.workOverride = (dump, titleId) -> workFolder(app, dump, titleId);
+        // The embedded launcher does not normally open Banana's MainActivity. Keep its initial GPU facts probe,
+        // so the same driver recommendations are available before the first game's readiness check.
+        if (app.getPackageName().equals(android.app.Application.getProcessName())) GpuGl.probe(app, null);
     }
 
     /**
@@ -137,17 +141,21 @@ public final class HokkaidoBridge {
     /** The plan for a game folder or file. Reads files: call it off the main thread. */
     public static Plan plan(Context c, String dumpPath, boolean tryAnyway) {
         File dump = new File(Frontend.normal(dumpPath));
-        if (!dump.exists()) return Plan.problem("Game not found", dump + " is not there.", null);
-        if (!dump.canRead()) return Plan.problem("Cannot read the game", dump + " cannot be read. Check that All files access is on.", null);
+        if (!dump.exists()) return Plan.problem(Words.s("fusion_native_game_not_found", "Game not found"),
+                Words.s("err_path_is_not_there", "%1$s is not there.", dump), null);
+        if (!dump.canRead()) return Plan.problem(Words.s("fusion_native_cannot_read", "Cannot read the game"),
+                Words.s("err_cannot_be_read", "%1$s cannot be read. Check that All files access is on.", dump), null);
 
         String id;
         try {
             id = Pack.playableIdOf(dump);
         } catch (IOException e) {
-            return Plan.problem("Cannot read the game", e.getMessage(), null);
+            return Plan.problem(Words.s("fusion_native_cannot_read", "Cannot read the game"), e.getMessage(), null);
         }
-        String missing = Profile.missing(id, "This game");
-        if (missing != null) return Plan.problem("Not supported by Banana Native", missing, null);
+        String missing = Profile.missing(id, Words.s("fusion_native_this_game", "This game"));
+        if (missing != null) return Plan.problem(Words.s("fusion_native_not_supported", "Not supported by Banana Native"), missing, null);
+
+        migrateWindow(c, id);
 
         Game ready = ready(c, dump, id, tryAnyway);
         if (ready != null) return new Plan(Plan.READY, ready.name, "", null, false, dump.getPath(), ready, null, null, null, false, false);
@@ -159,7 +167,7 @@ public final class HokkaidoBridge {
             if (b != null) {
                 Profile p = Profile.of(id);
                 String warning = b.kind == BuildCheck.Kind.UNSUPPORTED ? PrepareText.UNSUPPORTED_WARNING() : PrepareText.ANYWAY_WARNING();
-                return new Plan(Plan.PROBLEM, "Untested version" + (p != null ? " of " + p.name : ""), b.message + "\n\n" + warning, b.detail,
+                return new Plan(Plan.PROBLEM, untestedTitle(p), b.message + "\n\n" + warning, b.detail,
                                 true, dump.getPath(), null, null, null, null, false, false);
             }
         }
@@ -179,7 +187,7 @@ public final class HokkaidoBridge {
         DumpCheck.Result r = DumpCheck.check(dump, existing == null, any);
         if (!r.ok()) {
             Profile p = Profile.of(id);
-            String title = r.otherBuild ? "Untested version" + (p != null ? " of " + p.name : "") : "Cannot prepare this game";
+            String title = r.otherBuild ? untestedTitle(p) : Words.s("prepare_cannot_prepare_this_dump", "Cannot prepare this dump");
             String message = r.otherBuild ? r.error + "\n\n" + PrepareText.ANYWAY_WARNING() : r.error;
             return new Plan(Plan.PROBLEM, title, message, r.detail, r.otherBuild, dump.getPath(), null, null, null, null, false, false);
         }
@@ -194,7 +202,7 @@ public final class HokkaidoBridge {
                     return new Plan(Plan.RUNNING, name, j.statusText(true), null, false, dump.getPath(), null, r, j, null, false, false);
                 }
                 if (same && (s.equals("running") || s.equals("paused") || s.equals("failed") || s.equals("pending"))) {
-                    return new Plan(Plan.RESUME, name, j.statusText(false) + "\n\nIt goes on from where it stopped.", j.errorDetail(),
+                    return new Plan(Plan.RESUME, name, j.statusText(false) + "\n\n" + Words.s("prepare_it_goes_on", "It goes on from where it stopped."), j.errorDetail(),
                                     false, dump.getPath(), null, r, j, null, false, false);
                 }
             } catch (IOException e) {
@@ -210,14 +218,24 @@ public final class HokkaidoBridge {
                 String build = PackCheck.blocking(c, p, r.dump);
                 String library = PackCheck.shaders(packDir, r.titleId);
                 boolean code = build != null;
-                // A game the shader layer covers with no library at all: the code only; its shaders are built while it plays (Ondevice.Panel.checked)
-                boolean covered = ShaderLibs.layerCovers(r.titleId, Prefs.layerEnv(c, r.titleId));
-                boolean shaders = library != null && !(covered && code && Pack.libraryOf(packDir) == null);
+                // Match Ondevice.Panel.checked: an older playable library or the shader layer makes the full
+                // shader set optional, including when the game's code must be rewritten. Build all remains an
+                // explicit action in the game's settings; starting a game only prepares what it needs to play.
+                String env = Prefs.layerEnv(c, r.titleId);
+                boolean covered = Pack.shadersOnDemand(packDir, r.titleId, env);
+                boolean older = Pack.libraryOf(packDir) == null
+                        && (Pack.playableLibrary(packDir, r.titleId) != null || Pack.legacyLibrary(packDir, r.titleId) != null);
+                ShaderState.Need need = ShaderState.need(covered, older, code, library != null);
+                boolean shaders = need == ShaderState.Need.CODE_AND_SHADERS || need == ShaderState.Need.SHADERS;
                 String what = code && shaders
-                        ? "Rewrites the game's code (a few minutes) and " + Ondevice.shadersText(packDir, r.titleId)
-                        : code ? "Rewrites the game's code (a few minutes, in the background)." : Ondevice.shadersText(packDir, r.titleId);
+                        ? Words.s("prepare_rewriting_the_game_s_code_3", "Rewriting the game's code (a few minutes). ") + Ondevice.shadersText(packDir, r.titleId)
+                        : code ? Words.s("prepare_rewriting_code_few_minutes", "Rewriting the game's code (a few minutes, in the background).") : Ondevice.shadersText(packDir, r.titleId);
                 String why = (build != null ? build + "\n\n" : "") + (library != null ? library : "");
-                if (!code && !shaders) what = "Its pack fits: nothing needs preparing.";
+                if (need == ShaderState.Need.CODE_SHADERS_OPTIONAL) {
+                    boolean builds = covered || Pack.shaderLayerFills(packDir, r.titleId, env);
+                    what += "\n\n" + PrepareText.recommendText(ShaderLibs.minutesText(prof.shaderTotal), builds);
+                }
+                if (!code && !shaders) what = Words.s("prepare_pack_fits", "Its pack fits: nothing needs preparing.\n\nPack: %1$s", packDir);
                 return new Plan(Plan.PREPARE, name, what, why.trim(), false, dump.getPath(), null, r, null, packDir, code, shaders);
             }
         } catch (IOException e) {
@@ -226,12 +244,21 @@ public final class HokkaidoBridge {
         // A game the shader layer covers is prepared without shaders: it plays once its code is done and builds its shaders while it runs (Ondevice.Panel.checked)
         boolean covered = ShaderLibs.layerCovers(r.titleId, Prefs.layerEnv(c, r.titleId));
         int total = prof != null ? prof.shaderTotal : 0;
-        String head = (r.version == 0 ? "Base game" : "Update " + r.version) + (r.untested ? " (untested version)" : "") + ", " + r.dlc + " DLC.\n\n";
-        String space = String.format(Locale.getDefault(), "\n\nNeeds about 1.5 GB of free space (%.1f GB free now).", r.free / 1073741824.0);
+        String version = r.version == 0 ? Words.s("prepare_base_game", "Base game") : Words.s("fusion_native_update", "Update %1$d", r.version);
+        String head = Words.s("fusion_native_dump_summary", "%1$s%2$s, %3$d DLC.", version,
+                r.untested ? Words.s("prepare_untested_version_try_anyway", " (untested version: Try anyway)") : "", r.dlc) + "\n\n";
+        String space = "\n\n" + Words.s("fusion_native_prepare_space", "Needs about 1.5 GB of free space (%1$s GB free now).",
+                String.format(Locale.getDefault(), "%.1f", r.free / 1073741824.0));
         String text = covered ? head + PrepareText.codeOnlyText(ShaderLibs.minutesText(total)) + space
-                : head + String.format(Locale.getDefault(), "Banana Native makes the game's pack from your dump: it rewrites the game's code (a few minutes) and translates %,d shaders (%s in the background, best on the charger). You can pause any time.", total, ShaderLibs.jobMinutesText(total)) + space;
-        String where = "Game: " + r.dump + "\nWorking files: " + r.work + "\nPack: " + AppStorage.pack(c, r.titleId);
+                : head + Words.s("fusion_native_prepare_full", "Banana Native makes the game's pack from your dump: it rewrites the game's code (a few minutes) and translates %1$s shaders (%2$s in the background, best on the charger). You can pause any time.",
+                        String.format(Locale.getDefault(), "%,d", total), ShaderLibs.jobMinutesText(total)) + space;
+        String where = Words.s("fusion_native_prepare_paths", "Game: %1$s\nWorking files: %2$s\nPack: %3$s", r.dump, r.work, AppStorage.pack(c, r.titleId));
         return new Plan(Plan.PREPARE, name, text, where, false, dump.getPath(), null, r, null, null, true, !covered);
+    }
+
+    private static String untestedTitle(Profile p) {
+        return p == null ? Words.s("fusion_native_untested_version", "Untested version")
+                : Words.s("fusion_native_untested_game", "Untested version of %1$s", p.name);
     }
 
     /**
@@ -245,10 +272,11 @@ public final class HokkaidoBridge {
         try {
             id = Pack.playableIdOf(dump);
         } catch (IOException e) {
-            return Plan.problem("Cannot read the game", e.getMessage(), null);
+            return Plan.problem(Words.s("fusion_native_cannot_read", "Cannot read the game"), e.getMessage(), null);
         }
         Profile prof = Profile.of(id);
-        if (prof == null) return Plan.problem("Not supported by Banana Native", Profile.missing(id, "This game"), null);
+        if (prof == null) return Plan.problem(Words.s("fusion_native_not_supported", "Not supported by Banana Native"),
+                Profile.missing(id, Words.s("fusion_native_this_game", "This game")), null);
         boolean any = false;
         try {
             File jf = Job.fileOf(DumpCheck.workOf(dump, Pack.titleIdOf(dump)));
@@ -263,7 +291,7 @@ public final class HokkaidoBridge {
             // no job of this format: the new one replaces it
         }
         DumpCheck.Result r = DumpCheck.check(dump, false, any);
-        if (!r.ok()) return Plan.problem("Cannot prepare this game", r.error, r.detail);
+        if (!r.ok()) return Plan.problem(Words.s("prepare_cannot_prepare_this_dump", "Cannot prepare this dump"), r.error, r.detail);
         File packDir = Folders.packFor(c, r.dump, r.titleId);
         Pack p = null;
         try {
@@ -272,10 +300,9 @@ public final class HokkaidoBridge {
             // no pack: the game is prepared first
         }
         if (p == null || p.simulated || !p.titleId.equals(r.titleId)) {
-            return Plan.problem(prof.name, "Start the game once on Banana Native first: its code is prepared then.", null);
+            return Plan.problem(prof.name, Words.s("fusion_native_prepare_code_first", "Start the game once on Banana Native first: its code is prepared then."), null);
         }
-        String text = "Translates all of the game's shaders now, so new scenes no longer show up white or with parts missing while their shaders are built. "
-                + "It takes a while and uses the CPU hard: best on the charger. Shaders the set lacks are still built while you play.";
+        String text = Words.s("fusion_native_prepare_all_shaders", "Builds the game's full shader set before play. This can reduce incomplete scenes while shaders are compiled. It takes a while and uses the CPU heavily; keep the phone charging. Shaders missing from the set are still built while you play.");
         return new Plan(Plan.PREPARE, prof.name, text, null, false, dump.getPath(), null, r, null, packDir, false, true);
     }
 
@@ -313,32 +340,17 @@ public final class HokkaidoBridge {
     }
 
     /**
-     * Before a ready game starts: Hokkaido's driver for it (a driver zip, installed into Banana Native's own
-     * gpu_drivers/ when it is new or changed; empty: the system's) and Hokkaido's save folder for it, which both
-     * engines then use. A save Banana Native kept in its own folder moves in once, when Hokkaido's is still empty
-     * (it stays where it was too). Reads and writes files: call it off the main thread.
+     * Before a ready game starts, connect Hokkaido's save folder, which both engines then use. A save Banana
+     * Native kept in its own folder copies in once, when Hokkaido's is still empty. Driver, resolution and tuning
+     * belong to Banana's own settings and recommendations; Hokkaido's defaults must not overwrite them at launch.
+     * Reads and writes files: call it off the main thread.
      */
-    public static void prepareStart(Context c, Plan plan, String driverZip, String saveDir, String window) throws IOException {
+    public static void prepareStart(Context c, Plan plan, String saveDir) throws IOException {
         String id = plan.game.titleId;
-        // The render size Hokkaido's resolution scale gives (Game resolution: a "<width>x<height>" or "original"),
-        // when it changed since the last start: a size picked in the game's quick settings stays until then.
-        String given = "hokkaido_window_" + id;
-        if (window != null && !window.isEmpty() && !window.equals(Prefs.of(c).getString(given, null))) {
-            Prefs.gameWindow(c, id, window);
-            Prefs.of(c).edit().putString(given, window).commit();
-        }
-        startingSettings(c, id);
-        String driverName = null;
-        if (driverZip == null || driverZip.isEmpty()) {
-            GpuDriver.choice(c, id, GpuDriver.SYSTEM);
-        } else {
-            driverName = installedDriver(c, new File(driverZip)).dir.getName();
-            GpuDriver.choice(c, id, driverName);
-        }
-        meshThroughCompute(c, id, driverName);
+        migrateWindow(c, id);
         if (saveDir == null || saveDir.isEmpty()) return;
         File shared = new File(saveDir);
-        if (!shared.isDirectory() && !shared.mkdirs()) throw new IOException("cannot create the save folder " + shared);
+        if (!shared.isDirectory() && !shared.mkdirs()) throw new IOException(Words.s("fusion_native_cannot_create_folder", "Cannot create the folder %1$s.", shared));
         // Only the first time the game uses Hokkaido's folder: later an empty one is a deleted save, never refilled.
         File own = AppStorage.save(c, id);
         boolean first = Prefs.folder(c, "save_" + id) == null;
@@ -346,68 +358,59 @@ public final class HokkaidoBridge {
         Prefs.folder(c, "save_" + id, shared.getPath());
     }
 
-    /** The starting settings' version (startingSettings): raised when they change, so a game takes the new ones once. */
-    private static final int STARTING_SETTINGS = 2;
     private static final String OCARINA_OF_TIME = "0400486024DEC000";
 
     /**
-     * Hokkaido's starting settings for a game, among Banana Native's Game settings that Hokkaido does not show: set once
-     * (again when STARTING_SETTINGS rises), so a change in the game's quick settings stays. Ocarina of Time, from the
-     * Galaxy S26 (RADV, 12 GB): the RAM saver's file-backed texture pools left holes in the terrain, so it is off; Hold
-     * 60 fps keeps the frame rate from jumping between 30 and 20 fps, which the phone's GPU clock cap followed; and the
-     * lower vegetation detail Banana Native recommends.
+     * Older fusion releases copied Hokkaido's default 1x into Banana's legacy window setting. That made a fresh
+     * game use Quality instead of its profile's recommended preset. Migrate only that exact, marked value; a
+     * different size, explicit scene setting or preset remains the player's choice. The marker is then retired.
      */
-    private static void startingSettings(Context c, String id) {
-        String key = "hokkaido_settings_" + id;
-        int had = Prefs.of(c).getInt(key, 0);
-        if (had >= STARTING_SETTINGS) return;
-        if (id.equals(OCARINA_OF_TIME)) {
-            if (had < 1) {
-                Prefs.ramSaver(c, id, false);
-                Prefs.hold60(c, id, true);
-                Prefs.fullVegetation(c, id, false);
-            }
-            // A phone of 12 GB or less: soft textures and pools placed by parts (its Advanced rows), as
-            // Hokkaido's own build of Banana Native has them in the game's profile
-            if (had < 2 && Prefs.lowRam(c)) {
-                AdvancedSettings.set(c, "DM_VK_TEX_SOFT", id, "1");
-                AdvancedSettings.set(c, "DM_VK_PLACE_PART_MB", id, "256");
-            }
+    private static void migrateWindow(Context c, String id) {
+        SharedPreferences prefs = Prefs.of(c);
+        String mark = "hokkaido_window_" + id;
+        if (!prefs.contains(mark)) return;
+        SharedPreferences.Editor e = prefs.edit();
+        if ("1920x1080".equals(prefs.getString(mark, null))
+                && "1920x1080".equals(prefs.getString(Prefs.gameKey("window", id), null))
+                && !prefs.contains(Prefs.gameKey("res_preset", id))
+                && !prefs.contains(Prefs.gameKey("scene_res", id))) {
+            e.remove(Prefs.gameKey("window", id));
         }
-        Prefs.of(c).edit().putInt(key, STARTING_SETTINGS).commit();
+        e.remove(mark).commit();
     }
 
     /**
-     * Mesh draws through compute (the game's Advanced row DM_VK_MESH=0) while it runs on a RADV driver on Samsung's
-     * Xclipse GPU (an Exynos phone): there Ocarina of Time's task and mesh draws ran for seconds a frame and then hung
-     * the GPU (Galaxy S26). Back to Auto when the driver changes. Hokkaido's own build of Banana Native makes it the
-     * default for that driver too.
+     * An explicit action on Banana's game settings page, never automatic: restore its resolution and driver
+     * selection, use upstream recommendations, and retire legacy fusion tuning only when its marker and value
+     * still match. Different advanced values, saves, controls and non-recommended preferences are kept.
      */
-    private static void meshThroughCompute(Context c, String id, String driverName) {
-        boolean radvXclipse = "Samsung".equalsIgnoreCase(android.os.Build.SOC_MANUFACTURER)
-                && driverName != null && driverName.toLowerCase(Locale.ROOT).contains("radv");
-        String mark = "hokkaido_mesh_" + id;
-        if (radvXclipse) {
-            AdvancedSettings.set(c, "DM_VK_MESH", id, "0");
-            Prefs.of(c).edit().putBoolean(mark, true).commit();
-        } else if (Prefs.of(c).getBoolean(mark, false)) {
-            AdvancedSettings.set(c, "DM_VK_MESH", id, null);
-            Prefs.of(c).edit().remove(mark).commit();
+    public static void useRecommendedSettings(Context c, String titleId) {
+        if (titleId == null || titleId.isEmpty()) return;
+        String id = titleId.toUpperCase(Locale.ROOT);
+        SharedPreferences prefs = Prefs.of(c);
+        SharedPreferences.Editor e = prefs.edit();
+        int legacy = prefs.getInt("hokkaido_settings_" + id, 0);
+        if (OCARINA_OF_TIME.equals(id) && legacy > 0) {
+            removeIfEqual(prefs, e, Prefs.gameKey("ram_saver", id), false);
+            removeIfEqual(prefs, e, Prefs.gameKey("hold60", id), true);
+            removeIfEqual(prefs, e, Prefs.gameKey("full_vegetation", id), false);
+            if (legacy >= 2) {
+                removeIfEqual(prefs, e, "adv:DM_VK_TEX_SOFT@" + id, "1");
+                removeIfEqual(prefs, e, "adv:DM_VK_PLACE_PART_MB@" + id, "256");
+            }
         }
+        if (prefs.getBoolean("hokkaido_mesh_" + id, false)) {
+            removeIfEqual(prefs, e, "adv:DM_VK_MESH@" + id, "0");
+        }
+        e.remove(Prefs.gameKey("window", id)).remove(Prefs.gameKey("scene_res", id))
+                .remove(Prefs.gameKey("res_preset", id)).remove(Prefs.gameKey("gpu_driver", id))
+                .remove("hokkaido_window_" + id).remove("hokkaido_settings_" + id).remove("hokkaido_mesh_" + id).commit();
+        // Read recommendations again after releasing the old explicit driver: they depend on its real facts.
+        Prefs.backToRecommended(c, id);
     }
 
-    /** The driver unpacked from a zip, unpacked again only when the zip changed since (by its size and time). */
-    private static GpuDriver.Info installedDriver(Context c, File zip) throws IOException {
-        if (!zip.isFile()) throw new IOException("The GPU driver " + zip + " is not there: pick another one in Hokkaido.");
-        String key = "hokkaido_driver_" + zip.getPath(), stamp = zip.length() + ":" + zip.lastModified();
-        String known = Prefs.of(c).getString(key, "");
-        if (known.startsWith(stamp + ":")) {
-            String name = known.substring(stamp.length() + 1);
-            for (GpuDriver.Info i : GpuDriver.installed(c)) if (i.dir.getName().equals(name)) return i;
-        }
-        GpuDriver.Info i = GpuDriver.install(c, zip);
-        Prefs.of(c).edit().putString(key, stamp + ":" + i.dir.getName()).commit();
-        return i;
+    private static void removeIfEqual(SharedPreferences prefs, SharedPreferences.Editor e, String key, Object value) {
+        if (value.equals(prefs.getAll().get(key))) e.remove(key);
     }
 
     private static boolean isEmpty(File dir) {
@@ -418,7 +421,7 @@ public final class HokkaidoBridge {
     private static void copyTree(File from, File to) throws IOException {
         File[] l = from.listFiles();
         if (l == null) return;
-        if (!to.isDirectory() && !to.mkdirs()) throw new IOException("cannot create " + to);
+        if (!to.isDirectory() && !to.mkdirs()) throw new IOException(Words.s("fusion_native_cannot_create_folder", "Cannot create the folder %1$s.", to));
         for (File f : l) {
             File t = new File(to, f.getName());
             if (f.isDirectory()) {
@@ -513,18 +516,18 @@ public final class HokkaidoBridge {
         try {
             String[] running = runningGame(c);
             if (running != null && running[0].equalsIgnoreCase(titleId)) {
-                throw new IOException("the game is running in Banana Native: close it first");
+                throw new IOException(Words.s("err_game_running_stop_first", "%1$s is running: stop it first (its in-game panel › Stop the game).", running[1].isEmpty() ? titleId : running[1]));
             }
-            if (!packs.isDirectory() && !packs.mkdirs()) throw new IOException("cannot create " + packs);
+            if (!packs.isDirectory() && !packs.mkdirs()) throw new IOException(Words.s("fusion_native_cannot_create_folder", "Cannot create the folder %1$s.", packs));
             long need = source.length();
             if (packs.getUsableSpace() < need + (256L << 20)) {
-                throw new IOException("the pack needs " + SaveStore.size(need) + ", and the phone has " + SaveStore.size(packs.getUsableSpace()) + " free");
+                throw new IOException(Words.s("fusion_native_pack_space", "The pack needs %1$s, and the phone has %2$s free.", SaveStore.size(need), SaveStore.size(packs.getUsableSpace())));
             }
             File remembered = Job.remembered(c);
             if (remembered != null && remembered.isFile()) {
                 Job j = Job.read(remembered);
                 if (SaveStore.same(j.pack(), target) && !"done".equals(j.state())) {
-                    throw new IOException("this game is being prepared: let it finish, or start it once and cancel the Prepare");
+                    throw new IOException(Words.s("game_delete_prepare_running", "%1$s is being prepared: stop or finish that first.", j.name()));
                 }
             }
             Pack p = PackZip.stage(source, packs, titleId);
@@ -652,7 +655,7 @@ public final class HokkaidoBridge {
 
         private void report() {
             if (job == null || stopped) return;
-            boolean ready = ready(job);
+            boolean ready = ready(context, job);
             if (ready && !alive) addGame(context, job);
             listener.onProgress(new Progress(job, alive, ready));
         }
@@ -681,15 +684,22 @@ public final class HokkaidoBridge {
         }
     }
 
-    /** Play needs the pack and its shader library of this APK's version (Ondevice.Panel.ready). */
-    private static boolean ready(Job j) {
+    /** A completed code-only job is ready when its shaders can be built during play or an older library plays. */
+    private static boolean ready(Context c, Job j) {
         if (!"done".equals(j.state()) || j.apkChanged()) return false;
         try {
             Pack p = Pack.read(j.pack());
-            return Pack.libraryProblem(j.pack(), j.titleId()) == null && p.unfinishedModule() == null && p.titleId.equals(j.titleId());
+            return !p.simulated && p.unfinishedModule() == null && p.titleId.equals(j.titleId())
+                    && shadersPlayable(c, j.pack(), j.titleId());
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /** One shader readiness rule for the progress screen and the next start (FrontendLaunch.ready). */
+    private static boolean shadersPlayable(Context c, File packDir, String id) {
+        return Pack.libraryBlock(packDir, id, Prefs.layerEnv(c, id)) == null
+                || Pack.playableLibrary(packDir, id) != null || Pack.legacyLibrary(packDir, id) != null;
     }
 
     /** The finished job's game into the list with its pack (Ondevice.Panel.addGame). */
@@ -754,8 +764,7 @@ public final class HokkaidoBridge {
         // A missing or older shader library blocks only a game the shader layer does not cover (FrontendLaunch.ready), and, as on Banana
         // Native's own Home (MainActivity), not one whose older library still plays: its shader update is optional (Build all shaders now).
         // Without this, every new shader chain sent the game to a Prepare that translated all its shaders again.
-        if (Pack.libraryBlock(f.packDir, id, Prefs.layerEnv(c, id)) != null
-                && Pack.playableLibrary(f.packDir, id) == null && Pack.legacyLibrary(f.packDir, id) == null) return null;
+        if (!shadersPlayable(c, f.packDir, id)) return null;
         if (f.card != null && GameList.samePath(f.card.gameDir, game.getPath())) return f.card;
         // A card of the same title and build at another path (another copy of the dump) is moved to the dump Hokkaido starts:
         // the game would otherwise read the other copy's files (an incomplete copy: a black screen)

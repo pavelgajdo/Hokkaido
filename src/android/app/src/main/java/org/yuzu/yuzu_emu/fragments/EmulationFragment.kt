@@ -283,7 +283,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
             Log.error("[EmulationFragment] Error during game setup: ${e.message}")
             Toast.makeText(
                 requireContext(),
-                "Setup error: ${e.message?.take(30) ?: "Unknown"}",
+                R.string.failed_to_initialize_game,
                 Toast.LENGTH_SHORT
             ).show()
             requireActivity().finish()
@@ -530,7 +530,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                     Log.error("[EmulationFragment] Error processing EmuReady intent: ${e.message}")
                     Toast.makeText(
                         requireContext(),
-                        "Error: ${e.message?.take(50) ?: "Unknown error"}",
+                        R.string.failed_to_initialize_game,
                         Toast.LENGTH_LONG
                     ).show()
                     requireActivity().finish()

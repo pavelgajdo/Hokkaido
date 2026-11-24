@@ -61,7 +61,7 @@ android {
 
     sourceSets.getByName("main") {
         java.srcDirs("upstream/main/java", "upstream/ondevice/java", "src/main/java")
-        res.srcDirs("upstream/main/res", "upstream/variant-play/res")
+        res.srcDirs("upstream/main/res", "upstream/variant-play/res", "src/main/res")
         manifest.srcFile("src/main/AndroidManifest.xml")
         assets.srcDir(layout.buildDirectory.dir("generated/banana/assets"))
         jniLibs.srcDir(layout.buildDirectory.dir("generated/banana/jni"))

@@ -104,6 +104,24 @@ final class Profile {
             this(env, label, description, live, "", "");
         }
 
+        // Profile instances are cached. Resolve display text when shown so an app/system
+        // language change does not retain the language from the first profile lookup.
+        public String label() { return localized("label", label); }
+        public String description() { return localized("description", description); }
+
+        private String localized(String part, String fallback) {
+            String key;
+            switch (env) {
+                case "DM_OOT_MAX_RESOLUTION": key = "fusion_profile_oot_max_resolution"; break;
+                case "DM_OOT_TEXTURE_POOL_X2": key = "fusion_profile_oot_texture_pool"; break;
+                case "DM_OOT_FPS_UNLOCK": key = "fusion_profile_oot_fps_unlock"; break;
+                case "DM_VK_OQ_SPLIT_PASS": key = "fusion_profile_oot_cave_walls"; break;
+                case "DM_ONLINE": key = "fusion_profile_online_events"; break;
+                default: return fallback;
+            }
+            return Words.s(key + "_" + part, fallback);
+        }
+
         public boolean hasImplies() { return !implies.isEmpty(); }
         public boolean hasNeeds() { return !needs.isEmpty(); }
 

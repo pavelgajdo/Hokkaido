@@ -27,7 +27,14 @@ final class AdvancedTable {
         boolean live() { return live.equals("live") && type.equals("choice") && editable(); }
         /** Whether the page lets the player set it: a launcher control owns the others */
         boolean editable() { return shown() && !owned(); }
-        String title() { return label.isEmpty() ? name : label; }
+        String text(String field, String value) {
+            return value.isEmpty() ? value : Words.s("fusion_adv_" + name.toLowerCase(Locale.ROOT) + "_" + field, value);
+        }
+        String title() { return label.isEmpty() ? name : text("label", label); }
+        String tryText() { return text("try_if", tryIf); }
+        String defaultText() { return text("default", deflt); }
+        String warningText() { return text("warn", warn); }
+        String ownerText() { return text("owner", owner); }
 
         /** toggle and choice: {label, value} pairs, Auto not included */
         List<String[]> options() {
@@ -35,7 +42,7 @@ final class AdvancedTable {
             if (!type.equals("toggle") && !type.equals("choice")) return out;
             for (String c : choices.split(";")) {
                 int i = c.indexOf('=');
-                if (i > 0) out.add(new String[] {c.substring(0, i).trim(), c.substring(i + 1).trim()});
+                if (i > 0) out.add(new String[] {text("option_" + out.size(), c.substring(0, i).trim()), c.substring(i + 1).trim()});
             }
             return out;
         }
@@ -52,7 +59,8 @@ final class AdvancedTable {
             if (!type.equals("number")) return "";
             String c = choices.split("\\|")[0].trim();
             int i = c.indexOf(' ');
-            return i > 0 ? c.substring(i + 1).trim() : "";
+            String unit = i > 0 ? c.substring(i + 1).trim() : "";
+            return unit.equals("fps") ? Words.s("fusion_adv_unit_fps", "fps") : unit;
         }
 
         /** number: the preset values (chips), empty when the row has none */
@@ -144,7 +152,7 @@ final class AdvancedTable {
             boolean exact = q.equals(r.name.toLowerCase(Locale.ROOT));
             if (r.developer() && !dev && !exact) continue;
             if (r.owned() && !dev) continue;   // a launcher control already sets it: listed only for developers
-            String hay = (r.name + " " + r.label + " " + r.tryIf + " " + r.fixes.replace(';', ' ') + " " + r.area).toLowerCase(Locale.ROOT);
+            String hay = (r.name + " " + r.label + " " + r.title() + " " + r.tryIf + " " + r.tryText() + " " + r.fixes.replace(';', ' ') + " " + r.area + " " + areaLabel(r.area)).toLowerCase(Locale.ROOT);
             boolean all = true;
             for (String w : words) if (!hay.contains(w)) { all = false; break; }
             if (!all) continue;
@@ -152,6 +160,10 @@ final class AdvancedTable {
             if (words.length > 0 && out.size() >= SEARCH_MAX) break;
         }
         return out;
+    }
+
+    static String areaLabel(String area) {
+        return Words.s("fusion_adv_area_" + area.toLowerCase(Locale.ROOT), area);
     }
 
     /** A value for a log or a report: the folder and file switches (names ending _DIR, _PATH, _FILE, _ROOT) keep their path to themselves */

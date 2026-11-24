@@ -1,0 +1,56 @@
+Hokkaido and the embedded Banana Native ship different driver hooks. Give
+Hokkaido its own library names so Android packaging keeps both matching pairs.
+
+diff --git a/src/hook/CMakeLists.txt b/src/hook/CMakeLists.txt
+--- a/src/hook/CMakeLists.txt
++++ b/src/hook/CMakeLists.txt
+@@ -3,14 +3,14 @@
+ target_compile_options(hook_impl PRIVATE -Wall -Wextra)
+ target_link_libraries(hook_impl linkernsbypass log)
+ target_include_directories(hook_impl PRIVATE ../../include)
+-set_target_properties(hook_impl PROPERTIES CXX_VISIBILITY_PRESET hidden)
++set_target_properties(hook_impl PROPERTIES CXX_VISIBILITY_PRESET hidden OUTPUT_NAME hokkaido_hook_impl)
+ 
+ add_library(main_hook SHARED main_hook.c)
+ 
+ target_compile_options(main_hook PRIVATE -Wall -Wextra)
+ target_link_options(main_hook PRIVATE -z global)
+ target_link_libraries(main_hook hook_impl)
+-set_target_properties(main_hook PROPERTIES CXX_VISIBILITY_PRESET hidden)
++set_target_properties(main_hook PROPERTIES CXX_VISIBILITY_PRESET hidden OUTPUT_NAME hokkaido_main_hook)
+ 
+ add_library(file_redirect_hook SHARED file_redirect_hook.c)
+ 
+diff --git a/src/hook/hook_impl.cpp b/src/hook/hook_impl.cpp
+--- a/src/hook/hook_impl.cpp
++++ b/src/hook/hook_impl.cpp
+@@ -73,7 +73,7 @@
+ 
+     // Preload ourself, a new instance will be created since we have different linker ancestory
+     // If we don't preload we get a weird issue where despite being in NEEDED of the hook lib the hook's symbols will overwrite ours and cause an infinite loop
+-    auto hookImpl{linkernsbypass_namespace_dlopen("libhook_impl.so", RTLD_NOW, driverNs)};
++    auto hookImpl{linkernsbypass_namespace_dlopen("libhokkaido_hook_impl.so", RTLD_NOW, driverNs)};
+     if (!hookImpl)
+         return nullptr;
+ 
+diff --git a/src/driver.cpp b/src/driver.cpp
+--- a/src/driver.cpp
++++ b/src/driver.cpp
+@@ -71,7 +71,7 @@
+         return nullptr;
+ 
+     // Preload the hook implementation, otherwise we get a weird issue where despite being in NEEDED of the hook lib the hook's symbols will overwrite ours and cause an infinite loop
+-    auto hookImpl{linkernsbypass_namespace_dlopen("libhook_impl.so", RTLD_NOW, hookNs)};
++    auto hookImpl{linkernsbypass_namespace_dlopen("libhokkaido_hook_impl.so", RTLD_NOW, hookNs)};
+     if (!hookImpl)
+         return nullptr;
+ 
+@@ -95,7 +95,7 @@
+     initHookParam(new HookImplParams(featureFlags, tmpLibDir, hookLibDir, customDriverDir, customDriverName, fileRedirectDir, importMapping));
+ 
+     // Load the libvulkan hook into the isolated namespace
+-    if (!linkernsbypass_namespace_dlopen("libmain_hook.so", RTLD_GLOBAL, hookNs))
++    if (!linkernsbypass_namespace_dlopen("libhokkaido_main_hook.so", RTLD_GLOBAL, hookNs))
+         return nullptr;
+ 
+     return linkernsbypass_namespace_dlopen_unique("/system/lib64/libvulkan.so", tmpLibDir, dlopenFlags, hookNs);

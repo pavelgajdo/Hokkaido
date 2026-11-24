@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_banana_settings_title">Banana Native settings</string>
+    <string name="fusion_banana_global_settings">Defaults for all games</string>
+    <string name="fusion_banana_settings_notice">These settings control Banana Native. Restart the game to apply changes; use Quick settings for changes during play.</string>
+    <string name="fusion_banana_use_recommended">Use Banana Native recommendations</string>
+    <string name="fusion_banana_recommended_confirm">Restore this game’s driver, resolution and Banana Native recommendations, and remove compatibility overrides from the earlier Fusion build. Saves and button mappings are kept. Changes apply at the next game start.</string>
+    <string name="fusion_banana_recommended_done">Recommendations restored. Restart the game to apply them.</string>
+    <string name="fusion_banana_game_language_system">System language · %1$s</string>
+    <string name="fusion_banana_motion_slower">Slower</string>
+    <string name="fusion_banana_motion_faster">Faster</string>
+    <string name="fusion_banana_screen_shape">Screen shape</string>
+    <string name="fusion_banana_screen_shape_description">Screen shape (the picture fills the window; applies at the next start)</string>
+</resources>

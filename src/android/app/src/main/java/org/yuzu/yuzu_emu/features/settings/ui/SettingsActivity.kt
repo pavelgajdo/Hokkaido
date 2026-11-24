@@ -170,6 +170,7 @@ class SettingsActivity : AppCompatActivity() {
                 throw IOException("Failed to delete $settingsFile")
             }
             NativeConfig.initializeGlobalConfig()
+            org.yuzu.yuzu_emu.utils.AppLanguage.select(this, 0)
         } else {
             NativeConfig.unloadPerGameConfig()
             val settingsFile = SettingsFile.getCustomSettingsFile(args.game!!)

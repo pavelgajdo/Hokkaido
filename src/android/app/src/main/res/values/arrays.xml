@@ -364,7 +364,7 @@
         <item>4</item>
     </integer-array>
 
-    <string-array name="gamepadButtons">
+    <string-array name="gamepadButtons" translatable="false">
         <item>A</item>
         <item>B</item>
         <item>X</item>

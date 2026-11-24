@@ -125,14 +125,16 @@ final class Prefs {
     /** The game's window size (Game resolution): DM_WINDOW_SIZE for the host (loader.c window_apply), "1920x1080" (Phone 1080p, the default), "original" (the game's own, 2880x1620 in Donkey Kong Bananza), "1280x720" (Phone 720p: less GPU time a frame), "2560x1440" (Phone 1440p: for QHD screens), "960x540" (Phone 540p: for weaker GPUs) or "848x480" (Phone 480p). DM_WINDOW_SIZE in env.txt overrides it for a run.
      *  A game whose profile has graphics_scale rows gets the graphics scale and operation mode that give the size instead (Profile.resolutionEnv).
      *  Listed from the largest. The stored value is the size itself, so the order can change; the default is WINDOW_DEFAULT. */
-    static final String[] WINDOWS = {"original", "2560x1440", "1920x1080", "1280x720", "960x540", "848x480"},
-            WINDOW_NAMES = {Tx.s(R.string.game_original_the_game_s_own), Tx.s(R.string.game_phone_1440p_2560x1440), Tx.s(R.string.game_phone_1080p_1920x1080), Tx.s(R.string.game_phone_720p_1280x720), Tx.s(R.string.game_phone_540p_960x540), Tx.s(R.string.game_phone_480p_848x480)},
-            WINDOW_SHORT = {Tx.s(R.string.game_original), "1440p", "1080p", "720p", "540p", "480p"};
+    static final String[] WINDOWS = {"original", "2560x1440", "1920x1080", "1280x720", "960x540", "848x480"};
+    static String[] windowNames() {
+        return new String[] {Tx.s(R.string.game_original_the_game_s_own), Tx.s(R.string.game_phone_1440p_2560x1440), Tx.s(R.string.game_phone_1080p_1920x1080), Tx.s(R.string.game_phone_720p_1280x720), Tx.s(R.string.game_phone_540p_960x540), Tx.s(R.string.game_phone_480p_848x480)};
+    }
     static final String WINDOW_DEFAULT = "1920x1080";   // Phone 1080p
     /** A window size's name in the lists, its short name for a settings row (short); the value itself when it is none of WINDOWS (an env.txt-style size) */
     static String windowName(String v, boolean shortName) {
         int i = java.util.Arrays.asList(WINDOWS).indexOf(v);
-        return i < 0 ? v : (shortName ? WINDOW_SHORT : WINDOW_NAMES)[i];
+        return i < 0 ? v : !shortName ? windowNames()[i]
+                : i == 0 ? Tx.s(R.string.game_original) : new String[] {"", "1440p", "1080p", "720p", "540p", "480p"}[i];
     }
     static String window(Context c) { return of(c).getString("window", WINDOW_DEFAULT); }
     static void window(Context c, String v) { of(c).edit().putString("window", v).commit(); }
@@ -376,7 +378,7 @@ final class Prefs {
         if (skipLayersGame(titleId)) out.add(state(Recommend.SKIP_LAYERS, Recommend.onOff(skipLayers(c, titleId)), own(c, "vk_skip_layers", titleId), r));
         for (Profile.Option o : p.options) {
             String k = Recommend.OPTION + o.env;
-            out.add(new Recommend.State(k, o.label, Recommend.onOff(gameOption(c, titleId, o.env)), own(c, "opt_" + o.env, titleId), r.get(k)));
+            out.add(new Recommend.State(k, o.label(), Recommend.onOff(gameOption(c, titleId, o.env)), own(c, "opt_" + o.env, titleId), r.get(k)));
         }
         return out;
     }
@@ -404,20 +406,20 @@ final class Prefs {
     /** A recommended value's short name, as the player reads it (a changed row's "Recommended: …" line, a list's "Recommended (…)"): the preset's label, the driver's name
      *  without its version, the Upscaler's or Dynamic resolution's name as its list shows it, a cap in fps, On / Off */
     static String recName(Context c, String titleId, String setting, String v) {
-        if (setting.equals(Recommend.RES_PRESET)) { ResPresets.Preset p = ResPresets.of(ResPresets.presets(Profile.of(titleId)), v); return p == null ? v : p.label; }
+        if (setting.equals(Recommend.RES_PRESET)) { ResPresets.Preset p = ResPresets.of(ResPresets.presets(Profile.of(titleId)), v); return p == null ? v : p.displayLabel(); }
         if (setting.equals(Recommend.DRIVER)) {
-            if (v.equals("system")) return "System";
+            if (v.equals("system")) return Tx.s(R.string.common_system);
             for (GpuDriver.Info i : GpuDriver.installed(c)) if (i.dir.getName().equals(v)) return i.name;
         }
-        if (v.equals("on") || v.equals("off")) return v.equals("on") ? "On" : "Off";
+        if (v.equals("on") || v.equals("off")) return v.equals("on") ? Tx.s(R.string.game_on) : Tx.s(R.string.game_off);
         if (setting.equals(Recommend.UPSCALER)) {
             boolean dl = dlssGame(titleId);
             int i = Recommend.index(dl ? Recommend.DLSS_MODES : Recommend.UPSCALERS, v);
             String n = i < 0 ? v : (dl ? Tx.arr(R.array.arr_dlss_modes) : Tx.arr(R.array.arr_upscaler_modes))[i];
             return n.contains(" (") ? n.substring(0, n.indexOf(" (")) : n;
         }
-        if (setting.equals(Recommend.DRS)) { int i = Recommend.index(Recommend.DRS_VALUES, v); return i < 0 ? v : DRS_NAMES[i]; }
-        if (setting.equals(Recommend.FPS_CAP)) return v.equals("own") ? "the game's own" : v + " fps";
+        if (setting.equals(Recommend.DRS)) { int i = Recommend.index(Recommend.DRS_VALUES, v); return i < 0 ? v : drsNames()[i]; }
+        if (setting.equals(Recommend.FPS_CAP)) return v.equals("own") ? Tx.s(R.string.game_the_game_s_own_2) : v + " fps";
         return v;
     }
 
@@ -425,16 +427,16 @@ final class Prefs {
     static String recCardName(Context c, String titleId, String setting, String v) {
         String n = recName(c, titleId, setting, v);
         if (v.equals("on") || v.equals("off")) {
-            String what = setting.equals(Recommend.HOLD60) ? "Hold 60" : setting.startsWith(Recommend.OPTION) ? optionLabel(titleId, setting) : Recommend.label(setting);
-            return what + " " + v;
+            String what = setting.equals(Recommend.HOLD60) ? Tx.s(R.string.game_hold_60_fps) : setting.startsWith(Recommend.OPTION) ? optionLabel(titleId, setting) : Recommend.label(setting);
+            return Words.s("fusion_runtime_setting_value", "%1$s: %2$s", what, n);
         }
-        if (setting.equals(Recommend.FPS_CAP)) return n + " cap";
-        if (setting.equals(Recommend.DRS)) return "Dynamic resolution " + n;
+        if (setting.equals(Recommend.FPS_CAP)) return Words.s("fusion_runtime_frame_limit", "%1$s cap", n);
+        if (setting.equals(Recommend.DRS)) return Words.s("fusion_runtime_setting_value", "%1$s: %2$s", Tx.s(R.string.common_dynamic_resolution), n);
         return n;
     }
     private static String optionLabel(String titleId, String setting) {
         Profile p = Profile.of(titleId);
-        if (p != null) for (Profile.Option o : p.options) if (setting.equals(Recommend.OPTION + o.env)) return o.label;
+        if (p != null) for (Profile.Option o : p.options) if (setting.equals(Recommend.OPTION + o.env)) return o.label();
         return setting;
     }
 
@@ -448,6 +450,7 @@ final class Prefs {
     static boolean dlssGame(String titleId) { Profile p = Profile.of(titleId); return p != null && p.dlss; }
     static final int[][] DRS = {{100, 100}, {80, 100}, {70, 100}, {60, 100}, {50, 100}, {40, 100}, {30, 100}};   // 30 %: the game's rate table stops at 3x (640x360 at 1080p)
     static final String[] DRS_NAMES = {"Off", "80%", "70%", "60%", "50%", "40%", "30%"};   // the lowest render size, as % of the window (always up to 100 %)
+    static String[] drsNames() { String[] names = DRS_NAMES.clone(); names[0] = Tx.s(R.string.game_off); return names; }
     static final int DRS_DEFAULT = 5;   // 40-100 %
     static int drs(Context c) { int v = of(c).getInt("drs2", DRS_DEFAULT); return v >= 0 && v < DRS.length ? v : DRS_DEFAULT; }
     static void drsDefault(Context c, int v) { of(c).edit().putInt("drs2", v).commit(); }

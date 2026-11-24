@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_freedreno_cpu_memory">调试：使用系统内存</string>
+    <string name="fusion_freedreno_cpu_memory_description">使用系统内存，速度较慢，但更稳定</string>
+    <string name="fusion_freedreno_no_ubwc">调试：关闭 UBWC</string>
+    <string name="fusion_freedreno_no_ubwc_description">关闭 UBWC 压缩以进行调试</string>
+    <string name="fusion_freedreno_no_binning">调试：关闭分块优化</string>
+    <string name="fusion_freedreno_no_binning_description">关闭图形分块优化</string>
+    <string name="fusion_freedreno_capture_renderpass">捕获渲染过程</string>
+    <string name="fusion_freedreno_capture_renderpass_description">捕获图形命令流数据以进行调试</string>
+    <string name="fusion_freedreno_capture_frames">捕获前 100 帧</string>
+    <string name="fusion_freedreno_capture_frames_description">仅捕获前 100 帧的图形命令流</string>
+    <string name="fusion_freedreno_shader_debug">着色器调试</string>
+    <string name="fusion_freedreno_shader_debug_description">启用 IR3 着色器编译器调试</string>
+    <string name="fusion_freedreno_hang_trace">图形处理器卡死跟踪</string>
+    <string name="fusion_freedreno_hang_trace_description">跟踪图形处理进度以排查卡死</string>
+    <string name="fusion_freedreno_ubwc_hint">开发：UBWC 标记提示</string>
+    <string name="fusion_freedreno_ubwc_hint_description">启用 TP UBWC 标记提示以进行开发</string>
+    <string name="fusion_freedreno_performance">默认性能设置</string>
+    <string name="fusion_freedreno_performance_description">清除所有调试选项以恢复默认性能设置</string>
+</resources>

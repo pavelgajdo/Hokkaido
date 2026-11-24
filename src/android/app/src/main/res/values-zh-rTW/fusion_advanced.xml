@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_adv_reset_all">全部重設</string>
+    <string name="fusion_adv_reset_global">將所有遊戲的進階選項全部還原為自動。</string>
+    <string name="fusion_adv_reset_game">將 %1$s 的所有進階選項還原為自動。</string>
+    <string name="fusion_adv_advanced">進階選項</string>
+    <string name="fusion_adv_global_note">所有選項預設為自動，由應用程式決定，且不寫入覆寫值。修改在下次啟動時生效；env.txt 或「額外環境變數」中的設定優先。</string>
+    <string name="fusion_adv_game_note">僅適用於 %1$s，優先於全域進階選項。「自動」不寫入覆寫值。修改在下次啟動時生效。</string>
+    <string name="fusion_adv_search">搜尋選項名稱、問題現象或 DM_ 參數…</string>
+    <string name="fusion_adv_experimental">實驗性</string>
+    <string name="fusion_adv_developer">開發者選項</string>
+    <string name="fusion_adv_no_match">沒有符合的選項。</string>
+    <string name="fusion_adv_no_match_more">沒有符合的選項。開啟開發者選項可搜尋全部參數。</string>
+    <string name="fusion_adv_nothing">此處沒有可設定的選項。</string>
+    <string name="fusion_adv_nothing_more">此處沒有可設定的選項。開啟「實驗性」可顯示其餘選項。</string>
+    <string name="fusion_adv_search_more">搜尋可找到更多選項。</string>
+    <string name="fusion_adv_auto">自動</string>
+    <string name="fusion_adv_auto_value">自動：%1$s</string>
+    <string name="fusion_adv_global_value">全域設定：%1$s</string>
+    <string name="fusion_adv_try_if">適用情況：%1$s。</string>
+    <string name="fusion_adv_from_global">%1$s（來自全域設定）</string>
+    <string name="fusion_adv_set_in">請在 %1$s 中設定。</string>
+    <string name="fusion_adv_own_control">此選項有獨立的設定入口：%1$s。</string>
+    <string name="fusion_adv_changed">已修改</string>
+    <string name="fusion_adv_number_range">請輸入 %1$s 至 %2$s 之間的數值%3$s。</string>
+    <string name="fusion_adv_value_after">請輸入 %1$s= 後面的值。</string>
+    <string name="fusion_adv_empty_auto">留空或選擇「自動」不寫入覆寫值。</string>
+    <string name="fusion_adv_save">儲存</string>
+    <string name="fusion_adv_invalid_value">此選項不接受此值</string>
+    <string name="fusion_adv_cancel">取消</string>
+    <string name="fusion_adv_unit_fps">幀／秒</string>
+    <string name="fusion_adv_area_graphics">圖形</string>
+    <string name="fusion_adv_area_performance">效能</string>
+    <string name="fusion_adv_area_memory">記憶體</string>
+    <string name="fusion_adv_area_input">輸入</string>
+    <string name="fusion_adv_area_audio">音訊</string>
+    <string name="fusion_adv_area_packing">遊戲包準備</string>
+    <string name="fusion_adv_area_game">遊戲</string>
+    <string name="fusion_adv_area_diagnostics">診斷</string>
+    <string name="fusion_adv_dm_fps_limit_label" formatted="false">影格率上限</string>
+    <string name="fusion_adv_dm_fps_limit_owner" formatted="false">遊戲設定 › 影格率上限</string>
+    <string name="fusion_adv_dm_fps_target_label" formatted="false">影格率上限</string>
+    <string name="fusion_adv_dm_fps_target_owner" formatted="false">遊戲設定 › 影格率上限</string>
+    <string name="fusion_adv_dm_gfx_quality_label" formatted="false">畫質</string>
+    <string name="fusion_adv_dm_gfx_quality_try_if" formatted="false">畫面過於簡陋時選畫質優先，執行過慢時選效能優先</string>
+    <string name="fusion_adv_dm_gfx_quality_default" formatted="false">效能優先</string>
+    <string name="fusion_adv_dm_gfx_quality_option_0" formatted="false">效能優先</string>
+    <string name="fusion_adv_dm_gfx_quality_option_1" formatted="false">畫質優先</string>
+    <string name="fusion_adv_dm_lang_label" formatted="false">遊戲語言</string>
+    <string name="fusion_adv_dm_lang_owner" formatted="false">遊戲設定 › 遊戲語言</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_label" formatted="false">插幀最低影格率</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_try_if" formatted="false">遊戲低影格率時產生的畫面異常，可提高門檻；設為 0 一律啟用插幀</string>
+    <string name="fusion_adv_dm_lsfg_min_fps_default" formatted="false">30 幀／秒</string>
+    <string name="fusion_adv_dm_mem_fileback_label" formatted="false">節省記憶體</string>
+    <string name="fusion_adv_dm_mem_fileback_owner" formatted="false">遊戲設定 › 節省記憶體</string>
+    <string name="fusion_adv_dm_motion_sens_label" formatted="false">體感靈敏度</string>
+    <string name="fusion_adv_dm_motion_sens_owner" formatted="false">遊戲設定 › 體感靈敏度</string>
+    <string name="fusion_adv_dm_nvn_gpu_ts_label" formatted="false">圖形處理計時</string>
+    <string name="fusion_adv_dm_nvn_gpu_ts_owner" formatted="false">遊戲設定 › 圖形處理計時</string>
+    <string name="fusion_adv_dm_oot_draw_distance_label" formatted="false">繪製距離</string>
+    <string name="fusion_adv_dm_oot_draw_distance_try_if" formatted="false">在原野或城鎮中執行緩慢時可縮短距離，以減少繪製內容</string>
+    <string name="fusion_adv_dm_oot_draw_distance_default" formatted="false">完整距離（遊戲預設）</string>
+    <string name="fusion_adv_dm_oot_draw_distance_warn" formatted="false">遠景會被截斷，並隨行走逐漸出現；原野的地平線會較空曠。</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_0" formatted="false">遠（300）</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_1" formatted="false">中（150）</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_2" formatted="false">近（80）</string>
+    <string name="fusion_adv_dm_oot_draw_distance_option_3" formatted="false">很近（40）</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_label" formatted="false">距離邊緣霧化</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_try_if" formatted="false">縮短繪製距離後出現明顯的遠景截斷邊緣，可使用薄霧遮掩</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_default" formatted="false">關閉（使用遊戲預設霧效）</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_warn" formatted="false">僅在手動設定繪製距離時生效。遠景會漸隱到薄霧中；中、強兩檔會讓遠山偏藍，也會影響反射中的霧效。</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_0" formatted="false">輕</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_1" formatted="false">中</string>
+    <string name="fusion_adv_dm_oot_fog_at_cut_option_2" formatted="false">強</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_label" formatted="false">植被距離</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_try_if" formatted="false">草地、灌木或樹林處執行緩慢時可縮短距離，以減少植被繪製</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_default" formatted="false">完整距離（遊戲預設）</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_warn" formatted="false">草地、灌木和小樹只在較近距離顯示，並隨行走逐漸出現。</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_0" formatted="false">遠（75%）</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_1" formatted="false">中（50%）</string>
+    <string name="fusion_adv_dm_oot_foliage_distance_option_2" formatted="false">近（35%）</string>
+    <string name="fusion_adv_dm_oot_lod_scale_label" formatted="false">模型細節距離</string>
+    <string name="fusion_adv_dm_oot_lod_scale_try_if" formatted="false">城鎮或原野中執行緩慢時，讓模型在較近距離就切換為簡化版本</string>
+    <string name="fusion_adv_dm_oot_lod_scale_default" formatted="false">完整距離（遊戲預設）</string>
+    <string name="fusion_adv_dm_oot_lod_scale_warn" formatted="false">遠處的人物、建築和物件會更簡單，走近時外觀可能發生變化。</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_0" formatted="false">稍近（0.75）</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_1" formatted="false">較近（0.5）</string>
+    <string name="fusion_adv_dm_oot_lod_scale_option_2" formatted="false">很近（0.3）</string>
+    <string name="fusion_adv_dm_oot_shadow_range_label" formatted="false">陰影範圍</string>
+    <string name="fusion_adv_dm_oot_shadow_range_try_if" formatted="false">原野或城鎮中執行緩慢時，可縮小範圍以減少投射陰影的物件</string>
+    <string name="fusion_adv_dm_oot_shadow_range_default" formatted="false">完整距離（遊戲預設）</string>
+    <string name="fusion_adv_dm_oot_shadow_range_warn" formatted="false">陰影只在林克附近顯示；選擇近、很近時，遠處陰影會在一條邊界處截斷。</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_0" formatted="false">遠（500）</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_1" formatted="false">中（200）</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_2" formatted="false">近（100）</string>
+    <string name="fusion_adv_dm_oot_shadow_range_option_3" formatted="false">很近（50）</string>
+    <string name="fusion_adv_dm_render_pct_label" formatted="false">繪製尺寸</string>
+    <string name="fusion_adv_dm_render_pct_try_if" formatted="false">畫面太模糊時調高，遊戲太慢時調低</string>
+    <string name="fusion_adv_dm_render_pct_default" formatted="false">50 %</string>
+    <string name="fusion_adv_dm_render_pct_option_0" formatted="false">33 %</string>
+    <string name="fusion_adv_dm_render_pct_option_1" formatted="false">50 %</string>
+    <string name="fusion_adv_dm_render_pct_option_2" formatted="false">59 %</string>
+    <string name="fusion_adv_dm_render_pct_option_3" formatted="false">67 %</string>
+    <string name="fusion_adv_dm_render_pct_option_4" formatted="false">100 %</string>
+    <string name="fusion_adv_dm_rumble_label" formatted="false">震動</string>
+    <string name="fusion_adv_dm_rumble_owner" formatted="false">設定 › 震動</string>
+    <string name="fusion_adv_dm_vk_adpf_span_any_label" formatted="false">保持圖形處理器時脈</string>
+    <string name="fusion_adv_dm_vk_adpf_span_any_owner" formatted="false">遊戲設定 › 保持圖形處理器時脈</string>
+    <string name="fusion_adv_dm_vk_classic_rp_label" formatted="false">傳統繪製通道</string>
+    <string name="fusion_adv_dm_vk_classic_rp_owner" formatted="false">遊戲設定 › 傳統繪製通道</string>
+    <string name="fusion_adv_dm_vk_driver_label" formatted="false">圖形驅動</string>
+    <string name="fusion_adv_dm_vk_driver_owner" formatted="false">設定 › 圖形驅動</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_label" formatted="false">材質快取上限</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_try_if" formatted="false">因記憶體不足而關閉時調低，材質不斷重新載入時調高</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_default" formatted="false">根據可用記憶體測算</string>
+    <string name="fusion_adv_dm_vk_img_limit_mb_warn" formatted="false">上限過高可能導致 Android 關閉遊戲。</string>
+    <string name="fusion_adv_dm_vk_img_psi_label" formatted="false">記憶體壓力保護</string>
+    <string name="fusion_adv_dm_vk_img_psi_try_if" formatted="false">手機仍有可用記憶體，但材質不斷重載並卡頓；關閉可恢復舊處理方式</string>
+    <string name="fusion_adv_dm_vk_img_psi_default" formatted="false">開啟：Android 因記憶體等待而停頓時縮小材質快取</string>
+    <string name="fusion_adv_dm_vk_img_psi_option_0" formatted="false">關閉</string>
+    <string name="fusion_adv_dm_vk_img_psi_option_1" formatted="false">開啟</string>
+    <string name="fusion_adv_dm_vk_instance_label" formatted="false">實例化繪製</string>
+    <string name="fusion_adv_dm_vk_instance_owner" formatted="false">遊戲設定 › 實例化繪製</string>
+    <string name="fusion_adv_dm_vk_layer_label" formatted="false">遊玩時編譯著色器</string>
+    <string name="fusion_adv_dm_vk_layer_owner" formatted="false">遊戲設定 › 遊玩時編譯著色器</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_label" formatted="false">網格預處理相容方案</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_try_if" formatted="false">模型出現尖刺或閃爍時可嘗試，此選項用於相容高通驅動</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_default" formatted="false">使用高通驅動且啟用網格著色器時開啟，其餘情況關閉</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_option_0" formatted="false">關閉</string>
+    <string name="fusion_adv_dm_vk_mesh_prepass_skip_option_1" formatted="false">開啟</string>
+    <string name="fusion_adv_dm_vk_pso_async_label" formatted="false">背景管線編譯</string>
+    <string name="fusion_adv_dm_vk_pso_async_owner" formatted="false">遊戲設定 › 背景管線編譯</string>
+    <string name="fusion_adv_dm_vk_skip_warn_label" formatted="false">繪製缺失提示</string>
+    <string name="fusion_adv_dm_vk_skip_warn_try_if" formatted="false">出現「部分畫面未繪製」提示時，可設為 0 關閉，或提高門檻以僅提示較大的缺失</string>
+    <string name="fusion_adv_dm_vk_skip_warn_default" formatted="false">5 %</string>
+    <string name="fusion_adv_dm_vk_tex_soft_label" formatted="false">降低材質解析度</string>
+    <string name="fusion_adv_dm_vk_tex_soft_try_if" formatted="false">遊戲記憶體不足；去掉大型材質最精細的一層以節省記憶體，材質會略顯模糊</string>
+    <string name="fusion_adv_dm_vk_tex_soft_default" formatted="false">由遊戲設定決定</string>
+    <string name="fusion_adv_dm_vk_tex_soft_warn" formatted="false">材質會略顯模糊。尚未對所有遊戲測量效果。</string>
+    <string name="fusion_adv_dm_vk_tex_soft_option_0" formatted="false">關閉</string>
+    <string name="fusion_adv_dm_vk_tex_soft_option_1" formatted="false">開啟</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_label" formatted="false">材質精細層級削減</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_try_if" formatted="false">啟用降低材質解析度後仍然記憶體不足；削減層級越多，越省記憶體，材質也越模糊</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_default" formatted="false">1 級</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_warn" formatted="false">削減層級越多，材質越模糊。</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_0" formatted="false">1 級</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_1" formatted="false">2 級</string>
+    <string name="fusion_adv_dm_vk_tex_soft_levels_option_2" formatted="false">3 級</string>
+    <string name="fusion_adv_dm_vk_vegetation_label" formatted="false">完整植被</string>
+    <string name="fusion_adv_dm_vk_vegetation_owner" formatted="false">遊戲設定 › 完整植被</string>
+</resources>
