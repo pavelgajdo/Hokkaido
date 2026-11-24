@@ -48,6 +48,66 @@ for a,b in [
 ('tag.setVisibility(hidden ||','tag.setVisibility(HokkaidoInGame.on() || hidden ||'),
 ('handle.setVisibility(!clean &&','handle.setVisibility(!HokkaidoInGame.on() && !clean &&')]:
     s=change(s,a,b)
+import re
+matches=list(re.finditer(r'(?m)^\s*boolean paused\(\)\s*\{\s*return paused;\s*\}[ \t]* and 'private void unpause()' not in s
+f.write_text(s)
+f=p/'SidePanel.java'
+s=f.read_text()
+for a,b in [
+('void back() { if (open)','void back() { if (hk != null) { if (open) close(); else openMenu(); return; } if (open)'),
+('void padToggle() { if (isOpen())','void padToggle() { if (hk != null) { if (open) close(); else { openMenu(); hk.focus(); } return; } if (isOpen())'),
+('void open() { showPage(tab); }','void open() { if (hk != null) openMenu(); else showPage(tab); }'),
+('removeCallbacks(tick);\n        drawer.animate().cancel();','removeCallbacks(tick);\n        if (hk != null) { hk.close(); return; }\n        drawer.animate().cancel();'),
+('void openMenu() {\n','void openMenu() {\n        if (hk != null) { if (!open) { open = true; if (onOpen != null) onOpen.run(); hk.open(); } return; }\n'),
+('private void look() {\n','void hokkaidoTab(int k) {\n        if (!open || k < 0 || k >= TAB_NAMES.length) return;\n        tab = k;\n        box.removeAllViews();\n        build();\n        look();\n        refresh();\n    }\n\n    private void look() {\n        if (hk != null) { hk.built(tab, box); return; }\n'),
+('if (stacked()) {   // the menu','if (hk == null && stacked()) {   // the menu'),
+("buildMenu();   // the menu's rows","if (hk == null) buildMenu();   // the menu's rows")]:
+    s=change(s,a,b)
+f.write_text(s)
+rejects=list(p.rglob('*.rej'))
+assert {f.name for f in rejects}=={'GameActivity.java.rej','SidePanel.java.rej'}
+assert all(f.read_text().count('@@ -')==4 for f in rejects)
+for f in rejects: f.unlink()
+print('Preview integration conflicts migrated')
+PY
+        }
+    else
+        patch -d "$module/upstream" -p1 --no-backup-if-mismatch < "$patch"
+    fi
+done
+
+# BuildConfig: the values the release was built with (they match its native libraries).
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+unzip -q -o "$apk" 'classes*.dex' -d "$work"
+{
+    echo "# BuildConfig fields of the Banana Native release this module embeds, read from its classes.dex (tools/android/sync_bananative.sh): name, Java type and Java literal, separated by the first two spaces"
+    for dex in "$work"/classes*.dex; do "$dexdump" "$dex" 2>/dev/null; done | awk '
+        /Class descriptor  : .Ldev\/nxnative\/android\/BuildConfig;/ { p = 1 }
+        p && /Instance fields/ { exit }
+        p && /^ *name *: / { n = $0; sub(/^ *name *: \x27/, "", n); sub(/\x27$/, "", n) }
+        p && /^ *type *: / { t = $0; sub(/^ *type *: \x27/, "", t); sub(/\x27$/, "", t) }
+        p && /^ *value *: / {
+            v = $0; sub(/^ *value *: /, "", v)
+            ty = (t == "Z") ? "boolean" : (t == "I") ? "int" : (t == "Ljava/lang/String;") ? "String" : t
+            if (n != "APPLICATION_ID" && n != "BUILD_TYPE" && n != "DEBUG") printf "%s %s %s\n", n, ty, v
+        }'
+} > "$module/buildconfig.txt"
+
+cat > "$module/UPSTREAM.txt" <<EOF
+# The Banana Native release this module embeds (tools/android/sync_bananative.sh writes this file).
+repo = https://git.eden-emu.dev/moceure/BananaNative
+tag = $tag
+commit = $(git -C "$repo" rev-parse "$tag^{commit}")
+apk_url = $url
+apk_sha256 = $(sha256sum "$apk" | cut -d' ' -f1)
+EOF
+
+echo "Banana Native $tag synced: $(grep -c . "$module/buildconfig.txt") BuildConfig lines; check the manifests, then build."
+,s))
+assert len(matches)==2, 'Expected two identical paused accessors'
+m=matches[-1]
+s=s[:m.start()]+s[m.end():]
 assert 'void unpause()' in s and 'private void unpause()' not in s
 f.write_text(s)
 f=p/'SidePanel.java'
