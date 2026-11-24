@@ -74,7 +74,8 @@ android {
     }
 
     androidResources {
-        generateLocaleConfig = true
+        // Fusion declares the shared host/engine language list in @xml/fusion_locales.
+        generateLocaleConfig = false
     }
 
     defaultConfig {
