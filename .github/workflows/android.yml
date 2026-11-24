@@ -101,6 +101,16 @@ jobs:
           cp src/android/banana/UPSTREAM.txt artifacts/Banana-UPSTREAM.txt
           git diff --binary -- src/android/banana/upstream src/android/banana/buildconfig.txt src/android/banana/UPSTREAM.txt > artifacts/banana-source-sync.patch
 
+      - name: Configure native dependencies and SDL Java sources
+        working-directory: src/android
+        run: |
+          chmod +x gradlew
+          ./gradlew ':app:configureCMakeRelWithDebInfo[arm64-v8a]' \
+            --no-daemon --stacktrace --max-workers=2 \
+            -PYUZU_ANDROID_ARGS="-DUSE_CCACHE=ON -DENABLE_UPDATE_CHECKER=OFF -DCMAKE_JOB_POOLS=fusion_compile=2 -DCMAKE_JOB_POOL_COMPILE=fusion_compile" \
+            -Pnightly=false 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/cmake-configure.log"
+          test -f "$GITHUB_WORKSPACE/externals/generated/sdl/java/org/libsdl/app/SDL.java"
+
       - name: Compile Java and Kotlin integration
         working-directory: src/android
         run: |
