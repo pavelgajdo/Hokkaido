@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_banana_settings_title">Banana Native 設定</string>
+    <string name="fusion_banana_global_settings">所有遊戲的預設設定</string>
+    <string name="fusion_banana_settings_notice">此處設定控制 Banana Native，重新啟動遊戲後生效。如需在遊玩過程中即時修改，請使用快捷設定。</string>
+    <string name="fusion_banana_use_recommended">採用 Banana Native 建議設定</string>
+    <string name="fusion_banana_recommended_confirm">還原此遊戲的驅動、解析度及 Banana Native 建議設定，並清除舊融合版新增的相容性參數。存檔和按鍵對應會保留。修改在下次啟動遊戲時生效。</string>
+    <string name="fusion_banana_recommended_done">已還原建議設定。請重新啟動遊戲以套用。</string>
+    <string name="fusion_banana_game_language_system">系統語言 · %1$s</string>
+    <string name="fusion_banana_motion_slower">較慢</string>
+    <string name="fusion_banana_motion_faster">較快</string>
+    <string name="fusion_banana_screen_shape">跟隨螢幕比例</string>
+    <string name="fusion_banana_screen_shape_description">跟隨螢幕比例：畫面填滿視窗，重新啟動遊戲後生效</string>
+</resources>

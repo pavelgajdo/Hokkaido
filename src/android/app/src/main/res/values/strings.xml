@@ -1196,7 +1196,7 @@
     <string name="banana_pause">Pause</string>
     <string name="banana_try_anyway">Try anyway</string>
     <string name="banana_ready_title">%1$s is ready</string>
-    <string name="banana_ready_description">Its pack and shaders are prepared. From now on it starts at once.</string>
+    <string name="banana_ready_description">The game pack is ready to play. Any remaining shaders are handled according to your current settings.</string>
     <string name="banana_play">Play</string>
     <string name="banana_later">Later</string>
     <string name="banana_running_title">%1$s is still running</string>

@@ -18,7 +18,11 @@ final class Languages {
         final String tag;
         final int nameRes;
         Lang(String tag, int nameRes) { this.tag = tag; this.nameRes = nameRes; }
-        String label() { return Tx.s(nameRes); }
+        String label() {
+            if (nameRes != 0) return Tx.s(nameRes);
+            Locale locale = Locale.forLanguageTag(tag);
+            return locale.getDisplayName(locale);
+        }
     }
 
     /** English first (the source and the fallback), then the others */
@@ -27,6 +31,7 @@ final class Languages {
         new Lang("es", R.string.lang_es),
         new Lang("tr", R.string.lang_tr),
         new Lang("zh-CN", R.string.lang_zh_cn),
+        new Lang("zh-TW", R.string.lang_zh_tw),
         new Lang("fr", R.string.lang_fr),
         new Lang("ar", R.string.lang_ar),
         new Lang("pl", R.string.lang_pl),
@@ -43,7 +48,8 @@ final class Languages {
         if (m == null) return null;
         LocaleList l = m.getApplicationLocales();
         if (l.isEmpty()) return null;
-        return find(l.get(0));
+        Lang known = find(l.get(0));
+        return known != null ? known : new Lang(l.get(0).toLanguageTag(), 0);
     }
 
     /** Picks a language (null: System default); the screens are rebuilt by the system, which recreates the activities */
@@ -78,10 +84,18 @@ final class Languages {
         return null;
     }
 
-    /** The same language; when the launcher's translation names a region (zh-CN) the phone's must be that region or the same script */
+    /** The same language; when the launcher's translation names a region (zh-CN, zh-TW) the phone's must be that region or the same script (Chinese: zh-Hant, zh-HK and zh-MO get zh-TW) */
     static boolean matches(Locale phone, Locale ours) {
         if (!phone.getLanguage().equals(ours.getLanguage())) return false;
         if (ours.getCountry().isEmpty()) return true;
-        return ours.getCountry().equals(phone.getCountry()) || (phone.getCountry().isEmpty() && phone.getScript().isEmpty()) || "Hans".equals(phone.getScript());
+        if (ours.getLanguage().equals("zh")) return script(phone).equals(script(ours));
+        return ours.getCountry().equals(phone.getCountry()) || (phone.getCountry().isEmpty() && phone.getScript().isEmpty());
+    }
+
+    /** A Chinese locale's script: its own, else by region (Traditional in Taiwan, Hong Kong and Macao), else Simplified */
+    private static String script(Locale l) {
+        if (!l.getScript().isEmpty()) return l.getScript();
+        String c = l.getCountry();
+        return c.equals("TW") || c.equals("HK") || c.equals("MO") ? "Hant" : "Hans";
     }
 }

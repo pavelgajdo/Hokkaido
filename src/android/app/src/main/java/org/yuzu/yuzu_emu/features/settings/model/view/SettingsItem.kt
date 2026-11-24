@@ -41,19 +41,15 @@ abstract class SettingsItem(
 ) {
     abstract val type: Int
 
-    val title: String by lazy {
-        if (titleId != 0) {
-            return@lazy YuzuApplication.appContext.getString(titleId)
-        }
-        return@lazy titleString
-    }
+    // These items are cached in the companion map across activity recreation. Resolve text each
+    // time so switching the device/app language cannot leave the previous language in the menus.
+    val title: String
+        get() = if (titleId != 0) YuzuApplication.applyLanguage(YuzuApplication.appContext)
+            .getString(titleId) else titleString
 
-    val description: String by lazy {
-        if (descriptionId != 0) {
-            return@lazy YuzuApplication.appContext.getString(descriptionId)
-        }
-        return@lazy descriptionString
-    }
+    val description: String
+        get() = if (descriptionId != 0) YuzuApplication.applyLanguage(YuzuApplication.appContext)
+            .getString(descriptionId) else descriptionString
 
     val isEditable: Boolean
         get() {

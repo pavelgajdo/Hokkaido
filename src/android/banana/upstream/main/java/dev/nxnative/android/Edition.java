@@ -60,13 +60,17 @@ final class Edition {
     /**
      * The game Play starts for a card: the card itself, or with the switch on, program 1 of its dump as a game of its own (its title ID and name, the same dump
      * folder, its pack: the app's packs/&lt;program 1 ID&gt;, else &lt;program 1 ID&gt;-work/android-pack beside the dump folder, as pack_android.py writes it), null when
-     * the switch is on but program 1 has no pack yet
+     * the switch is on but program 1 has no pack yet. Reads the pack folders: off the main thread (MainActivity.launch)
      */
     static Game forPlay(Context c, Game g) {
         if (!on(c, g.titleId) || !offered(g)) return g;
         String p1 = program1(new File(g.gameDir));
         File game = new File(g.gameDir).getAbsoluteFile();
         File[] places = {AppStorage.pack(c, p1), new File(game.getParentFile(), p1 + "-work/android-pack")};
+        // a pack with this APK's shader library first (Pack.libraryOf), so an app-storage pack without one (its library deleted, or a code-only Prepare) does not
+        // hide a complete pack beside the game; else the first pack, as before (its card then says what the shaders need)
+        for (File d : places)
+            if (new File(d, "pack.tsv").isFile() && Pack.libraryOf(d) != null) return new Game(p1, name(g), g.gameDir, d.getPath());
         for (File d : places)
             if (new File(d, "pack.tsv").isFile()) return new Game(p1, name(g), g.gameDir, d.getPath());
         return null;

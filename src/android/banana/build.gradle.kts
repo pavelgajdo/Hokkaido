@@ -40,13 +40,13 @@ android {
     // BuildConfig.APPLICATION_ID is Hokkaido's application ID (LogProvider's authority).
     buildTypes {
         getByName("release") {
-            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.android\"")
+            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.fusion\"")
         }
         create("relWithDebInfo") {
-            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.android.relWithDebInfo\"")
+            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.fusion.relWithDebInfo\"")
         }
         getByName("debug") {
-            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.android.debug\"")
+            buildConfigField("String", "APPLICATION_ID", "\"dev.lichii.fusion.debug\"")
         }
     }
 
@@ -61,7 +61,7 @@ android {
 
     sourceSets.getByName("main") {
         java.srcDirs("upstream/main/java", "upstream/ondevice/java", "src/main/java")
-        res.srcDirs("upstream/main/res", "upstream/variant-play/res")
+        res.srcDirs("upstream/main/res", "upstream/variant-play/res", "src/main/res")
         manifest.srcFile("src/main/AndroidManifest.xml")
         assets.srcDir(layout.buildDirectory.dir("generated/banana/assets"))
         jniLibs.srcDir(layout.buildDirectory.dir("generated/banana/jni"))

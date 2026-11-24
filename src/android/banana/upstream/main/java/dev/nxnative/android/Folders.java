@@ -80,6 +80,32 @@ final class Folders {
         return n;
     }
 
+    /**
+     * A card whose pack is there but has no shader library of this APK (its library deleted, a code-only Prepare, or a pack from before an update): another pack of
+     * this game the usual search finds that has one (a pack copied beside the game since), else null. None when the player picked the card's pack. Changes nothing:
+     * Home's card offers it, and only the player's tap takes it ({@link #usePack}). Reads packs: off the main thread
+     */
+    static File packWithLibrary(Context a, Game g) {
+        File pd = new File(g.packDir);
+        if (!new File(pd, "pack.tsv").isFile() || Pack.libraryOf(pd) != null) return null;
+        String picked = pickedPack(a, g.titleId);
+        if (picked != null && new File(picked).getAbsoluteFile().equals(pd.getAbsoluteFile())) return null;   // the player's choice
+        if (!android.os.Environment.isExternalStorageManager() && !CopyPlan.inApp(AppStorage.root(a), g.gameDir)) return null;   // nothing beside the game to look at
+        File found = packFor(a, new File(g.gameDir), g.titleId);
+        if (found == null || found.getAbsoluteFile().equals(pd.getAbsoluteFile()) || !isPackOf(found, g.titleId) || Pack.libraryOf(found) == null) return null;
+        return found;
+    }
+
+    /** The card's pack from now on (the player took the pack Home's card offered: packWithLibrary). The list entry is updated */
+    static void usePack(Context a, Game g, File pack) {
+        android.util.Log.i("nxnative", g.titleId + ": the pack folder " + g.packDir + " has no shader library of this app; the player took " + pack + ", which has");
+        synchronized (Game.class) {
+            List<Game> list = Game.load(a);
+            int i = GameFile.index(list, g.gameDir);
+            if (i >= 0 && list.get(i).packDir.equals(g.packDir)) { list.set(i, new Game(g.titleId, g.name, g.gameDir, pack.getPath(), list.get(i).used)); Game.save(a, list); }
+        }
+    }
+
     /** A picked save folder that is gone (GameFile.saveGone), else null */
     static File goneSave(Context a, Game g) {
         String s = Prefs.folder(a, "save_" + g.titleId);

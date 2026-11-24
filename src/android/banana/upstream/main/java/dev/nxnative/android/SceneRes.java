@@ -35,6 +35,19 @@ final class SceneRes {
         Preset(String name, String label, double scale, String mode, String args) { this.name = name; this.label = label; this.scale = scale; this.mode = mode; this.args = args; }
         /** Whether the choice is game arguments (scene_arg) rather than an overlay the pack step made */
         boolean arg() { return mode.equals("arg"); }
+        /** Display only: names, arguments and the serialized profile keep their original values. */
+        String label() {
+            if (mode.equals("fixed") && label.startsWith("Fixed "))
+                return Words.s("fusion_scene_fixed", "Fixed %1$s", label.substring(6));
+            if (mode.equals("floor") && label.startsWith("At least ") && label.endsWith(" (dynamic)"))
+                return Words.s("fusion_scene_floor", "At least %1$s (dynamic)", label.substring(9, label.length() - 10));
+            java.util.regex.Matcher sized = java.util.regex.Pattern.compile("([0-9]+)%: 3D up to ([0-9]+x[0-9]+)").matcher(label);
+            if (arg() && sized.matches())
+                return Words.s("fusion_scene_up_to", "%1$s%%: 3D up to %2$s", sized.group(1), sized.group(2));
+            if (arg() && label.equals("The game's 50%, no dynamic resolution: 3D 960x540"))
+                return Words.s("fusion_scene_no_dynamic", "The game's 50%, no dynamic resolution: 3D 960x540");
+            return label;
+        }
         @Override public String toString() { return name + "|" + label; }
     }
 
@@ -112,6 +125,6 @@ final class SceneRes {
     /** The choice's label in Game settings: the preset's, "Game default" for none */
     static String label(List<Preset> presets, String choice) {
         Preset p = of(presets, choice);
-        return p == null ? "Game default" : p.label;
+        return p == null ? Words.s("fusion_scene_game_default", "Game default") : p.label();
     }
 }

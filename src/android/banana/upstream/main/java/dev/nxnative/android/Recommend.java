@@ -230,14 +230,14 @@ final class Recommend {
     /** A setting's name as Game settings shows it (an option's is its label, from the profile) */
     static String label(String setting) {
         switch (setting) {
-            case RES_PRESET: return "Resolution";
-            case DRIVER: return "GPU driver";
-            case UPSCALER: return "Upscaler";
-            case HOLD60: return "Hold 60 fps";
-            case FPS_CAP: return "Frame rate cap";
-            case DRS: return "Dynamic resolution";
-            case VEGETATION: return "Full vegetation";
-            case SKIP_LAYERS: return "Speedhack";
+            case RES_PRESET: return Words.s("common_resolution", "Resolution");
+            case DRIVER: return Words.s("common_gpu_driver", "GPU driver");
+            case UPSCALER: return Words.s("common_upscaler", "Upscaler");
+            case HOLD60: return Words.s("game_hold_60_fps", "Hold 60 fps");
+            case FPS_CAP: return Words.s("common_frame_rate_cap", "Frame rate cap");
+            case DRS: return Words.s("common_dynamic_resolution", "Dynamic resolution");
+            case VEGETATION: return Words.s("game_full_vegetation", "Full vegetation");
+            case SKIP_LAYERS: return Words.s("fusion_runtime_speedhack", "Speedhack");
             default: return setting;
         }
     }
@@ -270,8 +270,11 @@ final class Recommend {
     /** How many recommended settings the player set to another value for this game (the card's "You changed N of these.") */
     static int changedCount(List<State> states) { int n = 0; for (State st : states) if (st.changed()) n++; return n; }
 
+    /** Whether the card shows Custom: the player picked it (kept per game) or changed a recommended setting */
+    static boolean showsCustom(boolean picked, int changed) { return picked || changed > 0; }
+
     /** The card's muted line, null when nothing was changed (no line, no button) */
-    static String changedLine(int n) { return n <= 0 ? null : "You changed " + n + " of these."; }
+    static String changedLine(int n) { return n <= 0 ? null : Words.s("fusion_runtime_changed_settings", "You changed %1$d of these.", n); }
 
     /** A row's tag: "Changed" (warning tint) where the player's value is not the recommended one, else "Recommended" (the value is the recommended one); none without a recommendation */
     static String tag(State st) { return st == null || st.recommended == null ? null : st.changed() ? Words.s("game_changed", "Changed") : Words.s("game_recommended", "Recommended"); }

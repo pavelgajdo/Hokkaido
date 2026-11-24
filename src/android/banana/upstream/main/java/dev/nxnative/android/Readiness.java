@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * The readiness check's decisions (android/README.md "Readiness check"): what this phone and its GPU driver report, against what the host needs for every game
- * ({@link #HOST}, the checks vka_dev.c makes) and what the game's profile asks for (its req rows, dm/games/README.md "Keys"). Each requirement is "required" (the game
+ * ({@link #host}, the checks vka_dev.c makes) and what the game's profile asks for (its req rows, dm/games/README.md "Keys"). Each requirement is "required" (the game
  * will not run, or will draw nothing, without it) or "degraded" (it runs, with something missing or at lower detail). The facts are "key=value" lines: the host's
  * nxhost_vk_readiness (vka_readiness.c, on the driver the game would load: whatever it reports, a custom driver's too) and the launcher's own (ram_gib, android.sdk).
  * Nothing here knows a vendor or a game: the numbers come from the driver and the profile. No Android classes: the JVM test runs it on the Mac.
@@ -31,9 +31,10 @@ final class Readiness {
             this.required = required;
             this.fact = fact;
             this.min = min;
-            int c = what.indexOf(": ");
+            int c = what.indexOf(": "), separator = 2;
+            if (c < 0) { c = what.indexOf('：'); separator = 1; }
             this.title = c > 0 ? what.substring(0, c) : what;
-            this.why = c > 0 ? what.substring(c + 2) : "";
+            this.why = c > 0 ? what.substring(c + separator) : "";
         }
     }
 
@@ -57,7 +58,7 @@ final class Readiness {
 
     /** What the host needs whatever the game: vka_dev.c stops without the first ones (Vulkan 1.3, the queue, timeline semaphores, dynamic rendering), and without
      *  placed memory maps, update-after-bind texture tables or a swapchain it runs but draws or shows nothing (its [RED] lines say so) */
-    static final List<Req> HOST = Collections.unmodifiableList(List.of(
+    static List<Req> host() { return Collections.unmodifiableList(List.of(
             new Req(true, "android.sdk", "33", Words.s("ready_android_13_or_newer_the", "Android 13 or newer: the app is built for it")),
             new Req(true, "vk.instance", "1.3", Words.s("ready_vulkan_1_3_loader_the", "Vulkan 1.3 loader: the graphics replay is written for Vulkan 1.3")),
             new Req(true, "vk.api", "1.3", Words.s("ready_vulkan_1_3_gpu_driver", "Vulkan 1.3 GPU driver: the graphics replay is written for Vulkan 1.3")),
@@ -70,7 +71,7 @@ final class Readiness {
             new Req(true, "feature.memoryMapPlaced", "1", Words.s("ready_placed_memory_maps_the_game", "Placed memory maps: the game's GPU memory is mapped at the game's own addresses; without them nothing is drawn")),
             new Req(true, "feature.descriptorBindingSampledImageUpdateAfterBind", "1", Words.s("ready_texture_tables_update_after_bind", "Texture tables (update after bind): the game's texture pools live in them")),
             new Req(true, "feature.descriptorBindingPartiallyBound", "1", Words.s("ready_texture_tables_partially_bound_the", "Texture tables (partially bound): the game's texture pools live in them")),
-            new Req(true, "feature.runtimeDescriptorArray", "1", Words.s("ready_texture_tables_runtime_arrays_the", "Texture tables (runtime arrays): the game's texture pools live in them"))));
+            new Req(true, "feature.runtimeDescriptorArray", "1", Words.s("ready_texture_tables_runtime_arrays_the", "Texture tables (runtime arrays): the game's texture pools live in them")))); }
 
     /** A profile's req rows as build.gradle hands them over (Profile.reqs): "level|fact|min|what" rows, ';' between them; a malformed row is skipped */
     static List<Req> parseReqs(String table) {
@@ -129,7 +130,7 @@ final class Readiness {
         // or the host cannot report): nothing is known, so nothing is called missing; one warning says the GPU was not checked
         String err = facts.get("error"), unchecked = facts.get("unchecked");
         List<Req> all = new ArrayList<>();
-        for (Req r : HOST) all.add(r.fact.equals("android.sdk") && minSdk < 33
+        for (Req r : host()) all.add(r.fact.equals("android.sdk") && minSdk < 33
                 ? new Req(true, "android.sdk", String.valueOf(minSdk), Words.s("ready_android_12_or_newer_the", "Android 12 or newer (experimental): the app is built for it")) : r);
         all.addAll(game);
         List<String> failed = new ArrayList<>(), seen = new ArrayList<>();
@@ -140,7 +141,7 @@ final class Readiness {
                 if (!seen.contains("error")) {
                     seen.add("error");
                     out.add(err != null ? new Check(Words.s("ready_gpu_features", "GPU features"), Status.FAIL, Words.s("ready_the_gpu_driver_could_not", "The GPU driver could not be used (") + err + Words.s("ready_the_game_needs_vulkan_1", "): the game needs Vulkan 1.3."), "driver")
-                            : new Check(Words.s("ready_gpu_features", "GPU features"), Status.WARNING, "Not checked (" + unchecked + Words.s("ready_whether_this_gpu_has_what", "): whether this GPU has what the game needs is not known."), null));
+                            : new Check(Words.s("ready_gpu_features", "GPU features"), Status.WARNING, Words.s("fusion_runtime_gpu_unchecked", "Not checked (%1$s): whether this GPU has what the game needs is not known.", unchecked), null));
                 }
                 continue;
             }
@@ -160,13 +161,13 @@ final class Readiness {
                 continue;
             }
             boolean ok = have != null && compare(have, r.min) >= 0;
-            String shown = have == null ? Words.s("ready_not_reported", "not reported") : "reports " + have;
-            if (ok) out.add(new Check(r.title, Status.PASS, "Present (" + label(r.fact) + " " + have + ", needs " + r.min + ").", null));
+            String shown = have == null ? Words.s("ready_not_reported", "not reported") : Words.s("fusion_runtime_reports_value", "reports %1$s", have);
+            if (ok) out.add(new Check(r.title, Status.PASS, Words.s("fusion_runtime_requirement_present", "Present (%1$s %2$s, needs %3$s).", label(r.fact), have, r.min), null));
             else {
                 if (r.required) { failed.add(r.fact); failed.add("title " + r.title); }
                 String msg = (r.required ? Words.s("ready_this_device_lacks_it_this", "This device lacks it; this game needs it. ") : Words.s("ready_missing_this_game_runs_without", "Missing: this game runs without it, with less. "))
                         + (r.why.isEmpty() ? "" : r.why.substring(0, 1).toUpperCase(Locale.ROOT) + r.why.substring(1) + ". ")
-                        + "(" + label(r.fact) + " " + shown + ", needs " + r.min + ")";
+                        + Words.s("fusion_runtime_requirement_missing", "(%1$s %2$s, needs %3$s)", label(r.fact), shown, r.min);
                 out.add(new Check(r.title, r.required ? Status.FAIL : Status.WARNING, msg, r.fact.equals("ram_gib") ? "memory" : "driver", r.fact));
             }
         }
@@ -243,7 +244,7 @@ final class Readiness {
     }
 
     private static String label(String fact) {
-        if (fact.equals("ram_gib")) return "memory in GiB:";
+        if (fact.equals("ram_gib")) return Words.s("fusion_runtime_memory_gib", "memory in GiB:");
         if (fact.equals("android.sdk")) return "Android SDK";
         return fact + ":";
     }

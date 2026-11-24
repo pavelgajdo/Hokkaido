@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_native_game_not_found">未找到遊戲</string>
+    <string name="fusion_native_cannot_read">無法讀取遊戲</string>
+    <string name="fusion_native_this_game">此遊戲</string>
+    <string name="fusion_native_not_supported">Banana Native 暫不支援此遊戲</string>
+    <string name="fusion_native_update">更新版本 %1$d</string>
+    <string name="fusion_native_dump_summary">%1$s%2$s，包含 %3$d 個追加內容。</string>
+    <string name="fusion_native_prepare_space">需要約 1.5 GB 可用空間（目前剩餘 %1$s GB）。</string>
+    <string name="fusion_native_prepare_full">Banana Native 會根據你匯出的遊戲檔案製作遊戲包：重新編譯遊戲程式碼（需要幾分鐘），並轉換 %1$s 個著色器（在背景處理約需 %2$s，建議連接充電器）。你可以隨時暫停。</string>
+    <string name="fusion_native_prepare_paths">遊戲：%1$s\n工作檔案：%2$s\n遊戲包：%3$s</string>
+    <string name="fusion_native_untested_version">尚未測試的版本</string>
+    <string name="fusion_native_untested_game">%1$s 的此版本尚未測試</string>
+    <string name="fusion_native_prepare_code_first">請先使用 Banana Native 啟動此遊戲一次，以準備遊戲程式碼。</string>
+    <string name="fusion_native_prepare_all_shaders">在遊玩前編譯遊戲的完整著色器集合，減少因著色器尚未編譯而出現的場景缺失。此操作需要一些時間，並會大量使用處理器，建議連接充電器。集合中未包含的著色器仍會在遊玩時編譯。</string>
+    <string name="fusion_native_cannot_create_folder">無法建立資料夾 %1$s。</string>
+    <string name="fusion_native_pack_space">遊戲包需要 %1$s 空間，手機目前剩餘 %2$s。</string>
+</resources>

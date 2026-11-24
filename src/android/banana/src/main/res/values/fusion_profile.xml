@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fusion_profile_oot_max_resolution_label">Max resolution</string>
+    <string name="fusion_profile_oot_max_resolution_description">Keeps the 3D scene at full size: sharper, more GPU work. Best with Resolution › Quality</string>
+    <string name="fusion_profile_oot_texture_pool_label">Texture pool ×2</string>
+    <string name="fusion_profile_oot_texture_pool_description">Twice the game\'s starting graphics memory. Max resolution needs it</string>
+    <string name="fusion_profile_oot_fps_unlock_label">Unlocked frame rate</string>
+    <string name="fusion_profile_oot_fps_unlock_description">Game logic follows real time, so speed holds when fps changes. Does not raise fps</string>
+    <string name="fusion_profile_oot_cave_walls_label">Keep cave walls (Qualcomm)</string>
+    <string name="fusion_profile_oot_cave_walls_description">Fixes walls and rocks that vanish on Death Mountain Trail with Qualcomm\'s driver. Cheap in the cave, but about 7 fps slower in the castle: switch it on in the in-game panel there and off elsewhere. No effect on Turnip</string>
+    <string name="fusion_profile_online_events_label">Online events</string>
+    <string name="fusion_profile_online_events_description">Tells the game it is online so events that need a connection, such as Apples to Applin, can start. Nothing is sent. Experimental</string>
+    <string name="fusion_scene_fixed">Fixed %1$s</string>
+    <string name="fusion_scene_floor">At least %1$s (dynamic)</string>
+    <string name="fusion_scene_up_to">%1$s%%: 3D up to %2$s</string>
+    <string name="fusion_scene_no_dynamic">The game\'s 50%, no dynamic resolution: 3D 960x540</string>
+    <string name="fusion_scene_game_default">Game default</string>
+</resources>

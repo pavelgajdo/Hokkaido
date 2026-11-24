@@ -38,13 +38,27 @@ final class ResPresets {
         double scale() { return overlay() && outH > 0 ? (double) height / outH : 0; }
 
         /** The scene's size as the second line says it: "about 960x540" (open) or "960x540" (measured) */
-        String sceneSize() { return (measured ? "" : "about ") + Math.round(outW * scale()) + "x" + height; }
+        String sceneSize() {
+            String size = Math.round(outW * scale()) + "x" + height;
+            return measured ? size : Words.s("fusion_runtime_approximate_size", "about %1$s", size);
+        }
+
+        /** Translate known display labels without changing the profile's identifiers or serialized data. */
+        String displayLabel() {
+            switch (label) {
+                case "Quality": return Words.s("game_lsfg_quality", "Quality");
+                case "Balanced": return Words.s("game_clarity_balanced", "Balanced");
+                case "Performance": return Words.s("game_performance", "Performance");
+                default: return label;
+            }
+        }
 
         /** The second line: "window 1280x720 · 3D about 960x540" */
         String detail() {
-            String w = window.equals("original") ? "the game's own" : window;
-            String scene = !overlay() ? "the game's own dynamic resolution" : mode.equals("floor") ? "dynamic, at least " + sceneSize() : sceneSize();
-            return "window " + w + " · 3D " + scene;
+            String w = window.equals("original") ? Words.s("game_the_game_s_own_2", "the game's own") : window;
+            String scene = !overlay() ? Words.s("fusion_runtime_game_dynamic_resolution", "the game's own dynamic resolution")
+                    : mode.equals("floor") ? Words.s("fusion_runtime_dynamic_minimum", "dynamic, at least %1$s", sceneSize()) : sceneSize();
+            return Words.s("fusion_runtime_resolution_detail", "window %1$s · 3D %2$s", w, scene);
         }
 
         @Override public String toString() { return id + "|" + label + "|" + window + "|" + mode + "|" + height + "|" + outW + "|" + outH + "|" + (measured ? "measured" : "open"); }
@@ -75,12 +89,14 @@ final class ResPresets {
     static List<Preset> presets(Profile p) { return p == null ? Collections.emptyList() : parse(p.presets); }
 
     /** The subtitle of the Resolution setting, the same in Game settings and the in-game panel: what it sets, and when each part applies */
-    static final String NOTE = "Window and 3D picture together; lower is faster and softer. In a running game the window changes at once, the 3D picture the next time the game starts.";
+    static String note() { return Words.s("fusion_runtime_resolution_note", "Window and 3D picture together; lower is faster and softer. In a running game the window changes at once, the 3D picture the next time the game starts."); }
 
     /** One choice as both lists show it: "Quality (game default, recommended for this phone)" over its second line */
     static String itemText(Preset p, boolean dflt, boolean recommended) {
-        String tag = recommended ? " (recommended)" : dflt ? " (the game's own)" : "";
-        return p.label + tag + "\n" + p.detail();
+        String label = p.displayLabel();
+        if (recommended) label = Words.s("fusion_runtime_recommended_preset", "%1$s (recommended)", label);
+        else if (dflt) label = Words.s("fusion_runtime_default_preset", "%1$s (the game's own)", label);
+        return label + "\n" + p.detail();
     }
 
     /**
@@ -147,6 +163,6 @@ final class ResPresets {
     /** The choice's label in Game settings: "Balanced · window 1920x1080 · 3D dynamic, at least about 1280x720", or "Advanced" */
     static String label(List<Preset> ps, String choice) {
         Preset p = of(ps, choice);
-        return p != null ? p.label + " · " + p.detail() : "Advanced";
+        return p != null ? p.displayLabel() + " · " + p.detail() : Words.s("settings_advanced", "Advanced");
     }
 }

@@ -17,7 +17,7 @@
         <activity
             android:name="dev.nxnative.android.MainActivity"
             android:theme="@style/Theme.Banana"
-            android:launchMode="singleTask"
+            android:launchMode="standard"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
         <activity

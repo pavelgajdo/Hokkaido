@@ -139,9 +139,13 @@ final class UpdateCheck {
         final Release release; final int[] version; final Asset apk; final String sha256;   // sha256: lower-case hex, null when the asset has no digest
         Update(Release r, int[] v, Asset a, String sha256) { release = r; version = v; apk = a; this.sha256 = sha256; }
         String tag() { return release.tag; }
+        /** The version as players read it: the tag without its v ("0.3.47", "0.3.47-preview") */
+        String label() { String t = release.tag.trim(); return t.startsWith("v") || t.startsWith("V") ? t.substring(1) : t; }
     }
 
     private static final Pattern TAG = Pattern.compile("[vV]?(\\d{1,6})\\.(\\d{1,6})\\.(\\d{1,6})");
+    /** A preview release's tag, vX.Y.Z-preview: apps up to 0.3.45 read only vX.Y.Z tags, so they never offer one */
+    private static final Pattern PREVIEW_TAG = Pattern.compile("[vV]?(\\d{1,6})\\.(\\d{1,6})\\.(\\d{1,6})-preview");
     private static final Pattern APP = Pattern.compile("[vV]?(\\d{1,6})\\.(\\d{1,6})\\.(\\d{1,6})(?:[^0-9].*)?");
     private static final Pattern HEX = Pattern.compile("[0-9a-fA-F]{64}");
 
@@ -150,6 +154,12 @@ final class UpdateCheck {
 
     /** The app's own version (versionName): X.Y.Z, optionally followed by a suffix ("0.1.3", "0.1.1-test"), else null ("0.1-bringup": no update check) */
     static int[] appVersion(String name) { return match(APP, name); }
+
+    /** Whether a release tag is a preview one (vX.Y.Z-preview) */
+    static boolean previewTag(String tag) { return tag != null && PREVIEW_TAG.matcher(tag.trim()).matches(); }
+
+    /** Whether the app itself is a preview build (versionName X.Y.Z-preview): the release X.Y.Z is then newer than it */
+    static boolean previewApp(String name) { return name != null && name.trim().toLowerCase(Locale.ROOT).endsWith("-preview"); }
 
     private static int[] match(Pattern p, String s) {
         if (s == null) return null;
@@ -206,7 +216,7 @@ final class UpdateCheck {
      * vX.Y.Z are skipped, and so is a release without an APK. The highest version wins whatever the list's order; on a tie the first in the list (Updater lists
      * the sources in SOURCES order).
      */
-    static Update pick(List<Release> releases, int[] current) { return pick(releases, current, false); }
+    static Update pick(List<Release> releases, int[] current) { return pick(releases, current, false, HOTFIX); }
 
     private static final Pattern KIND = Pattern.compile("(?im)^[ \\t*_>#-]*update[ -]type[ \\t]*:[ \\t*_]*(hotfix|critical|major)\\b");
 
@@ -215,6 +225,7 @@ final class UpdateCheck {
      * everyone should take: always offered) or "Update type: major" (the default, also for every older release without the line)
      */
     static String kind(Release r) {
+        if (r != null && previewTag(r.tag)) return "preview";   // the tag decides, not the notes: a preview must never reach an app that reads only the notes
         Matcher m = r == null || r.body == null ? null : KIND.matcher(r.body);
         return m != null && m.find() ? m.group(1).toLowerCase(Locale.ROOT) : "major";
     }
@@ -223,15 +234,24 @@ final class UpdateCheck {
      * pick, and with skipHotfix (the player turned "small fix updates" off) a release that is a hotfix is passed over: the newest major or critical one above
      * the app's version is offered instead, and a hotfix alone is never offered. The next major release carries every hotfix before it (an APK is the whole app)
      */
-    static Update pick(List<Release> releases, int[] current, boolean skipHotfix) {
+    static Update pick(List<Release> releases, int[] current, boolean skipHotfix) { return pick(releases, current, false, skipHotfix ? STABLE : HOTFIX); }
+
+    /**
+     * The newest release the channel offers (offers) above the app's version. A preview of X.Y.Z (vX.Y.Z-preview) comes before the release X.Y.Z: an app
+     * that is that preview (currentPreview) is offered X.Y.Z, and on a tie the release wins over the preview
+     */
+    static Update pick(List<Release> releases, int[] current, boolean currentPreview, String channel) {
         if (releases == null || current == null) return null;
         Update best = null;
         for (Release r : releases) {
             if (r == null || r.draft) continue;
-            int[] v = tagVersion(r.tag);
-            if (v == null || compare(v, current) <= 0) continue;
-            if (best != null && compare(v, best.version) <= 0) continue;
-            if (skipHotfix && kind(r).equals("hotfix")) continue;
+            boolean pv = previewTag(r.tag);
+            int[] v = pv ? match(PREVIEW_TAG, r.tag) : tagVersion(r.tag);
+            if (v == null) continue;
+            int c = compare(v, current);
+            if (c < 0 || c == 0 && !(currentPreview && !pv)) continue;
+            if (best != null) { int b = compare(v, best.version); if (b < 0 || b == 0 && !(previewTag(best.tag()) && !pv)) continue; }
+            if (!offers(channel, kind(r))) continue;
             Asset a = apk(r);
             if (a == null) continue;
             best = new Update(r, v, a, sha256(a.digest));
@@ -239,14 +259,70 @@ final class UpdateCheck {
         return best;
     }
 
-    /** The newest release across the sources' lists (null for a source that failed): pick on them all, in order, so a tie goes to the earlier source */
-    static Update pickAll(List<List<Release>> perSource, int[] current) { return pickAll(perSource, current, false); }
+    /**
+     * Update channels (Settings > Updates > Update channel), a filter on the release notes' kind line, so no release, branch or tag changes on the server and
+     * every older release (no line: major) is read as before. STABLE: major and critical releases (the weekly ones and the fixes everyone needs); HOTFIX: every
+     * release, also the small fixes between weekly ones. The channel replaces the "Small fix updates" switch of 0.3.42 to 0.3.45 (Prefs "hotfix_updates",
+     * on = HOTFIX, off = STABLE).
+     */
+    static final String STABLE = "stable", HOTFIX = "hotfix", PREVIEW = "preview";
 
-    static Update pickAll(List<List<Release>> perSource, int[] current, boolean skipHotfix) {
+    /** The channel of a player who never chose one and never touched the older switch: STABLE (from 0.3.46, the first weekly release). Players who did
+     *  choose (the channel, or Small fix updates switched off or back on) keep their choice */
+    static final String DEFAULT_CHANNEL = STABLE;
+
+    /**
+     * The player's channel: the stored one when it names a channel, else the older switch's choice when it was ever set (smallFixes: null when never written),
+     * else DEFAULT_CHANNEL. So an update to this version keeps each player's choice without writing anything at start.
+     */
+    static String channel(String stored, Boolean smallFixes) {
+        if (STABLE.equals(stored) || HOTFIX.equals(stored) || PREVIEW.equals(stored)) return stored;
+        if (smallFixes != null) return smallFixes ? HOTFIX : STABLE;
+        return DEFAULT_CHANNEL;
+    }
+
+    /** Whether a channel passes hotfix releases over (pick's skipHotfix) */
+    static boolean skipsHotfix(String channel) { return STABLE.equals(channel); }
+
+    /** Whether a channel offers a release of this kind: Stable major and critical; Hotfix also hotfix; Preview every release, also previews (tags vX.Y.Z-preview) */
+    static boolean offers(String channel, String kind) {
+        if ("preview".equals(kind)) return PREVIEW.equals(channel);
+        if ("hotfix".equals(kind)) return !STABLE.equals(channel);
+        return true;
+    }
+
+    /** The newest release across the sources' lists (null for a source that failed): pick on them all, in order, so a tie goes to the earlier source */
+    static Update pickAll(List<List<Release>> perSource, int[] current) { return pickAll(perSource, current, false, HOTFIX); }
+
+    static Update pickAll(List<List<Release>> perSource, int[] current, boolean skipHotfix) { return pickAll(perSource, current, false, skipHotfix ? STABLE : HOTFIX); }
+
+    static Update pickAll(List<List<Release>> perSource, int[] current, boolean currentPreview, String channel) {
         if (perSource == null) return null;
         List<Release> all = new ArrayList<>();
         for (List<Release> l : perSource) if (l != null) all.addAll(l);
-        return pick(all, current, skipHotfix);
+        return pick(all, current, currentPreview, channel);
+    }
+
+    /**
+     * What a channel other than the player's offers beyond the player's own pick (own: pickAll on their channel), for Settings' Update channel row: the
+     * newest release of any kind (the Preview channel's pick) when it is not the player's own, else null. On Preview there is nothing beyond
+     */
+    static Update elsewhere(List<List<Release>> perSource, int[] current, boolean currentPreview, String channel, Update own) {
+        if (PREVIEW.equals(channel)) return null;
+        Update all = pickAll(perSource, current, currentPreview, PREVIEW);
+        return all == null || own != null && all.tag().equals(own.tag()) ? null : all;
+    }
+
+    /** The channel that offers a release first: Preview for a preview, Hotfix for a hotfix, else Stable */
+    static String channelFor(Release r) {
+        String k = kind(r);
+        return "preview".equals(k) ? PREVIEW : "hotfix".equals(k) ? HOTFIX : STABLE;
+    }
+
+    /** Whether Home's Settings button shows the update dot: an update of the player's channel waits, and either Settings was not opened since it came
+     *  (seenTag: the tag the player last saw there) or it is critical (then the dot stays until it is installed) */
+    static boolean dot(Update pending, String seenTag) {
+        return pending != null && ("critical".equals(kind(pending.release)) || !pending.tag().equals(seenTag));
     }
 
     /** "12.3 MB" */

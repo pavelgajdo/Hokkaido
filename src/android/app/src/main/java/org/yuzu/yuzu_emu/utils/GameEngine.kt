@@ -12,9 +12,6 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.yuzu.yuzu_emu.R
-import org.yuzu.yuzu_emu.features.settings.model.IntSetting
-import org.yuzu.yuzu_emu.features.settings.model.StringSetting
-import org.yuzu.yuzu_emu.features.settings.utils.SettingsFile
 import org.yuzu.yuzu_emu.model.Game
 import java.io.File
 
@@ -95,6 +92,14 @@ object GameEngine {
         ui?.setOption(context, titleIdOf(game), option.id, on)
     }
 
+    /** Opens Banana Native's actual settings, without changing the selected engine or preparing a game. */
+    fun openNativeSettings(context: Context, game: Game? = null): Boolean {
+        val engine = ui ?: return false
+        val path = if (game == null) null else filePath(game) ?: return false
+        engine.openSettings(context, game?.let { titleIdOf(it) }, game?.title, path)
+        return true
+    }
+
     /**
      * Imports a pack that Banana Native's own app exported (Manage › Export pack…) for this game, from the zip
      * the user picked. Null when it is in, else why not. Blocks while it copies: call it off the main thread.
@@ -114,8 +119,11 @@ object GameEngine {
         }
     }
 
-    /** What Auto picks: Banana Native for the games its profiles call playable, Hokkaido for the rest. */
-    fun autoIsNative(game: Game): Boolean = status(game) == "playable"
+    /** Fusion prefers Banana for Ocarina of Time; its upstream experimental status remains visible. */
+    fun autoIsNative(game: Game): Boolean {
+        val status = status(game) ?: return false
+        return status == "playable" || titleIdOf(game) == "0400486024DEC000"
+    }
 
     fun usesNative(context: Context, game: Game): Boolean = when (choice(context, game)) {
         Choice.NATIVE -> supports(game)
@@ -125,7 +133,7 @@ object GameEngine {
 
     /** Banana Native's name for this game: marked experimental while its profile is in bring-up. */
     fun nativeName(context: Context, game: Game): String = context.getString(
-        if (autoIsNative(game)) R.string.game_engine_native else R.string.game_engine_native_experimental
+        if (status(game) == "playable") R.string.game_engine_native else R.string.game_engine_native_experimental
     )
 
     fun describe(context: Context, game: Game): String = when (choice(context, game)) {
@@ -179,13 +187,11 @@ object GameEngine {
     private fun launchNative(
         activity: FragmentActivity,
         game: Game,
-        useCustom: Boolean,
         emulate: () -> Unit
     ): Boolean {
         val engine = ui ?: return false
         val path = filePath(game) ?: return false
-        val (driver, window) = gameSettings(game, useCustom)
-        engine.launch(activity, path, game.title, driver, game.saveDir, window, emulate)
+        engine.launch(activity, path, game.title, game.saveDir, emulate)
         return true
     }
 
@@ -196,20 +202,19 @@ object GameEngine {
     fun prepareNativeShaders(activity: FragmentActivity, game: Game, emulate: () -> Unit): Boolean {
         val engine = ui ?: return false
         val path = filePath(game) ?: return false
-        val (driver, window) = gameSettings(game, true)
-        engine.prepareShaders(activity, path, game.title, driver, game.saveDir, window, emulate)
+        engine.prepareShaders(activity, path, game.title, game.saveDir, emulate)
         return true
     }
 
     /**
      * Starts a game in its engine (Game properties › Engine): every way of starting a game comes here.
-     * [useCustom] is the game's own settings rather than the global ones (Start › Global or Custom);
-     * [emulate] starts it in Hokkaido.
+     * [useCustom] is kept for Hokkaido's Global/Custom start callers; Banana uses its own settings.
+     * [emulate] starts it in Hokkaido with the caller's configuration choice.
      */
     fun start(activity: FragmentActivity, game: Game, useCustom: Boolean = true, emulate: () -> Unit) {
         if (!usesNative(activity, game)) {
             emulate()
-        } else if (!launchNative(activity, game, useCustom, emulate)) {
+        } else if (!launchNative(activity, game, emulate)) {
             MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.game_engine_banana_missing)
                 .setMessage(R.string.game_engine_banana_missing_description)
@@ -217,26 +222,6 @@ object GameEngine {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
-    }
-
-    /**
-     * What Hokkaido would start the game with: the GPU driver (a zip; empty: the system's) and the render
-     * size its resolution scale gives, 1x being 1920x1080. With [useCustom] the game's own settings,
-     * else the global ones.
-     */
-    private fun gameSettings(game: Game, useCustom: Boolean): Pair<String, String> {
-        val loaded = NativeConfig.isPerGameConfigLoaded()
-        if (useCustom && !loaded) {
-            SettingsFile.loadCustomConfig(game)
-        }
-        val needsGlobal = !useCustom
-        val driver = StringSetting.DRIVER_PATH.getString(needsGlobal)
-        val window = windowOf(IntSetting.RENDERER_RESOLUTION.getInt(needsGlobal))
-        if (useCustom && !loaded) {
-            NativeConfig.unloadPerGameConfig()
-            NativeConfig.reloadGlobalConfig()
-        }
-        return driver to window
     }
 
     /**
@@ -257,9 +242,4 @@ object GameEngine {
         return ok
     }
 
-    /** ResolutionSetup (Res1_4X … Res8X) as Banana Native's Game resolution; above 2x the game's own size. */
-    private fun windowOf(setup: Int): String {
-        val scale = listOf(0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0).getOrNull(setup) ?: return "original"
-        return "${(1920 * scale).toInt()}x${(1080 * scale).toInt()}"
-    }
 }

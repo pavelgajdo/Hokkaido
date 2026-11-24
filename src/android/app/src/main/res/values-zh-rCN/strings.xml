@@ -280,7 +280,7 @@
     <string name="error_getting_emulator_info">获取模拟器信息错误</string>
     <string name="memory_info">内存信息</string>
     <string name="total_memory">总内存</string>
-    <string name="soc">SOC:</string>
+    <string name="soc">芯片：</string>
 
     <string name="warning_help">帮助</string>
     <string name="warning">警告</string>
@@ -321,9 +321,9 @@
     <string name="frame_gen_target_rate">目标帧率</string>
     <string name="frame_gen_target_rate_description">选取一个符合显示器实际能能力的帧率。增幅会自动调整以保持设定的帧率不变，并回调任何会导致游戏运行变慢的设定。</string>
     <string name="frame_gen_target_rate_off">使用固定增幅</string>
-    <string name="frame_gen_target_rate_60">60 FPS</string>
-    <string name="frame_gen_target_rate_90">90 FPS</string>
-    <string name="frame_gen_target_rate_120">120 FPS</string>
+    <string name="frame_gen_target_rate_60">60 帧/秒</string>
+    <string name="frame_gen_target_rate_90">90 帧/秒</string>
+    <string name="frame_gen_target_rate_120">120 帧/秒</string>
     <string name="frame_gen_on">开</string>
     <string name="frame_gen_off">关</string>
     <string name="frame_gen_fixed">固定</string>
@@ -459,9 +459,9 @@
     <string name="applets_error_description"><![CDATA[请确保您的<a href=\"https://yuzu-mirror.github.io/help/quickstart/#dumping-prodkeys-and-titlekeys\">prod.keys</a>文件和 <a href=\"https://yuzu-mirror.github.io/help/quickstart/#dumping-system-firmware\">固件</a>已安装并重试。]]></string>
     <string name="album_applet">相册</string>
     <string name="album_applet_description">查看存储在用户屏幕截图文件夹中的图像</string>
-    <string name="mii_edit_applet">Mii edit</string>
+    <string name="mii_edit_applet">Mii 编辑器</string>
     <string name="mii_edit_applet_description">查看和编辑 Mii</string>
-    <string name="cabinet_applet">Cabinet</string>
+    <string name="cabinet_applet">amiibo 数据管理</string>
     <string name="cabinet_applet_description">编辑、删除存储在 amiibo 上的数据</string>
     <string name="cabinet_launcher">Cabinet 启动器</string>
     <string name="cabinet_nickname_and_owner">昵称和所有者设置</string>
@@ -571,7 +571,7 @@
     <string name="use_optimized_vertex_buffers">优化顶点缓冲区</string>
     <string name="use_optimized_vertex_buffers_description">启用经过优化的顶点缓冲区绑定以提升性能。需要 Mesa 26.0 及以上版本的 Turnip 或 QCOM 驱动程序。若使用较旧版本的 Turnip 驱动 (25.3 及以下版本) 则会导致崩溃。</string>
 
-    <string name="hacks">Hacks</string>
+    <string name="hacks">兼容性优化</string>
 
     <string name="fast_gpu_time">GPU 时钟频率</string>
     <string name="fast_gpu_time_description">通过让游戏误以为 GPU 的处理速度比实际更快，以避免游戏为了适应 Switch 的时钟频率而降低分辨率和渲染距离。</string>
@@ -626,12 +626,12 @@
     <string name="use_auto_stub_description">自动为缺失的服务和功能生成占位代码。这可能会提高兼容性，但也可能导致崩溃和稳定性问题</string>
 
     <string name="gpu">GPU</string>
-    <string name="renderer_api">API</string>
+    <string name="renderer_api">图形接口</string>
     <string name="renderer_debug">图形调试</string>
     <string name="renderer_debug_description">将图形 API 设置为较慢的调试模式。</string>
     <string name="patch_old_qcom_drivers">BCn 纹理补丁</string>
     <string name="patch_old_qcom_drivers_description">在 Adreno GPU 上覆盖自动 BCn 纹理格式检测。通常根据 Android 版本自动检测（在 API 28 及以上启用）。</string>
-    <string name="fastmem">Fastmem</string>
+    <string name="fastmem">快速内存访问</string>
 
     <string name="log">日志记录</string>
     <string name="flush_by_line">按行刷新调试日志</string>
@@ -672,7 +672,7 @@
     <string name="buttons">按键</string>
     <string name="button_plus">＋</string>
     <string name="button_minus">－</string>
-    <string name="button_home">Home</string>
+    <string name="button_home">主页键</string>
     <string name="button_capture">截图</string>
     <string name="start_pause">开始/暂停</string>
     <string name="dpad">十字方向键</string>
@@ -1091,9 +1091,9 @@
 
     <!-- Renderer VSync -->
     <string name="renderer_vsync_immediate">即时 (关闭)</string>
-    <string name="renderer_vsync_mailbox">Mailbox</string>
+    <string name="renderer_vsync_mailbox">邮箱模式</string>
     <string name="renderer_vsync_fifo">FIFO (开启)</string>
-    <string name="renderer_vsync_fifo_relaxed">FIFO Relaxed</string>
+    <string name="renderer_vsync_fifo_relaxed">宽松先入先出</string>
 
     <!-- Anti-Aliasing -->
     <string name="anti_aliasing_none">无</string>
@@ -1140,7 +1140,7 @@
     <string name="gamepad_d_pad">十字方向键</string>
     <string name="gamepad_left_stick">左摇杆</string>
     <string name="gamepad_right_stick">右摇杆</string>
-    <string name="gamepad_home">Home</string>
+    <string name="gamepad_home">主页键</string>
     <string name="gamepad_screenshot">截图</string>
 
     <!-- Disk shader cache -->
@@ -1173,7 +1173,7 @@
 
     <!-- App Language -->
     <string name="app_language">应用使用的语言</string>
-    <string name="app_language_description">更改应用界面语言</string>
+    <string name="app_language_description">选择整个应用的显示语言。默认跟随系统。</string>
     <string name="app_language_system">跟随系统</string>
     <!-- Static Themes -->
     <string name="static_theme_color">主题颜色</string>

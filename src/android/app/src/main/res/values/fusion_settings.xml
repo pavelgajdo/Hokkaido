@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="banana_settings">Banana Native settings</string>
+    <string name="banana_settings_description">GPU driver, resolution, frame generation and advanced settings for Banana Native</string>
+    <string name="banana_game_settings_description">Performance, controls and recommended settings for this game in Banana Native. Changes apply at the next game start.</string>
+    <string name="fusion_hokkaido_settings">Settings (Hokkaido)</string>
+    <string name="fusion_hokkaido_game_settings">Per-game settings (Hokkaido)</string>
+    <string name="fusion_hokkaido_controls">Controls (Hokkaido)</string>
+</resources>

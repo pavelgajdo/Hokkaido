@@ -66,10 +66,15 @@
             </intent-filter>
         </activity-alias>
         <!-- The game runs in a process of its own: the host starts once per process and ends it when it stops, the launcher stays. sensorLandscape is for a phone: GameActivity.fitOrientation drops the request on a large screen (GameOrientation), where it would letterbox the window -->
+        <!-- Its own task (taskAffinity), whoever starts it: never stacked on Home's task, so the launcher's icon (which brings Home's task forward) cannot close the
+             game's screen while its process runs on, and Recents has the game's card; the card goes when the screen finishes (autoRemoveFromRecents), and the
+             screen's finish ends the process (GameActivity.endProcess). android/README.md, "The game's task" -->
         <activity
             android:name=".GameActivity"
             android:exported="false"
             android:launchMode="singleTask"
+            android:taskAffinity="${applicationId}.game"
+            android:autoRemoveFromRecents="true"
             android:process=":game"
             android:screenOrientation="sensorLandscape"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"

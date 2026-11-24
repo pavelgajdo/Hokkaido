@@ -112,6 +112,18 @@ final class ShaderLibs {
     }
 
     /**
+     * Whether a delta update (the profile's manifest knows the pack's older library: delta shaders to translate, -1 when it does not) starts by itself in the background.
+     * When nothing plays meanwhile (playsMeanwhile false) the shaders are required and a known delta starts as before. When the game plays meanwhile only a small one
+     * starts by itself (at most a quarter of the set: it never blocks Play and the player can pause it); a larger one is an offer on the game's page, as the update with
+     * no manifest is
+     */
+    static boolean autoDelta(int delta, int total, boolean playsMeanwhile) {
+        if (delta < 0) return false;
+        if (!playsMeanwhile) return true;
+        return (long) delta * 4 <= Math.max(0, total);
+    }
+
+    /**
      * Whether the shader layer (LayerService, android/SHADERS.md "Shaders the library lacks") builds what an older library lacks while the game runs: the host copies only
      * NVN2 control sections (the Switch 2 titles, whose title IDs start 0400), a Maxwell game gets no layer; and the player's own lines for the game can turn it off
      * (DM_VK_LAYER=0)

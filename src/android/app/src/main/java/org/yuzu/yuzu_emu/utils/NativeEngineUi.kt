@@ -34,19 +34,19 @@ interface NativeEngineUi {
     /** Sets a game option; it takes effect at the game's next start. */
     fun setOption(context: Context, titleId: String, option: Int, on: Boolean)
 
+    /** Opens Banana Native's defaults or a game's complete settings; changes apply at the next start. */
+    fun openSettings(context: Context, titleId: String?, title: String?, gamePath: String?)
+
     /**
-     * Starts the game in Banana Native, preparing it first when it needs that, with Hokkaido's GPU driver for it
-     * ([driverZip]: a driver zip, empty for the system's), Hokkaido's save folder ([saveDir], shared by both
-     * engines) and the render size of Hokkaido's resolution scale ([window]: "<width>x<height>" or "original");
+     * Starts the game in Banana Native, preparing it first when it needs that, with Hokkaido's save folder
+     * ([saveDir], shared by both engines). Banana Native keeps its own driver and graphics settings;
      * [emulate] plays it in Hokkaido instead.
      */
     fun launch(
         activity: FragmentActivity,
         gamePath: String,
         title: String,
-        driverZip: String,
         saveDir: String,
-        window: String,
         emulate: () -> Unit
     )
 
@@ -58,9 +58,7 @@ interface NativeEngineUi {
         activity: FragmentActivity,
         gamePath: String,
         title: String,
-        driverZip: String,
         saveDir: String,
-        window: String,
         emulate: () -> Unit
     )
 }

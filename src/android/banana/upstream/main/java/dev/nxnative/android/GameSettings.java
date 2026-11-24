@@ -258,8 +258,8 @@ final class GameSettings {
     }
 
     /** A controller's L1 / R1: the next (+1) or previous (-1) tab of the game's page, round; false when there is nothing to switch to */
-    static boolean stepTab(Game g, int delta) {
-        String[] keys = Profile.missing(g.titleId, g.name) == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
+    static boolean stepTab(Game g, int delta, boolean settingsOnly) {
+        String[] keys = settingsOnly ? new String[] {PERFORMANCE, GAME} : Profile.missing(g.titleId, g.name) == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
         int cur = Math.max(0, Arrays.asList(keys).indexOf(tab));
         int next = PadPanel.tab(cur, delta, keys.length);
         if (next == cur) return false;
@@ -284,22 +284,26 @@ final class GameSettings {
     /** Builds the page into content (Ui.page's column); again builds it once more after a choice (keeping the place), close returns to Home */
     static void build(MainActivity a, LinearLayout outer, Game g, Runnable again, Runnable close) {
         String id = g.titleId;
-        if (!id.equals(customFor)) { customFor = id; custom = false; }
+        if (!id.equals(customFor)) { customFor = id; custom = Prefs.customPicked(a, id); }
         boolean wide = a.getResources().getConfiguration().screenWidthDp >= 600;
         String missing = Profile.missing(id, g.name);
-        String[] keys = missing == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
-        String[] labels = missing == null ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game), Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)} : new String[] {Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)};
+        String[] keys = a.hokkaidoSettings() ? new String[] {PERFORMANCE, GAME} : missing == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
+        String[] labels = a.hokkaidoSettings() ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game)} : missing == null ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game), Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)} : new String[] {Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)};
         int t = Math.max(0, Arrays.asList(keys).indexOf(tab));
         tab = keys[t];
         final LinearLayout content;
-        if (wide) content = split(a, outer, g, missing == null, keys, labels, t, close);   // the game and its tabs at the left, the tab's page at the right
+        if (wide) content = split(a, outer, g, missing == null && !a.hokkaidoSettings(), keys, labels, t, close);   // the game and its tabs at the left, the tab's page at the right
         else {
-            topBar(a, outer, g, missing == null, close);
+            topBar(a, outer, g, missing == null && !a.hokkaidoSettings(), close);
             Ui.add(outer, Ui.tabs(a, labels, t, k -> { tab = keys[k]; a.gameSettingsTop(); }), 4);
             content = outer;
         }
+        if (a.hokkaidoSettings()) HokkaidoSettings.rows(a, content, g, () -> {
+            custom = Prefs.customPicked(a, id);
+            again.run();
+        });
         if (missing != null) Ui.add(content, Ui.small(a, missing), 12);
-        if (Edition.offered(g)) {   // a set with a Switch 2 Edition (program 1) whose profile this APK has: which one Play starts (Edition); one save for both
+        if (!a.hokkaidoSettings() && Edition.offered(g)) {   // a set with a Switch 2 Edition (program 1) whose profile this APK has: which one Play starts (Edition); one save for both
             LinearLayout ed = Ui.add(content, Ui.listCard(a), 12);
             boolean on = Edition.on(a, id);
             Ui.Setting s = new Ui.Setting(a, "🎮", Tx.s(R.string.game_switch_2_edition), null)
@@ -307,7 +311,7 @@ final class GameSettings {
                     .toggle(a, on, (b, x) -> { Edition.set(a, id, x); again.run(); });
             ed.addView(s.view);
         }
-        shaderUpdateCard(a, content, g, again);
+        if (!a.hokkaidoSettings()) shaderUpdateCard(a, content, g, again);
         if (!tab.equals(PERFORMANCE) && !tab.equals(GAME)) { a.gameTab(content, g, tab.equals(SAVES)); return; }
         boolean perf = tab.equals(PERFORMANCE);
         if (perf) Ui.add(content, Ui.statusChip(a, chipText(a, id)), 12, Ui.wrap());
@@ -327,8 +331,8 @@ final class GameSettings {
             card.addView(Ui.text(a, Tx.s(R.string.game_recommended_for_this_phone), 15, R.color.bn_text, 700));
             Ui.Segmented[] seg = new Ui.Segmented[1];
             seg[0] = Ui.add(card, new Ui.Segmented(a, new String[] {Tx.s(R.string.game_recommended), Tx.s(R.string.game_custom)}, 0, k -> {
-                if (k == 1) { custom = true; refresh[0].run(); return; }   // Custom keeps the player's values: nothing to change
-                if (Recommend.changedCount(Prefs.recStates(a, id)) == 0) { custom = false; refresh[0].run(); return; }
+                if (k == 1) { custom = true; Prefs.customPicked(a, id, true); refresh[0].run(); return; }   // Custom keeps the player's values: nothing to change
+                if (Recommend.changedCount(Prefs.recStates(a, id)) == 0) { custom = false; Prefs.customPicked(a, id, false); refresh[0].run(); return; }
                 new PadFocus.Builder(a).setTitle(Tx.s(R.string.game_title_for, Tx.s(R.string.game_use_recommended), g.name))
                         .setMessage(Tx.s(R.string.game_the_settings_you_changed_for))
                         .setPositiveButton(Tx.s(R.string.game_use_recommended), (x, w) -> { Prefs.backToRecommended(a, id); custom = false; again.run(); })
@@ -342,8 +346,8 @@ final class GameSettings {
                 for (Recommend.State st : now) { Ui.Setting r = recRows.get(st.setting); if (r != null) decorate(a, id, r, st); }
                 int n = Recommend.changedCount(now);
                 String l = Recommend.line(now, (s, v) -> Prefs.recCardName(a, id, s, v)), c = Recommend.changedLine(n);
-                if (n > 0) custom = false;   // the changed count decides from here on
-                seg[0].select(n > 0 || custom ? 1 : 0);
+                if (n > 0 && !custom) { custom = true; Prefs.customPicked(a, id, true); }   // a changed recommended setting is a Custom choice too, kept
+                seg[0].select(Recommend.showsCustom(custom, n) ? 1 : 0);   // Custom stays until the player picks Recommended (kept per game: Prefs.customPicked)
                 if (l != null) values.setText(l);
                 changed.setText(c != null ? c + " " + Tx.s(R.string.game_recommended_puts_them_back) : custom ? Tx.s(R.string.game_your_own_values_stay_change) : "");
                 changed.setVisibility(changed.length() == 0 ? View.GONE : View.VISIBLE);
@@ -364,7 +368,7 @@ final class GameSettings {
         boolean simple = Prefs.simpleRes(a, id);   // a game with Resolution presets and the tester rows off (Settings › Help): Resolution's choices alone, no Advanced, Upscaler or Dynamic resolution
         if (!rps.isEmpty()) {   // a profile with res_preset rows: one Resolution (window and 3D scene together, ResPresets); Advanced shows the two settings apart
             String rc = Prefs.resolutionChoice(a, id);
-            picture.add(track(recRows, Recommend.RES_PRESET, prepared(new Ui.Setting(a, "🖼️", Tx.s(R.string.common_resolution), v -> presets(a, g, again)), presetValue(a, g, rps, rc, simple)).note(ResPresets.NOTE).chevron(a)));
+            picture.add(track(recRows, Recommend.RES_PRESET, prepared(new Ui.Setting(a, "🖼️", Tx.s(R.string.common_resolution), v -> presets(a, g, again)), presetValue(a, g, rps, rc, simple)).note(ResPresets.note()).chevron(a)));
             if (ResPresets.ADVANCED.equals(rc) && !simple) {
                 if (prof.hasResolution()) picture.add(new Ui.Setting(a, "🪟", Tx.s(R.string.game_window), v -> resolution(a, g, again)).value(windowLabel(a, id)).chevron(a).sub());
                 if (!SceneRes.presets(prof).isEmpty())
@@ -380,7 +384,7 @@ final class GameSettings {
         if (simple) {   // the Upscaler stays as stored (GameActivity reads the preference); only testers change it for a game with Resolution presets
         } else if (Prefs.dlssGame(id)) {   // a game on the DLSS stand-in (game.tsv dlss_standin): its Upscaler is the stand-in (GSR2's sliders under GSR 2, the sharpness under FSR 1)
             int dm = GameUpscaler.dlssMode(a, id);
-            picture.add(track(recRows, Recommend.UPSCALER, new Ui.Setting(a, "🔍", Tx.s(R.string.common_upscaler), v -> dlssMode(a, g, again)).value(shortName(Tx.arr(R.array.arr_dlss_modes)[dm])).chevron(a)));
+            picture.add(track(recRows, Recommend.UPSCALER, new Ui.Setting(a, "🔍", Tx.s(R.string.common_game_upscaler), v -> dlssMode(a, g, again)).value(shortName(Tx.arr(R.array.arr_dlss_modes)[dm])).chevron(a)));
             if (DlssTune.showsClarity(dm))
                 picture.add(new Ui.Setting(a, "🌀", Tx.s(R.string.game_motion_clarity), v -> clarity(a, g, again)).value(dflt(GameUpscaler.ownClarity(a, id), DlssTune.clarityName(GameUpscaler.clarity(a, id)))).chevron(a).sub());
             if (DlssTune.showsSharp(dm))
@@ -395,7 +399,16 @@ final class GameSettings {
             if (GameUpscaler.mode(a, id) == GameUpscaler.MODE_FSR)   // only with FSR 1 chosen
                 picture.add(new Ui.Setting(a, "✨", Tx.s(R.string.common_fsr_sharpness), v -> sharpness(a, g, again)).value(dflt(GameUpscaler.ownSharp(a, id), GameUpscaler.sharpName(a, id))).chevron(a).sub());
         }
-        picture.add(new Ui.Setting(a, "📺", Tx.s(R.string.common_display), v -> display(a, g, again)).value(Tx.arr(R.array.arr_display)[Prefs.stretch(a, id) ? 1 : 0]).chevron(a));
+        picture.add(new Ui.Setting(a, "📺", Tx.s(R.string.common_display), v -> display(a, g, again)).value(ownLabel(Prefs.ownStretch(a, id), Tx.arr(R.array.arr_display)[Prefs.stretch(a, id) ? 1 : 0])).chevron(a));
+        // The rest of the in-game panel's settings, each this game's own or Settings' default (the panel writes the game's own): Picture size, the overlay, the shaders label
+        picture.add(new Ui.Setting(a, "🔲", Tx.s(R.string.common_picture_size), v -> ownChoice(a, g, Tx.s(R.string.common_picture_size), sizeNames(), Prefs.ownPictureSize(a, id) ? sizeIndex(Prefs.pictureSize(a, id)) : -1,
+                sizeNames()[sizeIndex(Prefs.pictureSize(a))], w -> Prefs.pictureSizeOwn(a, id, w < 0 ? null : sizeOfIndex(w)), again))
+                .value(ownLabel(Prefs.ownPictureSize(a, id), sizeNames()[sizeIndex(Prefs.pictureSize(a, id))])).chevron(a));
+        picture.add(new Ui.Setting(a, "👀", Tx.s(R.string.settings_overlay), v -> overlay(a, g, again)).value(ownLabel(Prefs.ownOverlay(a, id), overlayValue(a, id))).chevron(a));
+        if (ShaderLibs.layerCovers(id, null))   // the label over a game the shader layer covers (the panel shows it only then)
+            picture.add(new Ui.Setting(a, "🔨", Tx.s(R.string.settings_building_shaders_label), v -> ownChoice(a, g, Tx.s(R.string.settings_building_shaders_label), Overlay.labelChoices(),
+                    Prefs.ownLayerLabel(a, id) ? Prefs.layerLabel(a, id) : -1, Overlay.labelChoices()[Prefs.layerLabel(a)], w -> Prefs.layerLabel(a, id, w < 0 ? null : w), again))
+                    .value(ownLabel(Prefs.ownLayerLabel(a, id), Overlay.labelChoices()[Prefs.layerLabel(a, id)])).chevron(a));
         if (!aspects(prof).isEmpty())   // a profile with a native aspect mod (game.tsv variant rows labelled w:h)
             picture.add(new Ui.Setting(a, "🔳", Tx.s(R.string.game_aspect_ratio), v -> aspect(a, g, again)).value(aspectLabel(a, id)).chevron(a));
 
@@ -418,8 +431,14 @@ final class GameSettings {
             full.says(Tx.s(R.string.game_normal_speed_when_the_frame), Tx.s(R.string.game_slows_down_with_the_frame));
             speed.add(full);
         }
+        if (BuildConfig.NX_LSFG)   // frame generation: this game's own settings, else Settings' (the in-game panel writes the game's own)
+            speed.add(new Ui.Setting(a, "✨", Tx.s(R.string.settings_frame_generation), v -> frameGen(a, g, again)).value(ownLabel(Lsfg.own(a, id), Lsfg.label(a, id))).chevron(a));
         if (Prefs.drsGame(id) && !simple)   // the host's dynamic resolution slider: testers only for a game with Resolution presets (Quality is the game's own dynamic resolution)
             speed.add(track(recRows, Recommend.DRS, new Ui.Setting(a, "📏", Tx.s(R.string.common_dynamic_resolution), v -> drs(a, g, again)).value(drsValue(Prefs.drs(a, id))).chevron(a)));
+        // The ADPF reports against the game's shortest period with any GPU clock floor (DM_VK_ADPF_SPAN_ANY): fixes a game stuck at a low frame rate after a menu on a phone whose
+        // system caps the GPU from those reports, at the cost of a higher GPU clock in menus (heat), so off unless the player turns it on
+        speed.add(new Ui.Setting(a, "🌡️", Tx.s(R.string.game_keep_gpu_clock_up), null).toggle(a, Prefs.keepGpuUp(a, id), (b, on) -> Prefs.keepGpuUp(a, id, on))
+                .says(Tx.s(R.string.game_keep_gpu_clock_up_on), Tx.s(R.string.game_keep_gpu_clock_up_off)));
         speed.add(track(recRows, Recommend.DRIVER, new Ui.Setting(a, "🎮", Tx.s(R.string.common_gpu_driver), v -> driver(a, g, again)).value(driverShort(a, id)).chevron(a)));
 
         // ---- Game options: the profile's own switches ----
@@ -447,9 +466,9 @@ final class GameSettings {
                         if (s == null) continue;
                         Profile.Option source = Profile.findImpliedBy(prof.options, opt, env -> Prefs.gameOption(a, id, env));
                         boolean supported = opt.isSupported(packDir);
-                        s.value(opt.description);   // always what it does; what it needs, or what turned it on, on a line of its own
+                        s.value(opt.description());   // always what it does; what it needs, or what turned it on, on a line of its own
                         // needs=<marker>: the rewriter's patch of the game's code that Prepare makes (main.fixups.tsv), not the shaders
-                        s.status(!supported ? Tx.s(R.string.game_needs_prepare_again_patches_the) : source != null ? Tx.s(R.string.game_turned_on_by, source.label) : null);
+                        s.status(!supported ? Tx.s(R.string.game_needs_prepare_again_patches_the) : source != null ? Tx.s(R.string.game_turned_on_by, source.label()) : null);
                         if (source != null) {
                             s.toggle.setChecked(true);
                             s.toggle.setEnabled(false);
@@ -466,7 +485,7 @@ final class GameSettings {
             };
 
             for (Profile.Option opt : prof.options) {
-                Ui.Setting setting = new Ui.Setting(a, optionIcon(opt.env), opt.label, null)
+                Ui.Setting setting = new Ui.Setting(a, optionIcon(opt.env), opt.label(), null)
                         .toggle(a, Prefs.gameOption(a, id, opt.env), (button, checked) -> {
                             if (updating[0]) return;
                             Prefs.gameOption(a, id, opt.env, checked);
@@ -484,7 +503,7 @@ final class GameSettings {
         if (LinkPlay.has(id))
             options.add(new Ui.Setting(a, "🔗", Tx.s(R.string.game_link_play), v -> LinkPlay.dialog(a, g, again)).value(LinkPlay.label(a, id)).chevron(a));
         options.add(Covers.row(a, g, again));
-        options.add(new Ui.Setting(a, "🌐", Tx.s(R.string.game_game_language), v -> language(a, g, again)).value(GameLanguage.label(Prefs.gameLang(a, id), phoneTag())).chevron(a));   // not a tester's knob: with the game's options, never folded
+        options.add(new Ui.Setting(a, "🌐", Tx.s(R.string.game_game_language), v -> language(a, g, again)).value(languageLabel(a, Prefs.gameLang(a, id))).chevron(a));   // not a tester's knob: with the game's options, never folded
         if (prof != null && prof.timeOfDay)   // the one global setting (Prefs.timeOverride → DM_TIME), here for a game whose day/night cycle follows the user clock
             options.add(new Ui.Setting(a, "🕒", Tx.s(R.string.common_time_of_day), v -> TimeOfDay.dialog(a, again)).value(TimeOfDay.label(a)).chevron(a));
 
@@ -502,7 +521,8 @@ final class GameSettings {
                 Tx.arr(R.array.arr_pad_open)[Prefs.panelPad(a)], w -> Prefs.panelPad(a, id, w < 0 ? null : w), again))
                 .value(ownLabel(Prefs.ownPanelPad(a, id), Tx.arr(R.array.arr_pad_open)[Prefs.panelPad(a, id)])).chevron(a));
         controls.add(new Ui.Setting(a, "🕹️", Tx.s(R.string.common_button_mapping), v -> PadMapUi.forGame(a, g, again)).value(PadMapUi.label(a, id)).chevron(a));
-        controls.add(new Ui.Setting(a, "🎯", Tx.s(R.string.game_motion_sensitivity), v -> motionSens(a, g, again)).value(Prefs.MOTION_NAMES[Prefs.motionSens(a, id)]).note(Tx.s(R.string.game_how_far_the_phone_s)).chevron(a));
+        controls.add(new Ui.Setting(a, "🎨", Tx.s(R.string.settings_touch_look), v -> touchLook(a, g, again)).value(ownLabel(TouchControls.ownLook(a, id), touchLookValue(a, id))).chevron(a));
+        controls.add(new Ui.Setting(a, "🎯", Tx.s(R.string.game_motion_sensitivity), v -> motionSens(a, g, again)).value(ownLabel(Prefs.ownMotionSens(a, id), Prefs.MOTION_NAMES[Prefs.motionSens(a, id)])).note(Tx.s(R.string.game_how_far_the_phone_s)).chevron(a));
         controls.add(new Ui.Setting(a, "🅰️", Tx.s(R.string.game_xbox_button_labels), v -> xbox(a, g, again)).value(Prefs.xboxLabel(Prefs.xboxButtons(a, id))).chevron(a));
 
         // ---- Advanced: for testers ----
@@ -525,8 +545,9 @@ final class GameSettings {
                 .says(Tx.s(R.string.game_ram_saver_strong_on), Tx.s(R.string.game_ram_saver_strong_off)));
         advanced.add(new Ui.Setting(a, "⚡", Tx.s(R.string.common_use_fast_cores), null).toggle(a, Prefs.pinThreads(a, id), (b, on) -> Prefs.pinThreads(a, id, on))
                 .says(Tx.s(R.string.game_busy_threads_off_the_small), Tx.s(R.string.game_android_places_the_threads)));
-        advanced.add(new Ui.Setting(a, "⏸️", Tx.s(R.string.game_pause_on_return), null).toggle(a, Prefs.pauseOnReturn(a, id), (b, on) -> Prefs.pauseOnReturn(a, id, on))
-                .says(Tx.s(R.string.game_back_from_the_background_paused), Tx.s(R.string.game_back_from_the_background_runs)));
+        advanced.add(new Ui.Setting(a, "⏸️", Tx.s(R.string.game_pause_on_return), v -> ownChoice(a, g, Tx.s(R.string.game_pause_on_return), new String[] {Tx.s(R.string.game_on), Tx.s(R.string.game_off)},
+                Prefs.ownPauseOnReturn(a, id) ? (Prefs.pauseOnReturn(a, id) ? 0 : 1) : -1, Prefs.pauseOnReturn(a) ? Tx.s(R.string.game_on) : Tx.s(R.string.game_off), w -> Prefs.pauseOnReturnOwn(a, id, w < 0 ? null : w == 0), again))
+                .value(ownLabel(Prefs.ownPauseOnReturn(a, id), Prefs.pauseOnReturn(a, id) ? Tx.s(R.string.game_back_from_the_background_paused) : Tx.s(R.string.game_back_from_the_background_runs))).chevron(a));
         Ui.Setting advRow = new Ui.Setting(a, "🛠️", Tx.s(R.string.game_advanced_switches), null).chevron(a);   // every switch for this game, by area, with search (AdvancedPage.java)
         advRow.view.setOnClickListener(v -> AdvancedPage.show(a, id, g.name, again));
         advRow.value(AdvancedSettings.count(a, id) == 0 ? Tx.s(R.string.common_search_every_switch_each_starts) : Tx.n(R.plurals.common_n_set, AdvancedSettings.count(a, id), AdvancedSettings.count(a, id)));
@@ -684,8 +705,8 @@ final class GameSettings {
         return s.status(need ? Tx.s(R.string.game_needs_prepare_again_makes_this) : null);
     }
 
-    /** Dynamic resolution's value: Off, or the range the render size moves in (Prefs.DRS_NAMES: the lowest size, as % of the window; always up to 100 %) */
-    static String drsValue(int i) { return i <= 0 ? Tx.s(R.string.game_off) : Tx.s(R.string.game_drs_between, Prefs.DRS_NAMES[i]); }
+    /** Dynamic resolution's value: Off, or the range the render size moves in (Prefs.drsNames(): the lowest size, as % of the window; always up to 100 %) */
+    static String drsValue(int i) { return i <= 0 ? Tx.s(R.string.game_off) : Tx.s(R.string.game_drs_between, Prefs.drsNames()[i]); }
 
     /** A list's choice without its explanation in brackets, as a row's value ("FSR 1 (sharp, fast)" reads "FSR 1"); the list shows it whole */
     static String shortName(String s) { int i = s.indexOf(" ("); return i > 0 ? s.substring(0, i) : s; }
@@ -779,7 +800,7 @@ final class GameSettings {
 
     static final String[] GPU_TS = {"segment", "submission"};
 
-    private static String gpuTsName(String mode) { return mode.equals("segment") ? "Per segment" : "Per submission"; }
+    private static String gpuTsName(String mode) { return mode.equals("segment") ? Tx.s(R.string.game_per_segment) : Tx.s(R.string.game_per_submission); }
 
     static String gpuTsLabel(MainActivity a, String id) {
         String m = Prefs.gpuTs(a, id);
@@ -826,7 +847,7 @@ final class GameSettings {
 
     /** Game settings' value of Resolution: the preset in force with its window and 3D scene, Advanced with its two values; and Prepare again when the pack lacks the overlay */
     private static String presetValue(MainActivity a, Game g, List<ResPresets.Preset> ps, String rc, boolean simple) {
-        if (ResPresets.ADVANCED.equals(rc)) return simple ? "Custom setup (window and 3D scene set apart)" : Tx.s(R.string.game_advanced_window_and_3d_scene);
+        if (ResPresets.ADVANCED.equals(rc)) return simple ? Words.s("fusion_runtime_custom_setup", "Custom setup") : Tx.s(R.string.game_advanced_window_and_3d_scene);
         ResPresets.Preset p = ResPresets.of(ps, rc);
         if (p == null) return "";
         String l = ResPresets.label(ps, rc);
@@ -849,7 +870,7 @@ final class GameSettings {
         box.setOrientation(LinearLayout.VERTICAL);
         AlertDialog[] d = new AlertDialog[1];
         boolean simple = Prefs.simpleRes(a, g.titleId);
-        box.addView(Ui.small(a, ResPresets.NOTE + " " + Tx.s(R.string.game_window_note_tail)));
+        box.addView(Ui.small(a, ResPresets.note() + " " + Tx.s(R.string.game_window_note_tail)));
         android.widget.RadioGroup rg = new android.widget.RadioGroup(a);
         for (int k = 0; k <= (simple ? ps.size() - 1 : ps.size()); k++) {   // the tester rows add Advanced after the presets
             android.widget.RadioButton rb = new android.widget.RadioButton(a);
@@ -893,7 +914,7 @@ final class GameSettings {
         if (ps.isEmpty()) return;
         String[] labels = new String[ps.size() + 1];
         labels[0] = Tx.s(R.string.game_game_default_its_own_dynamic);
-        for (int k = 0; k < ps.size(); k++) labels[k + 1] = ps.get(k).label;
+        for (int k = 0; k < ps.size(); k++) labels[k + 1] = ps.get(k).label();
         SceneRes.Preset cur = SceneRes.of(ps, Prefs.sceneRes(a, g.titleId));
         LinearLayout box = new LinearLayout(a);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -922,11 +943,21 @@ final class GameSettings {
 
     static String phoneTag() { return java.util.Locale.getDefault().toLanguageTag(); }
 
+    private static String languageName(android.content.Context context, String code) {
+        return java.util.Locale.forLanguageTag(code).getDisplayName(context.getResources().getConfiguration().getLocales().get(0));
+    }
+
+    private static String languageLabel(android.content.Context context, String choice) {
+        String code = choice == null ? GameLanguage.code(phoneTag()) : choice;
+        String name = languageName(context, code == null ? "en-US" : code);
+        return choice == null ? Tx.s(R.string.fusion_banana_game_language_system, name) : name;
+    }
+
     /** Game language (DM_LANG, GameLanguage): the phone's language first (the default), then the console's languages; a game without the one picked uses one it has */
     static void language(android.app.Activity a, Game g, Runnable done) {   // the in-game panel's shortcut too
         String[] labels = new String[GameLanguage.CODES.length + 1];
-        labels[0] = GameLanguage.label(null, phoneTag());
-        System.arraycopy(GameLanguage.NAMES, 0, labels, 1, GameLanguage.NAMES.length);
+        labels[0] = languageLabel(a, null);
+        for (int i = 0; i < GameLanguage.CODES.length; i++) labels[i + 1] = languageName(a, GameLanguage.CODES[i]);
         String m = Prefs.gameLang(a, g.titleId);
         int checked = m == null ? 0 : 1 + Math.max(0, Arrays.asList(GameLanguage.CODES).indexOf(m));
         new PadFocus.Builder(a).setTitle(Tx.s(R.string.game_title_for, Tx.s(R.string.game_game_language), g.name)).setSingleChoiceItems(labels, checked, (x, w) -> {
@@ -959,7 +990,7 @@ final class GameSettings {
         }
         String[] labels = new String[Prefs.WINDOWS.length + 1];
         labels[0] = Tx.s(R.string.game_default_value, Prefs.windowName(Prefs.defaultWindow(a, g.titleId), false));
-        { Profile lp = Profile.of(g.titleId); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], Prefs.WINDOW_NAMES[li]) : Prefs.WINDOW_NAMES[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
+        { Profile lp = Profile.of(g.titleId); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], Prefs.windowNames()[li]) : Prefs.windowNames()[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
         int checked = Prefs.ownWindow(a, g.titleId) ? 1 + Math.max(0, Arrays.asList(Prefs.WINDOWS).indexOf(Prefs.gameWindow(a, g.titleId))) : 0;
         new PadFocus.Builder(a).setTitle(windowTitle(g) + " · " + g.name).setSingleChoiceItems(labels, checked, (x, w) -> {
             Prefs.gameWindow(a, g.titleId, w == 0 ? null : Prefs.WINDOWS[w - 1]);
@@ -970,12 +1001,56 @@ final class GameSettings {
     }
 
     /** Display: Fit keeps the game's 16:9 picture with bars on a screen of another shape; Stretch fills the screen (DM_VK_STRETCH), the touch mapping with it */
-    private static void display(MainActivity a, Game g, Runnable done) {
-        new PadFocus.Builder(a).setTitle(Tx.s(R.string.game_title_for, Tx.s(R.string.common_display), g.name)).setSingleChoiceItems(Tx.arr(R.array.arr_display), Prefs.stretch(a, g.titleId) ? 1 : 0, (x, w) -> {
-            Prefs.stretch(a, g.titleId, w == 1);
-            x.dismiss();
-            done.run();
-        }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+    private static void display(MainActivity a, Game g, Runnable done) {   // Fit / Stretch: Default (Settings' choice) first, then the game's own
+        ownChoice(a, g, Tx.s(R.string.common_display), Tx.arr(R.array.arr_display), Prefs.ownStretch(a, g.titleId) ? (Prefs.stretch(a, g.titleId) ? 1 : 0) : -1,
+                  Tx.arr(R.array.arr_display)[Prefs.stretch(a) ? 1 : 0], w -> Prefs.stretchOwn(a, g.titleId, w < 0 ? null : w == 1), done);
+    }
+
+    /** The Picture size choices, largest first ("100 %" … PictureFit.SIZE_MIN), and the index of a size among them (Settings uses them too) */
+    static String[] sizeNames() {
+        String[] n = new String[PictureFit.steps() + 1];
+        for (int i = 0; i < n.length; i++) n[i] = sizeOfIndex(i) + " %";
+        return n;
+    }
+    static int sizeOfIndex(int i) { return PictureFit.sizeOfChoice(i); }
+    static int sizeIndex(int pct) { return PictureFit.choiceOfSize(pct); }
+
+    /** The overlay row's value: Off, or On with how many of its items */
+    static String overlayValue(android.content.Context a, String id) {
+        if (!Prefs.overlay(a, id)) return Tx.s(R.string.game_off);
+        int n = 0;
+        for (String k : Prefs.OVERLAY_KEYS) if (Prefs.overlayItem(a, k, id)) n++;
+        return Tx.s(R.string.home_on_n_of_m_items, n, Prefs.OVERLAY_KEYS.length);
+    }
+    /** The controls look row's value: opacity and size */
+    static String touchLookValue(android.content.Context a, String id) {
+        return Tx.s(R.string.game_opacity_pct, Math.round(TouchControls.opacity(a, id) * 100)) + " · " + Tx.s(R.string.game_size_percent, Math.round(TouchControls.scale(a, id) * 100));
+    }
+
+    /**
+     * A sheet of a group of settings for this game (frame generation, the overlay, the on-screen controls' look): the same rows as Settings' and the in-game panel's, which
+     * write this game's own values; its first line says whether the game has its own or follows Settings; Use Settings' default removes the game's own (clear)
+     */
+    private static void ownSheet(MainActivity a, Game g, String title, boolean own, String settingsValue, java.util.function.Consumer<LinearLayout> rows, Runnable clear, Runnable done) {
+        LinearLayout box = new LinearLayout(a);
+        box.setOrientation(LinearLayout.VERTICAL);
+        Ui.add(box, Ui.small(a, own ? Tx.s(R.string.game_own_settings_note) : Tx.s(R.string.game_own_follows_settings, settingsValue)), 0);
+        rows.accept(box);
+        Ui.sheet(a, Tx.s(R.string.game_title_for, title, g.name), box).setPositiveButton(Tx.s(R.string.common_done), null)
+                .setNeutralButton(Tx.s(R.string.game_use_settings_default), (d, w) -> clear.run()).setOnDismissListener(d -> done.run()).show();
+    }
+    private static void frameGen(MainActivity a, Game g, Runnable done) {
+        String id = g.titleId;
+        ownSheet(a, g, Tx.s(R.string.settings_frame_generation), Lsfg.own(a, id), Lsfg.label(a, null),
+                 box -> Lsfg.rows(a, box, Lsfg.find(a) != null ? "" : Tx.s(R.string.game_put_dll_in_documents), () -> {}, id), () -> Lsfg.ownClear(a, id), done);
+    }
+    private static void overlay(MainActivity a, Game g, Runnable done) {
+        String id = g.titleId;
+        ownSheet(a, g, Tx.s(R.string.settings_overlay), Prefs.ownOverlay(a, id), overlayValue(a, null), box -> Overlay.rows(a, box, null, id), () -> Prefs.overlayDefault(a, id), done);
+    }
+    private static void touchLook(MainActivity a, Game g, Runnable done) {
+        String id = g.titleId;
+        ownSheet(a, g, Tx.s(R.string.settings_touch_look), TouchControls.ownLook(a, id), touchLookValue(a, null), box -> TouchControls.lookRows(a, box, id), () -> TouchControls.lookDefault(a, id), done);
     }
 
     private static void xbox(MainActivity a, Game g, Runnable done) {   // Default first: the game follows Settings again
@@ -1098,13 +1173,13 @@ final class GameSettings {
     }
 
     private static void dlssMode(MainActivity a, Game g, Runnable done) {   // the DLSS stand-in's mode (GameUpscaler.dlssMode, DM_VK_DLSS); the in-game panel changes it live
-        choose(a, Tx.s(R.string.game_title_for, Tx.s(R.string.common_upscaler), g.name), Tx.arr(R.array.arr_dlss_modes), firstLabel(recLabel(Tx.arr(R.array.arr_dlss_modes), Recommend.DLSS_MODES, Prefs.rec(a, g.titleId, Recommend.UPSCALER)), Tx.arr(R.array.arr_dlss_modes)[DlssTune.MODE_DEFAULT]), GameUpscaler.ownDlssMode(a, g.titleId), GameUpscaler.dlssMode(a, g.titleId),
+        choose(a, Tx.s(R.string.game_title_for, Tx.s(R.string.common_game_upscaler), g.name), Tx.arr(R.array.arr_dlss_modes), firstLabel(recLabel(Tx.arr(R.array.arr_dlss_modes), Recommend.DLSS_MODES, Prefs.rec(a, g.titleId, Recommend.UPSCALER)), Tx.arr(R.array.arr_dlss_modes)[DlssTune.MODE_DEFAULT]), GameUpscaler.ownDlssMode(a, g.titleId), GameUpscaler.dlssMode(a, g.titleId),
                v -> GameUpscaler.dlssMode(a, g.titleId, v), done);
     }
 
     static final String CLARITY_LEFT = "Steady", CLARITY_RIGHT = "Clear";   // the Motion clarity slider's ends: more history (steadier) / less ghosting
     private static void clarity(MainActivity a, Game g, Runnable done) {   // the GSR2 stand-in's clarity step (DlssTune, DM_VK_GSR2_CLARITY); the in-game panel changes it live
-        StepSlider.dialog(a, Tx.s(R.string.game_motion_clarity), " · " + g.name, DlssTune.clarityNames(), GameUpscaler.clarity(a, g.titleId), CLARITY_LEFT, CLARITY_RIGHT,
+        StepSlider.dialog(a, Tx.s(R.string.game_motion_clarity), " · " + g.name, DlssTune.clarityNames(), GameUpscaler.clarity(a, g.titleId), Tx.s(R.string.game_clarity_steady), Tx.s(R.string.game_clarity_clear),
                           DlssTune.clarityName(DlssTune.CLARITY_DEFAULT), GameUpscaler.ownClarity(a, g.titleId), v -> GameUpscaler.clarity(a, g.titleId, v), done);
     }
     private static void dlssSharp(MainActivity a, Game g, Runnable done) {   // the DLSS stand-in's RCAS (DlssTune, DM_VK_DLSS_SHARP; GSR 2's and FSR 1's); the in-game panel changes it live
@@ -1113,11 +1188,11 @@ final class GameSettings {
     }
 
     private static void motionSens(MainActivity a, Game g, Runnable done) {   // the phone's gyro scale (Prefs.MOTION_PCT, DM_MOTION_SENS); read when the game starts
-        StepSlider.dialog(a, Tx.s(R.string.game_motion_sensitivity), " · " + g.name, Prefs.MOTION_NAMES, Prefs.motionSens(a, g.titleId), "Slower", "Faster",
-                          Prefs.MOTION_NAMES[Prefs.MOTION_DEFAULT], Prefs.ownMotionSens(a, g.titleId), v -> Prefs.motionSens(a, g.titleId, v), done);
+        StepSlider.dialog(a, Tx.s(R.string.game_motion_sensitivity), " · " + g.name, Prefs.MOTION_NAMES, Prefs.motionSens(a, g.titleId), Tx.s(R.string.fusion_banana_motion_slower), Tx.s(R.string.fusion_banana_motion_faster),
+                          Prefs.MOTION_NAMES[Prefs.motionSens(a)], Prefs.ownMotionSens(a, g.titleId), v -> Prefs.motionSens(a, g.titleId, v), done);   // Default: Settings' value
     }
     private static void drs(MainActivity a, Game g, Runnable done) {   // the render size's range (Prefs.DRS), from the next start; the in-game panel changes it live
-        DrsSlider.dialog(a, " · " + g.name, Prefs.drs(a, g.titleId), firstLabel(recLabel(Prefs.DRS_NAMES, Recommend.DRS_VALUES, Prefs.rec(a, g.titleId, Recommend.DRS)), Prefs.DRS_NAMES[Prefs.drs(a)]), Prefs.ownDrs(a, g.titleId), v -> Prefs.drs(a, g.titleId, v), done);
+        DrsSlider.dialog(a, " · " + g.name, Prefs.drs(a, g.titleId), firstLabel(recLabel(Prefs.drsNames(), Recommend.DRS_VALUES, Prefs.rec(a, g.titleId, Recommend.DRS)), Prefs.drsNames()[Prefs.drs(a)]), Prefs.ownDrs(a, g.titleId), v -> Prefs.drs(a, g.titleId, v), done);
     }
 
     /** The profile's aspect variants' labels ("4:3"): its variant rows labelled w:h */
@@ -1133,8 +1208,8 @@ final class GameSettings {
     static String aspectLabel(android.content.Context a, String id) {
         String l = Prefs.aspect(a, id);
         Profile p = Profile.of(id);
-        if (ScreenShape.CHOICE.equals(l) && aspects(p).contains(l)) return "Screen shape";
-        return l == null || !aspects(p).contains(l) ? "16:9 (as shipped)" : l + (p.aspectVariant(l) != null ? Tx.s(R.string.game_aspect_native) : Tx.s(R.string.game_aspect_3d_view));
+        if (ScreenShape.CHOICE.equals(l) && aspects(p).contains(l)) return Tx.s(R.string.fusion_banana_screen_shape);
+        return l == null || !aspects(p).contains(l) ? Tx.s(R.string.game_16_9_as_shipped) : l + (p.aspectVariant(l) != null ? Tx.s(R.string.game_aspect_native) : Tx.s(R.string.game_aspect_3d_view));
     }
 
     /** Aspect ratio: as shipped, or a native aspect mod (the pack holds both, so it takes effect at the next start without Prepare); 4:3 shows the picture at 4:3, filling a
@@ -1144,7 +1219,7 @@ final class GameSettings {
         List<String> as = aspects(Profile.of(g.titleId));
         String[] labels = new String[as.size() + 1];
         labels[0] = Tx.s(R.string.game_16_9_as_shipped);
-        for (int k = 0; k < as.size(); k++) labels[k + 1] = ScreenShape.CHOICE.equals(as.get(k)) ? "Screen shape (the picture fills the window; applies at the next start)"
+        for (int k = 0; k < as.size(); k++) labels[k + 1] = ScreenShape.CHOICE.equals(as.get(k)) ? Tx.s(R.string.fusion_banana_screen_shape_description)
                     : as.get(k) + (Profile.of(g.titleId).aspectVariant(as.get(k)) != null ? Tx.s(R.string.game_aspect_native_laid_out, as.get(k))
                     : Tx.s(R.string.game_aspect_3d_follows));
         String cur = Prefs.aspect(a, g.titleId);

@@ -358,6 +358,18 @@ class GamePropertiesFragment : Fragment() {
                 if (GameEngine.isBananaAvailable) {
                     add(
                         SubmenuProperty(
+                            R.string.banana_settings,
+                            R.string.banana_game_settings_description,
+                            R.drawable.ic_settings,
+                            action = {
+                                if (!GameEngine.openNativeSettings(requireContext(), args.game)) {
+                                    Toast.makeText(requireContext(), R.string.game_engine_banana_missing_description, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        )
+                    )
+                    add(
+                        SubmenuProperty(
                             R.string.banana_pack_import,
                             R.string.banana_pack_import_description,
                             R.drawable.ic_import,

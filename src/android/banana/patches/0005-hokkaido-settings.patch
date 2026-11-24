@@ -1,0 +1,621 @@
+--- a/main/java/dev/nxnative/android/MainActivity.java
++++ b/main/java/dev/nxnative/android/MainActivity.java
+@@ -56,6 +56,7 @@
+     /** The update dot on the dock's Settings button (Updater.dot) */
+     private View updateDot; private View settingsButton;
+     private boolean resumed, settingsPage;
++    private boolean hokkaidoSettings;   // the embedded settings page returns to its caller, never to Banana Home
+     private boolean usersPage;   // the Users page (UsersUi) in place of Home
+     private String usersEdit;   // the player whose own page it shows, else the page of all players
+     private boolean advancedOpen;   // the Advanced page (AdvancedPage) is open over Settings or a game's page
+@@ -68,9 +69,20 @@
+ 
+     @Override protected void onCreate(Bundle saved) {
+         super.onCreate(saved);
+-        if (saved != null) settingsPage = saved.getBoolean("settings");
+-        if (saved != null && saved.getString("game_settings") != null)   // a fold or unfold makes the activity again: the game's settings page stays open
++        hokkaidoSettings = HokkaidoBridge.embedded();
++        if (hokkaidoSettings) {
++            settingsGame = HokkaidoSettings.game(this, getIntent());
++            settingsPage = settingsGame == null;
++        } else if (saved != null) settingsPage = saved.getBoolean("settings");
++        if (!hokkaidoSettings && saved != null && saved.getString("game_settings") != null)   // a fold or unfold makes the activity again: the game's settings page stays open
+             for (Game g : Game.load(this)) if (g.gameDir.equals(saved.getString("game_settings"))) { settingsGame = g; break; }
++        if (saved != null) {
++            settingsOpen = saved.getInt("settings_section", -1);
++            defaultsOpen = saved.getBoolean("defaults_open");
++            advancedOpen = saved.getBoolean("advanced_open");
++            advancedTitleId = saved.getString("advanced_title_id");
++            advancedName = saved.getString("advanced_name");
++        }
+         FrameLayout frame = new FrameLayout(this);
+         bananas = new BananaBackgroundView(this);
+         frame.addView(bananas, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+@@ -89,15 +101,20 @@
+         });   // a controller or keyboard moves the focus
+         PadFocus.watch(getWindow());   // a controller: the focus frame (PadFocus)
+         build();
+-        if (saved == null) { setIntent(gated(getIntent())); fromIntent(getIntent()); GameReturn.back(this, getIntent()); }   // start() reads no_pause from getIntent() too; GameReturn: Home made anew by the app's icon while a game runs
++        if (!hokkaidoSettings && saved == null) { setIntent(gated(getIntent())); fromIntent(getIntent()); GameReturn.back(this, getIntent()); }   // start() reads no_pause from getIntent() too; GameReturn: Home made anew by the app's icon while a game runs
+         GpuGl.probe(this, () -> { if (!isFinishing() && settingsGame != null) gameSettingsAgain(); });   // the GPU's name and, before any readiness check, the system driver's facts for the recommendations
+-        Updater.changed = this::updatesChanged;
+-        Updater.onStart(this);   // the release app: a newer release on GitHub opens the update popup (once per process start: not on a resume or a rotation)
++        if (!hokkaidoSettings) Updater.changed = this::updatesChanged;
++        if (!hokkaidoSettings) Updater.onStart(this);   // the release app: a newer release on GitHub opens the update popup (once per process start: not on a resume or a rotation)
+     }
+ 
+     @Override protected void onSaveInstanceState(Bundle out) {
+         super.onSaveInstanceState(out);
+         out.putBoolean("settings", settingsPage);
++        out.putInt("settings_section", settingsOpen);
++        out.putBoolean("defaults_open", defaultsOpen);
++        out.putBoolean("advanced_open", advancedOpen);
++        out.putString("advanced_title_id", advancedTitleId);
++        out.putString("advanced_name", advancedName);
+         if (settingsGame != null) out.putString("game_settings", settingsGame.gameDir);
+     }
+ 
+@@ -146,7 +163,10 @@
+     void userChanged() { styleUserButton(); }
+     void rebuildUsers() { build(); }
+ 
++    boolean hokkaidoSettings() { return hokkaidoSettings; }
++
+     void page(boolean settings) {
++        if (hokkaidoSettings && !settings) { finish(); return; }
+         advancedOpen = false;
+         settingsOpen = -1;
+         boolean wasUsers = usersPage;
+@@ -208,7 +228,7 @@
+         }
+         int step = PadFocus.tabStep(k);
+         if (step != 0 && settingsGame != null) {
+-            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0 && GameSettings.stepTab(settingsGame, step)) gameSettingsTop();
++            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0 && GameSettings.stepTab(settingsGame, step, hokkaidoSettings)) gameSettingsTop();
+             return true;
+         }
+         return super.dispatchKeyEvent(e);
+@@ -285,6 +305,7 @@
+ 
+     /** (Re)builds the current page above the bananas (Ui.page: the same gutter, width and header spacing as every screen; a game's settings page wider on a wide window, for its rail) */
+     private void build() {
++        if (hokkaidoSettings && onHome()) settingsPage = true;
+         FrameLayout frame = (FrameLayout) bananas.getParent();
+         while (frame.getChildCount() > 1) frame.removeViewAt(1);
+         if (!onHome()) { moveId = null; moveOrig = null; }   // a lifted game is put back when Home is left
+@@ -665,7 +686,7 @@
+         body.addView(ls, new LinearLayout.LayoutParams(dp(200), ViewGroup.LayoutParams.MATCH_PARENT));
+         LinearLayout top = Ui.row(this);
+         top.addView(Ui.back(this, v -> page(false)));
+-        TextView title = Ui.text(this, Tx.s(R.string.home_settings), 20, R.color.bn_text, 800);
++        TextView title = Ui.text(this, Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.home_settings), 20, R.color.bn_text, 800);
+         title.setAccessibilityHeading(true);
+         title.setPadding(dp(10), 0, 0, 0);
+         top.addView(title);
+@@ -695,7 +716,7 @@
+     private void narrowSettings(LinearLayout target, LinearLayout col, java.util.List<String> names, java.util.List<java.util.List<View>> groups, java.util.List<View> before) {
+         if (settingsOpen >= groups.size()) settingsOpen = -1;
+         if (settingsOpen < 0) {
+-            target.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(R.string.settings_settings), null));
++            target.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.settings_settings), null));
+             for (View v : before) { col.removeView(v); target.addView(v); }
+             LinearLayout list = Ui.add(target, Ui.listCard(this), 10);
+             for (int k = 0; k < names.size(); k++) {
+@@ -728,14 +749,15 @@
+         Ui.Setting row = new Ui.Setting(this, "🌐", Tx.s(R.string.settings_language_title), null).chevron(this);
+         row.value(Languages.current(this));
+         row.view.setOnClickListener(v -> {
+-            String[] names = new String[Languages.LIST.length + 1];
++            Languages.Lang cur = Languages.picked(this);
++            java.util.List<Languages.Lang> choices = new ArrayList<>(java.util.Arrays.asList(Languages.LIST));
++            if (cur != null && !choices.contains(cur)) choices.add(cur);
++            String[] names = new String[choices.size() + 1];
+             names[0] = Languages.systemLabel();
+-            for (int i = 0; i < Languages.LIST.length; i++) names[i + 1] = Languages.LIST[i].label();
+-            Languages.Lang cur = Languages.picked(this);
+-            int sel = 0;
+-            for (int i = 0; i < Languages.LIST.length; i++) if (Languages.LIST[i] == cur) sel = i + 1;
++            for (int i = 0; i < choices.size(); i++) names[i + 1] = choices.get(i).label();
++            int sel = cur == null ? 0 : choices.indexOf(cur) + 1;
+             new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_language_title))
+-                    .setSingleChoiceItems(names, sel, (d, w) -> { d.dismiss(); Languages.apply(this, w == 0 ? null : Languages.LIST[w - 1]); })
++                    .setSingleChoiceItems(names, sel, (d, w) -> { d.dismiss(); Languages.apply(this, w == 0 ? null : choices.get(w - 1)); })
+                     .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+         });
+         return row;
+@@ -744,70 +766,75 @@
+     private void buildSettingsInto(LinearLayout content) {
+         accessCard = null;
+         gameBox = null;
+-        content.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(R.string.settings_settings), null));
+-
+-        // Updates first, so the version and the check are easy to find (Updater: the release app also checks at every fresh start)
+-        Ui.add(content, Ui.section(this, Tx.s(R.string.settings_updates)), 16);
+-        LinearLayout upd = settingsCard(content);
+-        updateRow = new Ui.Setting(this, "🔄", Tx.s(R.string.common_check_for_updates), v -> Updater.checkNow(this)).chevron(this);
+-        upd.addView(updateRow.view);
+-        channelRow = Updater.channelSetting(this);   // Update channel: Stable, Hotfix or Preview; names a newer release on another channel
+-        upd.addView(channelRow.view);
+-        String runLine = Updater.runningBuild(Prefs.updateChannel(this));   // what kind of build this is: a preview or a hotfix says so; a weekly release says nothing
+-        if (!runLine.isEmpty()) Ui.add(upd, Ui.small(this, runLine), 8);
+-        Updater.seen(this);   // Settings shows the waiting update: the dot goes (a critical one keeps it)
+-        upd.addView(new Ui.Setting(this, "💾", Tx.s(R.string.settings_backup_before_update), null)   // UpdateBackupUi: the saves outside app storage before an update installs
+-                .toggle(this, Prefs.backupBeforeUpdate(this), (b, on) -> Prefs.backupBeforeUpdate(this, on))
+-                .value(Tx.s(R.string.settings_backup_before_update_note)).view);
+-        upd.addView(new Ui.Setting(this, "📖", Tx.s(R.string.settings_player_wiki), v -> openLink(WIKI_URL)).chevron(this)
+-                .value(Tx.s(R.string.settings_guides_what_every_setting_does)).view);
++        content.addView(Ui.header(this, Ui.back(this, v -> page(false)), Tx.s(hokkaidoSettings ? R.string.fusion_banana_settings_title : R.string.settings_settings), null));
++        if (hokkaidoSettings) HokkaidoSettings.rows(this, content, null, this::build);
++
++        if (!hokkaidoSettings) {
++            // Updates first, so the version and the check are easy to find (Updater: the release app also checks at every fresh start)
++            Ui.add(content, Ui.section(this, Tx.s(R.string.settings_updates)), 16);
++            LinearLayout upd = settingsCard(content);
++            updateRow = new Ui.Setting(this, "🔄", Tx.s(R.string.common_check_for_updates), v -> Updater.checkNow(this)).chevron(this);
++            upd.addView(updateRow.view);
++            channelRow = Updater.channelSetting(this);   // Update channel: Stable, Hotfix or Preview; names a newer release on another channel
++            upd.addView(channelRow.view);
++            String runLine = Updater.runningBuild(Prefs.updateChannel(this));   // what kind of build this is: a preview or a hotfix says so; a weekly release says nothing
++            if (!runLine.isEmpty()) Ui.add(upd, Ui.small(this, runLine), 8);
++            Updater.seen(this);   // Settings shows the waiting update: the dot goes (a critical one keeps it)
++            upd.addView(new Ui.Setting(this, "💾", Tx.s(R.string.settings_backup_before_update), null)   // UpdateBackupUi: the saves outside app storage before an update installs
++                    .toggle(this, Prefs.backupBeforeUpdate(this), (b, on) -> Prefs.backupBeforeUpdate(this, on))
++                    .value(Tx.s(R.string.settings_backup_before_update_note)).view);
++            upd.addView(new Ui.Setting(this, "📖", Tx.s(R.string.settings_player_wiki), v -> openLink(WIKI_URL)).chevron(this)
++                    .value(Tx.s(R.string.settings_guides_what_every_setting_does)).view);
++        }
+ 
+         Ui.add(content, Ui.section(this, Tx.s(R.string.common_appearance)), Ui.SECTION_GAP);
+         LinearLayout look = settingsCard(content);
+         look.addView(languageRow().view);
+-        Ui.Setting theme = new Ui.Setting(this, "🌗", Tx.s(R.string.settings_theme), null).chevron(this);
+-        theme.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_theme))
+-                .setSingleChoiceItems(Tx.arr(R.array.arr_theme), Prefs.theme(this), (d, w) -> { Prefs.theme(this, w); d.dismiss(); NxApp.applyTheme(this); })
+-                .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+-        theme.value(Tx.arr(R.array.arr_theme)[Prefs.theme(this)]);
+-        look.addView(theme.view);
+-        Ui.Setting bg = new Ui.Setting(this, "🖼️", Tx.s(R.string.settings_background), null).chevron(this);
+-        bg.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_background))
+-                .setSingleChoiceItems(Tx.arr(R.array.arr_background), Prefs.background(this), (d, w) -> {
+-                    d.dismiss();
+-                    if (w == 2) {   // a picture: pick it first, the choice is kept once it is read
+-                        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
+-                        startActivityForResult(i, PICK_BG);
+-                        return;
+-                    }
+-                    Prefs.background(this, w);
+-                    bananas.setLook(w);
+-                    bg.value(Tx.arr(R.array.arr_background)[w]);
+-                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+-        bg.value(Tx.arr(R.array.arr_background)[Prefs.background(this)]);
+-        look.addView(bg.view);
+-        Ui.Setting lay = new Ui.Setting(this, "\uD83D\uDDC2\uFE0F", Tx.s(R.string.settings_home_layout), null).chevron(this);
+-        lay.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_home_layout))
+-                .setSingleChoiceItems(Tx.arr(R.array.arr_home_layout), HomeLayout.mode(this), (d, w) -> {
+-                    d.dismiss();
+-                    Prefs.homeLayout(this, w);
+-                    lay.value(Tx.arr(R.array.arr_home_layout)[w]);   // Home is built again when Settings closes
+-                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
+-        lay.value(Tx.arr(R.array.arr_home_layout)[HomeLayout.mode(this)]);
+-        look.addView(lay.view);
+-        look.addView(new Ui.Setting(this, "🔊", Tx.s(R.string.settings_ui_sounds), null).toggle(this, Prefs.uiSounds(this), (b, on) -> { Prefs.uiSounds(this, on); if (on) UiSound.select(this); })
+-                .value(Tx.s(R.string.settings_a_tick_when_the_focus)).view);
+-        Ui.Setting snd = new Ui.Setting(this, "🎵", Tx.s(R.string.settings_my_sound), null).chevron(this);
+-        snd.view.setOnClickListener(v -> {
+-            if (UiSound.custom(this).isFile()) new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_my_sound)).setItems(new String[]{Tx.s(R.string.settings_pick_another_sound), Tx.s(R.string.settings_use_the_built_in_sounds)}, (d, w) -> {
+-                if (w == 0) pickSound(); else { UiSound.clearCustom(this); snd.value("Built-in"); }
+-            }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+-            else pickSound();
+-        });
+-        snd.value(UiSound.custom(this).isFile() ? Tx.s(R.string.settings_your_sound) : "Built-in");
+-        look.addView(snd.view);
+-        if (BuildConfig.DEBUG) look.addView(new Ui.Setting(this, "🧪", Tx.s(R.string.settings_sample_games), null).toggle(this, Prefs.demoGames(this), (b, on) -> { Prefs.demoGames(this, on); refresh(); })
+-                .value(Tx.s(R.string.settings_test_builds_shows_sample_tiles)).view);
++        if (!hokkaidoSettings) {
++            Ui.Setting theme = new Ui.Setting(this, "🌗", Tx.s(R.string.settings_theme), null).chevron(this);
++            theme.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_theme))
++                    .setSingleChoiceItems(Tx.arr(R.array.arr_theme), Prefs.theme(this), (d, w) -> { Prefs.theme(this, w); d.dismiss(); NxApp.applyTheme(this); })
++                    .setNegativeButton(Tx.s(R.string.common_cancel), null).show());
++            theme.value(Tx.arr(R.array.arr_theme)[Prefs.theme(this)]);
++            look.addView(theme.view);
++            Ui.Setting bg = new Ui.Setting(this, "🖼️", Tx.s(R.string.settings_background), null).chevron(this);
++            bg.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_background))
++                    .setSingleChoiceItems(Tx.arr(R.array.arr_background), Prefs.background(this), (d, w) -> {
++                        d.dismiss();
++                        if (w == 2) {   // a picture: pick it first, the choice is kept once it is read
++                            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
++                            startActivityForResult(i, PICK_BG);
++                            return;
++                        }
++                        Prefs.background(this, w);
++                        bananas.setLook(w);
++                        bg.value(Tx.arr(R.array.arr_background)[w]);
++                    }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
++            bg.value(Tx.arr(R.array.arr_background)[Prefs.background(this)]);
++            look.addView(bg.view);
++            Ui.Setting lay = new Ui.Setting(this, "\uD83D\uDDC2\uFE0F", Tx.s(R.string.settings_home_layout), null).chevron(this);
++            lay.view.setOnClickListener(v -> new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_home_layout))
++                    .setSingleChoiceItems(Tx.arr(R.array.arr_home_layout), HomeLayout.mode(this), (d, w) -> {
++                        d.dismiss();
++                        Prefs.homeLayout(this, w);
++                        lay.value(Tx.arr(R.array.arr_home_layout)[w]);   // Home is built again when Settings closes
++                    }).setNegativeButton(Tx.s(R.string.common_cancel), null).show());
++            lay.value(Tx.arr(R.array.arr_home_layout)[HomeLayout.mode(this)]);
++            look.addView(lay.view);
++            look.addView(new Ui.Setting(this, "🔊", Tx.s(R.string.settings_ui_sounds), null).toggle(this, Prefs.uiSounds(this), (b, on) -> { Prefs.uiSounds(this, on); if (on) UiSound.select(this); })
++                    .value(Tx.s(R.string.settings_a_tick_when_the_focus)).view);
++            Ui.Setting snd = new Ui.Setting(this, "🎵", Tx.s(R.string.settings_my_sound), null).chevron(this);
++            snd.view.setOnClickListener(v -> {
++                if (UiSound.custom(this).isFile()) new PadFocus.Builder(this).setTitle(Tx.s(R.string.settings_my_sound)).setItems(new String[]{Tx.s(R.string.settings_pick_another_sound), Tx.s(R.string.settings_use_the_built_in_sounds)}, (d, w) -> {
++                    if (w == 0) pickSound(); else { UiSound.clearCustom(this); snd.value("Built-in"); }
++                }).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
++                else pickSound();
++            });
++            snd.value(UiSound.custom(this).isFile() ? Tx.s(R.string.settings_your_sound) : "Built-in");
++            look.addView(snd.view);
++            if (BuildConfig.DEBUG) look.addView(new Ui.Setting(this, "🧪", Tx.s(R.string.settings_sample_games), null).toggle(this, Prefs.demoGames(this), (b, on) -> { Prefs.demoGames(this, on); refresh(); })
++                    .value(Tx.s(R.string.settings_test_builds_shows_sample_tiles)).view);
++        }
+ 
+         Ui.add(content, Ui.section(this, Tx.s(R.string.common_display)), Ui.SECTION_GAP);
+         LinearLayout play = settingsCard(content);
+@@ -904,14 +931,16 @@
+         advRow.view.setOnClickListener(v -> AdvancedPage.show(this, null, null, () -> advRow.value(AdvancedSettings.count(this, null) == 0 ? Tx.s(R.string.common_search_every_switch_each_starts) : Tx.n(R.plurals.common_n_set, AdvancedSettings.count(this, null), AdvancedSettings.count(this, null)))));
+         advRow.value(AdvancedSettings.count(this, null) == 0 ? Tx.s(R.string.common_search_every_switch_each_starts) : Tx.n(R.plurals.common_n_set, AdvancedSettings.count(this, null), AdvancedSettings.count(this, null)));
+         sys.addView(advRow.view);
+-        sys.addView(new Ui.Setting(this, "📁", Tx.s(R.string.common_folders), v -> Folders.dialog(this)).value(Tx.s(R.string.common_game_pack_and_save_folders)).chevron(this).view);
+-        sys.addView(new Ui.Setting(this, "🧹", Tx.s(R.string.settings_storage), v -> StorageUi.dialog(this)).value(Tx.s(R.string.settings_remove_leftovers_and_old_files)).chevron(this).view);   // (StorageUi.java)
+-        // some phones stop or slow a background job once the screen is off (GitHub discussion 58): Home keeps the screen on while preparing (Ondevice), the service its wake lock
+-        sys.addView(new Ui.Setting(this, "🔆", Tx.s(R.string.settings_keep_the_screen_on_while), null).toggle(this, Prefs.keepScreenPreparing(this), (b, on) -> Prefs.keepScreenPreparing(this, on))
+-                .value(Tx.s(R.string.settings_while_home_shows_a_game)).view);   // the game, pack and save folders, kept across updates (Folders.java)
+-        // a game whose shaders are not this version's is updated in the background at start and at Play (Ondevice.autoUpdate); off: the game's page does it when asked
+-        sys.addView(new Ui.Setting(this, "🔄", Tx.s(R.string.settings_update_shaders_automatically), null).toggle(this, Prefs.autoShaderUpdate(this), (b, on) -> Prefs.autoShaderUpdate(this, on))
+-                .says(Tx.s(R.string.settings_auto_shader_update_on), Tx.s(R.string.settings_auto_shader_update_off)).view);
++        if (!hokkaidoSettings) {
++            sys.addView(new Ui.Setting(this, "📁", Tx.s(R.string.common_folders), v -> Folders.dialog(this)).value(Tx.s(R.string.common_game_pack_and_save_folders)).chevron(this).view);
++            sys.addView(new Ui.Setting(this, "🧹", Tx.s(R.string.settings_storage), v -> StorageUi.dialog(this)).value(Tx.s(R.string.settings_remove_leftovers_and_old_files)).chevron(this).view);   // (StorageUi.java)
++            // some phones stop or slow a background job once the screen is off (GitHub discussion 58): Home keeps the screen on while preparing (Ondevice), the service its wake lock
++            sys.addView(new Ui.Setting(this, "🔆", Tx.s(R.string.settings_keep_the_screen_on_while), null).toggle(this, Prefs.keepScreenPreparing(this), (b, on) -> Prefs.keepScreenPreparing(this, on))
++                    .value(Tx.s(R.string.settings_while_home_shows_a_game)).view);   // the game, pack and save folders, kept across updates (Folders.java)
++            // a game whose shaders are not this version's is updated in the background at start and at Play (Ondevice.autoUpdate); off: the game's page does it when asked
++            sys.addView(new Ui.Setting(this, "🔄", Tx.s(R.string.settings_update_shaders_automatically), null).toggle(this, Prefs.autoShaderUpdate(this), (b, on) -> Prefs.autoShaderUpdate(this, on))
++                    .says(Tx.s(R.string.settings_auto_shader_update_on), Tx.s(R.string.settings_auto_shader_update_off)).view);
++        }
+ 
+         Ui.add(content, Ui.section(this, Tx.s(R.string.common_help)), Ui.SECTION_GAP);
+         LinearLayout help = settingsCard(content);
+@@ -921,7 +950,7 @@
+         help.addView(new Ui.Setting(this, "📨", Tx.s(R.string.common_share_log), v -> shareLog()).value(Tx.s(R.string.settings_the_newest_log)).chevron(this).view);
+         help.addView(new Ui.Setting(this, "🧰", Tx.s(R.string.settings_tester_settings), null).toggle(this, Prefs.testerRows(this), (b, on) -> Prefs.testerRows(this, on))
+                 .says(Tx.s(R.string.settings_showing_the_rows_made_for), Tx.s(R.string.settings_hidden_a_game_with_resolution)).view);   // (Prefs.simpleRes)
+-        if (BuildConfig.NX_PLAY) {   // a test build always takes adb's commands (Prefs.adbControl)
++        if (!hokkaidoSettings && BuildConfig.NX_PLAY) {   // a test build always takes adb's commands (Prefs.adbControl)
+             Ui.Setting adb = new Ui.Setting(this, "🛠", Tx.s(R.string.settings_adb_control_debug), null)
+                     .value(Tx.s(R.string.settings_lets_adb_commands_add_games));
+             adb.toggle(this, Prefs.adbControl(this), (b, on) -> {
+@@ -987,18 +1016,18 @@
+     /** The settings rows' current values (after a dialog, on resume) */
+     private void refreshSettings() {
+         if (overlayRow == null) return;
+-        updateRow.value(Updater.versionText(this));
++        if (updateRow != null) updateRow.value(Updater.versionText(this));
+         boolean ov = Prefs.overlay(this);
+         if (overlayRow.toggle.isChecked() != ov) overlayRow.toggle.setChecked(ov);
+         int n = 0;
+-        for (String[] it : Overlay.ITEMS) if (Prefs.overlayItem(this, it[0])) n++;
+-        overlayRow.value(ov ? Tx.s(R.string.home_on_n_of_m_items, n, Overlay.ITEMS.length) : Tx.s(R.string.game_off));
++        for (String[] it : Overlay.items()) if (Prefs.overlayItem(this, it[0])) n++;
++        overlayRow.value(ov ? Tx.s(R.string.home_on_n_of_m_items, n, Overlay.items().length) : Tx.s(R.string.game_off));
+         resRow.value(resLabel());
+         capRow.value(capLabel(Prefs.fpsCap(this)));
+         upsRow.value(Tx.arr(R.array.arr_upscaler_modes)[GameUpscaler.mode(this)]);
+         sharpRow.value(GameUpscaler.sharpName(GameUpscaler.sharp(this)));
+         sharpRow.view.setVisibility(GameUpscaler.mode(this) == GameUpscaler.MODE_FSR ? View.VISIBLE : View.GONE);
+-        drsRow.value(Prefs.DRS_NAMES[Prefs.drs(this)]);
++        drsRow.value(Prefs.drsNames()[Prefs.drs(this)]);
+         lsfgRow.value(!BuildConfig.NX_LSFG ? Tx.s(R.string.home_not_in_this_build) : Lsfg.on(this) ? Lsfg.label(this, null) + (Lsfg.find(this) == null ? Tx.s(R.string.home_lossless_dll_missing) : "") : Tx.s(R.string.game_off));
+         dispRow.value(Tx.arr(R.array.arr_display)[Prefs.stretch(this) ? 1 : 0]);
+         sizeRow.value(GameSettings.sizeNames()[GameSettings.sizeIndex(Prefs.pictureSize(this))]);
+@@ -1018,6 +1047,7 @@
+ 
+     @Override protected void onNewIntent(Intent i) {
+         super.onNewIntent(i);
++        if (hokkaidoSettings) return;
+         if (GameReturn.back(this, i)) return;   // the app's icon while a game runs: back to the game, not Home (the icon brought Home's task forward; the game's own task waits behind it)
+         fromIntent(i);
+     }
+@@ -1074,13 +1104,13 @@
+     @Override protected void onResume() {
+         super.onResume();
+         resumed = true;
+-        GameReturn.homeInRecents(this, true);   // Home's card in Recents again (a game's screen leaves it out while it shows: one card, the game's)
++        if (!hokkaidoSettings) GameReturn.homeInRecents(this, true);   // Home's card in Recents again (a game's screen leaves it out while it shows: one card, the game's)
+         if (gameBox != null && Game.load(this).size() != games.size()) refresh();   // a card FrontendLaunch added while Home was in the background
+         onResumeViews();
+-        Ondevice.resume(this);
+-        Updater.resume(this);   // back from "Install unknown apps" with an update download waiting
+-        ExitWatch.resume(this);
+-        sampleTick();   // the shader check's cards (the line goes on by itself in the background)
++        if (!hokkaidoSettings) Ondevice.resume(this);
++        if (!hokkaidoSettings) Updater.resume(this);   // back from "Install unknown apps" with an update download waiting
++        if (!hokkaidoSettings) ExitWatch.resume(this);
++        if (!hokkaidoSettings) sampleTick();   // the shader check's cards (the line goes on by itself in the background)
+         updateTick();   // a game that ended unexpectedly: "The game stopped unexpectedly", once (and every 2 s while a game runs and Home shows)
+     }
+ 
+@@ -2534,7 +2564,7 @@
+     /** Game resolution: the window size the host gives the game (DM_WINDOW), from the next start */
+     private void gameRes() {
+         int i = Math.max(0, java.util.Arrays.asList(Prefs.WINDOWS).indexOf(Prefs.window(this)));
+-        new PadFocus.Builder(this).setTitle(Tx.s(R.string.home_game_resolution)).setSingleChoiceItems(Prefs.WINDOW_NAMES, i, (d, w) -> { Prefs.window(this, Prefs.WINDOWS[w]); refreshSettings(); d.dismiss(); })
++        new PadFocus.Builder(this).setTitle(Tx.s(R.string.home_game_resolution)).setSingleChoiceItems(Prefs.windowNames(), i, (d, w) -> { Prefs.window(this, Prefs.WINDOWS[w]); refreshSettings(); d.dismiss(); })
+                 .setNegativeButton(Tx.s(R.string.common_cancel), null).show();
+     }
+ 
+--- a/main/java/dev/nxnative/android/GameSettings.java
++++ b/main/java/dev/nxnative/android/GameSettings.java
+@@ -258,8 +258,8 @@
+     }
+ 
+     /** A controller's L1 / R1: the next (+1) or previous (-1) tab of the game's page, round; false when there is nothing to switch to */
+-    static boolean stepTab(Game g, int delta) {
+-        String[] keys = Profile.missing(g.titleId, g.name) == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
++    static boolean stepTab(Game g, int delta, boolean settingsOnly) {
++        String[] keys = settingsOnly ? new String[] {PERFORMANCE, GAME} : Profile.missing(g.titleId, g.name) == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
+         int cur = Math.max(0, Arrays.asList(keys).indexOf(tab));
+         int next = PadPanel.tab(cur, delta, keys.length);
+         if (next == cur) return false;
+@@ -287,19 +287,23 @@
+         if (!id.equals(customFor)) { customFor = id; custom = Prefs.customPicked(a, id); }
+         boolean wide = a.getResources().getConfiguration().screenWidthDp >= 600;
+         String missing = Profile.missing(id, g.name);
+-        String[] keys = missing == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
+-        String[] labels = missing == null ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game), Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)} : new String[] {Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)};
++        String[] keys = a.hokkaidoSettings() ? new String[] {PERFORMANCE, GAME} : missing == null ? new String[] {PERFORMANCE, GAME, SAVES, STORAGE} : new String[] {SAVES, STORAGE};
++        String[] labels = a.hokkaidoSettings() ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game)} : missing == null ? new String[] {Tx.s(R.string.game_performance), Tx.s(R.string.game_game), Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)} : new String[] {Tx.s(R.string.game_saves), Tx.s(R.string.game_storage)};
+         int t = Math.max(0, Arrays.asList(keys).indexOf(tab));
+         tab = keys[t];
+         final LinearLayout content;
+-        if (wide) content = split(a, outer, g, missing == null, keys, labels, t, close);   // the game and its tabs at the left, the tab's page at the right
++        if (wide) content = split(a, outer, g, missing == null && !a.hokkaidoSettings(), keys, labels, t, close);   // the game and its tabs at the left, the tab's page at the right
+         else {
+-            topBar(a, outer, g, missing == null, close);
++            topBar(a, outer, g, missing == null && !a.hokkaidoSettings(), close);
+             Ui.add(outer, Ui.tabs(a, labels, t, k -> { tab = keys[k]; a.gameSettingsTop(); }), 4);
+             content = outer;
+         }
++        if (a.hokkaidoSettings()) HokkaidoSettings.rows(a, content, g, () -> {
++            custom = Prefs.customPicked(a, id);
++            again.run();
++        });
+         if (missing != null) Ui.add(content, Ui.small(a, missing), 12);
+-        if (Edition.offered(g)) {   // a set with a Switch 2 Edition (program 1) whose profile this APK has: which one Play starts (Edition); one save for both
++        if (!a.hokkaidoSettings() && Edition.offered(g)) {   // a set with a Switch 2 Edition (program 1) whose profile this APK has: which one Play starts (Edition); one save for both
+             LinearLayout ed = Ui.add(content, Ui.listCard(a), 12);
+             boolean on = Edition.on(a, id);
+             Ui.Setting s = new Ui.Setting(a, "🎮", Tx.s(R.string.game_switch_2_edition), null)
+@@ -307,7 +311,7 @@
+                     .toggle(a, on, (b, x) -> { Edition.set(a, id, x); again.run(); });
+             ed.addView(s.view);
+         }
+-        shaderUpdateCard(a, content, g, again);
++        if (!a.hokkaidoSettings()) shaderUpdateCard(a, content, g, again);
+         if (!tab.equals(PERFORMANCE) && !tab.equals(GAME)) { a.gameTab(content, g, tab.equals(SAVES)); return; }
+         boolean perf = tab.equals(PERFORMANCE);
+         if (perf) Ui.add(content, Ui.statusChip(a, chipText(a, id)), 12, Ui.wrap());
+@@ -364,7 +368,7 @@
+         boolean simple = Prefs.simpleRes(a, id);   // a game with Resolution presets and the tester rows off (Settings › Help): Resolution's choices alone, no Advanced, Upscaler or Dynamic resolution
+         if (!rps.isEmpty()) {   // a profile with res_preset rows: one Resolution (window and 3D scene together, ResPresets); Advanced shows the two settings apart
+             String rc = Prefs.resolutionChoice(a, id);
+-            picture.add(track(recRows, Recommend.RES_PRESET, prepared(new Ui.Setting(a, "🖼️", Tx.s(R.string.common_resolution), v -> presets(a, g, again)), presetValue(a, g, rps, rc, simple)).note(ResPresets.NOTE).chevron(a)));
++            picture.add(track(recRows, Recommend.RES_PRESET, prepared(new Ui.Setting(a, "🖼️", Tx.s(R.string.common_resolution), v -> presets(a, g, again)), presetValue(a, g, rps, rc, simple)).note(ResPresets.note()).chevron(a)));
+             if (ResPresets.ADVANCED.equals(rc) && !simple) {
+                 if (prof.hasResolution()) picture.add(new Ui.Setting(a, "🪟", Tx.s(R.string.game_window), v -> resolution(a, g, again)).value(windowLabel(a, id)).chevron(a).sub());
+                 if (!SceneRes.presets(prof).isEmpty())
+@@ -462,9 +466,9 @@
+                         if (s == null) continue;
+                         Profile.Option source = Profile.findImpliedBy(prof.options, opt, env -> Prefs.gameOption(a, id, env));
+                         boolean supported = opt.isSupported(packDir);
+-                        s.value(opt.description);   // always what it does; what it needs, or what turned it on, on a line of its own
++                        s.value(opt.description());   // always what it does; what it needs, or what turned it on, on a line of its own
+                         // needs=<marker>: the rewriter's patch of the game's code that Prepare makes (main.fixups.tsv), not the shaders
+-                        s.status(!supported ? Tx.s(R.string.game_needs_prepare_again_patches_the) : source != null ? Tx.s(R.string.game_turned_on_by, source.label) : null);
++                        s.status(!supported ? Tx.s(R.string.game_needs_prepare_again_patches_the) : source != null ? Tx.s(R.string.game_turned_on_by, source.label()) : null);
+                         if (source != null) {
+                             s.toggle.setChecked(true);
+                             s.toggle.setEnabled(false);
+@@ -481,7 +485,7 @@
+             };
+ 
+             for (Profile.Option opt : prof.options) {
+-                Ui.Setting setting = new Ui.Setting(a, optionIcon(opt.env), opt.label, null)
++                Ui.Setting setting = new Ui.Setting(a, optionIcon(opt.env), opt.label(), null)
+                         .toggle(a, Prefs.gameOption(a, id, opt.env), (button, checked) -> {
+                             if (updating[0]) return;
+                             Prefs.gameOption(a, id, opt.env, checked);
+@@ -499,7 +503,7 @@
+         if (LinkPlay.has(id))
+             options.add(new Ui.Setting(a, "🔗", Tx.s(R.string.game_link_play), v -> LinkPlay.dialog(a, g, again)).value(LinkPlay.label(a, id)).chevron(a));
+         options.add(Covers.row(a, g, again));
+-        options.add(new Ui.Setting(a, "🌐", Tx.s(R.string.game_game_language), v -> language(a, g, again)).value(GameLanguage.label(Prefs.gameLang(a, id), phoneTag())).chevron(a));   // not a tester's knob: with the game's options, never folded
++        options.add(new Ui.Setting(a, "🌐", Tx.s(R.string.game_game_language), v -> language(a, g, again)).value(languageLabel(a, Prefs.gameLang(a, id))).chevron(a));   // not a tester's knob: with the game's options, never folded
+         if (prof != null && prof.timeOfDay)   // the one global setting (Prefs.timeOverride → DM_TIME), here for a game whose day/night cycle follows the user clock
+             options.add(new Ui.Setting(a, "🕒", Tx.s(R.string.common_time_of_day), v -> TimeOfDay.dialog(a, again)).value(TimeOfDay.label(a)).chevron(a));
+ 
+@@ -701,8 +705,8 @@
+         return s.status(need ? Tx.s(R.string.game_needs_prepare_again_makes_this) : null);
+     }
+ 
+-    /** Dynamic resolution's value: Off, or the range the render size moves in (Prefs.DRS_NAMES: the lowest size, as % of the window; always up to 100 %) */
+-    static String drsValue(int i) { return i <= 0 ? Tx.s(R.string.game_off) : Tx.s(R.string.game_drs_between, Prefs.DRS_NAMES[i]); }
++    /** Dynamic resolution's value: Off, or the range the render size moves in (Prefs.drsNames(): the lowest size, as % of the window; always up to 100 %) */
++    static String drsValue(int i) { return i <= 0 ? Tx.s(R.string.game_off) : Tx.s(R.string.game_drs_between, Prefs.drsNames()[i]); }
+ 
+     /** A list's choice without its explanation in brackets, as a row's value ("FSR 1 (sharp, fast)" reads "FSR 1"); the list shows it whole */
+     static String shortName(String s) { int i = s.indexOf(" ("); return i > 0 ? s.substring(0, i) : s; }
+@@ -796,7 +800,7 @@
+ 
+     static final String[] GPU_TS = {"segment", "submission"};
+ 
+-    private static String gpuTsName(String mode) { return mode.equals("segment") ? "Per segment" : "Per submission"; }
++    private static String gpuTsName(String mode) { return mode.equals("segment") ? Tx.s(R.string.game_per_segment) : Tx.s(R.string.game_per_submission); }
+ 
+     static String gpuTsLabel(MainActivity a, String id) {
+         String m = Prefs.gpuTs(a, id);
+@@ -843,7 +847,7 @@
+ 
+     /** Game settings' value of Resolution: the preset in force with its window and 3D scene, Advanced with its two values; and Prepare again when the pack lacks the overlay */
+     private static String presetValue(MainActivity a, Game g, List<ResPresets.Preset> ps, String rc, boolean simple) {
+-        if (ResPresets.ADVANCED.equals(rc)) return simple ? "Custom setup (window and 3D scene set apart)" : Tx.s(R.string.game_advanced_window_and_3d_scene);
++        if (ResPresets.ADVANCED.equals(rc)) return simple ? Words.s("fusion_runtime_custom_setup", "Custom setup") : Tx.s(R.string.game_advanced_window_and_3d_scene);
+         ResPresets.Preset p = ResPresets.of(ps, rc);
+         if (p == null) return "";
+         String l = ResPresets.label(ps, rc);
+@@ -866,7 +870,7 @@
+         box.setOrientation(LinearLayout.VERTICAL);
+         AlertDialog[] d = new AlertDialog[1];
+         boolean simple = Prefs.simpleRes(a, g.titleId);
+-        box.addView(Ui.small(a, ResPresets.NOTE + " " + Tx.s(R.string.game_window_note_tail)));
++        box.addView(Ui.small(a, ResPresets.note() + " " + Tx.s(R.string.game_window_note_tail)));
+         android.widget.RadioGroup rg = new android.widget.RadioGroup(a);
+         for (int k = 0; k <= (simple ? ps.size() - 1 : ps.size()); k++) {   // the tester rows add Advanced after the presets
+             android.widget.RadioButton rb = new android.widget.RadioButton(a);
+@@ -910,7 +914,7 @@
+         if (ps.isEmpty()) return;
+         String[] labels = new String[ps.size() + 1];
+         labels[0] = Tx.s(R.string.game_game_default_its_own_dynamic);
+-        for (int k = 0; k < ps.size(); k++) labels[k + 1] = ps.get(k).label;
++        for (int k = 0; k < ps.size(); k++) labels[k + 1] = ps.get(k).label();
+         SceneRes.Preset cur = SceneRes.of(ps, Prefs.sceneRes(a, g.titleId));
+         LinearLayout box = new LinearLayout(a);
+         box.setOrientation(LinearLayout.VERTICAL);
+@@ -939,11 +943,21 @@
+ 
+     static String phoneTag() { return java.util.Locale.getDefault().toLanguageTag(); }
+ 
++    private static String languageName(android.content.Context context, String code) {
++        return java.util.Locale.forLanguageTag(code).getDisplayName(context.getResources().getConfiguration().getLocales().get(0));
++    }
++
++    private static String languageLabel(android.content.Context context, String choice) {
++        String code = choice == null ? GameLanguage.code(phoneTag()) : choice;
++        String name = languageName(context, code == null ? "en-US" : code);
++        return choice == null ? Tx.s(R.string.fusion_banana_game_language_system, name) : name;
++    }
++
+     /** Game language (DM_LANG, GameLanguage): the phone's language first (the default), then the console's languages; a game without the one picked uses one it has */
+     static void language(android.app.Activity a, Game g, Runnable done) {   // the in-game panel's shortcut too
+         String[] labels = new String[GameLanguage.CODES.length + 1];
+-        labels[0] = GameLanguage.label(null, phoneTag());
+-        System.arraycopy(GameLanguage.NAMES, 0, labels, 1, GameLanguage.NAMES.length);
++        labels[0] = languageLabel(a, null);
++        for (int i = 0; i < GameLanguage.CODES.length; i++) labels[i + 1] = languageName(a, GameLanguage.CODES[i]);
+         String m = Prefs.gameLang(a, g.titleId);
+         int checked = m == null ? 0 : 1 + Math.max(0, Arrays.asList(GameLanguage.CODES).indexOf(m));
+         new PadFocus.Builder(a).setTitle(Tx.s(R.string.game_title_for, Tx.s(R.string.game_game_language), g.name)).setSingleChoiceItems(labels, checked, (x, w) -> {
+@@ -976,7 +990,7 @@
+         }
+         String[] labels = new String[Prefs.WINDOWS.length + 1];
+         labels[0] = Tx.s(R.string.game_default_value, Prefs.windowName(Prefs.defaultWindow(a, g.titleId), false));
+-        { Profile lp = Profile.of(g.titleId); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], Prefs.WINDOW_NAMES[li]) : Prefs.WINDOW_NAMES[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
++        { Profile lp = Profile.of(g.titleId); for (int li = 0; li < Prefs.WINDOWS.length; li++) labels[li + 1] = lp != null ? lp.windowLabel(Prefs.WINDOWS[li], Prefs.windowNames()[li]) : Prefs.windowNames()[li]; }   // a choice the game draws at another size says so (Profile.windowLabel)
+         int checked = Prefs.ownWindow(a, g.titleId) ? 1 + Math.max(0, Arrays.asList(Prefs.WINDOWS).indexOf(Prefs.gameWindow(a, g.titleId))) : 0;
+         new PadFocus.Builder(a).setTitle(windowTitle(g) + " · " + g.name).setSingleChoiceItems(labels, checked, (x, w) -> {
+             Prefs.gameWindow(a, g.titleId, w == 0 ? null : Prefs.WINDOWS[w - 1]);
+@@ -1165,7 +1179,7 @@
+ 
+     static final String CLARITY_LEFT = "Steady", CLARITY_RIGHT = "Clear";   // the Motion clarity slider's ends: more history (steadier) / less ghosting
+     private static void clarity(MainActivity a, Game g, Runnable done) {   // the GSR2 stand-in's clarity step (DlssTune, DM_VK_GSR2_CLARITY); the in-game panel changes it live
+-        StepSlider.dialog(a, Tx.s(R.string.game_motion_clarity), " · " + g.name, DlssTune.clarityNames(), GameUpscaler.clarity(a, g.titleId), CLARITY_LEFT, CLARITY_RIGHT,
++        StepSlider.dialog(a, Tx.s(R.string.game_motion_clarity), " · " + g.name, DlssTune.clarityNames(), GameUpscaler.clarity(a, g.titleId), Tx.s(R.string.game_clarity_steady), Tx.s(R.string.game_clarity_clear),
+                           DlssTune.clarityName(DlssTune.CLARITY_DEFAULT), GameUpscaler.ownClarity(a, g.titleId), v -> GameUpscaler.clarity(a, g.titleId, v), done);
+     }
+     private static void dlssSharp(MainActivity a, Game g, Runnable done) {   // the DLSS stand-in's RCAS (DlssTune, DM_VK_DLSS_SHARP; GSR 2's and FSR 1's); the in-game panel changes it live
+@@ -1174,11 +1188,11 @@
+     }
+ 
+     private static void motionSens(MainActivity a, Game g, Runnable done) {   // the phone's gyro scale (Prefs.MOTION_PCT, DM_MOTION_SENS); read when the game starts
+-        StepSlider.dialog(a, Tx.s(R.string.game_motion_sensitivity), " · " + g.name, Prefs.MOTION_NAMES, Prefs.motionSens(a, g.titleId), "Slower", "Faster",
++        StepSlider.dialog(a, Tx.s(R.string.game_motion_sensitivity), " · " + g.name, Prefs.MOTION_NAMES, Prefs.motionSens(a, g.titleId), Tx.s(R.string.fusion_banana_motion_slower), Tx.s(R.string.fusion_banana_motion_faster),
+                           Prefs.MOTION_NAMES[Prefs.motionSens(a)], Prefs.ownMotionSens(a, g.titleId), v -> Prefs.motionSens(a, g.titleId, v), done);   // Default: Settings' value
+     }
+     private static void drs(MainActivity a, Game g, Runnable done) {   // the render size's range (Prefs.DRS), from the next start; the in-game panel changes it live
+-        DrsSlider.dialog(a, " · " + g.name, Prefs.drs(a, g.titleId), firstLabel(recLabel(Prefs.DRS_NAMES, Recommend.DRS_VALUES, Prefs.rec(a, g.titleId, Recommend.DRS)), Prefs.DRS_NAMES[Prefs.drs(a)]), Prefs.ownDrs(a, g.titleId), v -> Prefs.drs(a, g.titleId, v), done);
++        DrsSlider.dialog(a, " · " + g.name, Prefs.drs(a, g.titleId), firstLabel(recLabel(Prefs.drsNames(), Recommend.DRS_VALUES, Prefs.rec(a, g.titleId, Recommend.DRS)), Prefs.drsNames()[Prefs.drs(a)]), Prefs.ownDrs(a, g.titleId), v -> Prefs.drs(a, g.titleId, v), done);
+     }
+ 
+     /** The profile's aspect variants' labels ("4:3"): its variant rows labelled w:h */
+@@ -1194,8 +1208,8 @@
+     static String aspectLabel(android.content.Context a, String id) {
+         String l = Prefs.aspect(a, id);
+         Profile p = Profile.of(id);
+-        if (ScreenShape.CHOICE.equals(l) && aspects(p).contains(l)) return "Screen shape";
+-        return l == null || !aspects(p).contains(l) ? "16:9 (as shipped)" : l + (p.aspectVariant(l) != null ? Tx.s(R.string.game_aspect_native) : Tx.s(R.string.game_aspect_3d_view));
++        if (ScreenShape.CHOICE.equals(l) && aspects(p).contains(l)) return Tx.s(R.string.fusion_banana_screen_shape);
++        return l == null || !aspects(p).contains(l) ? Tx.s(R.string.game_16_9_as_shipped) : l + (p.aspectVariant(l) != null ? Tx.s(R.string.game_aspect_native) : Tx.s(R.string.game_aspect_3d_view));
+     }
+ 
+     /** Aspect ratio: as shipped, or a native aspect mod (the pack holds both, so it takes effect at the next start without Prepare); 4:3 shows the picture at 4:3, filling a
+@@ -1205,7 +1219,7 @@
+         List<String> as = aspects(Profile.of(g.titleId));
+         String[] labels = new String[as.size() + 1];
+         labels[0] = Tx.s(R.string.game_16_9_as_shipped);
+-        for (int k = 0; k < as.size(); k++) labels[k + 1] = ScreenShape.CHOICE.equals(as.get(k)) ? "Screen shape (the picture fills the window; applies at the next start)"
++        for (int k = 0; k < as.size(); k++) labels[k + 1] = ScreenShape.CHOICE.equals(as.get(k)) ? Tx.s(R.string.fusion_banana_screen_shape_description)
+                     : as.get(k) + (Profile.of(g.titleId).aspectVariant(as.get(k)) != null ? Tx.s(R.string.game_aspect_native_laid_out, as.get(k))
+                     : Tx.s(R.string.game_aspect_3d_follows));
+         String cur = Prefs.aspect(a, g.titleId);
+--- a/main/java/dev/nxnative/android/Languages.java
++++ b/main/java/dev/nxnative/android/Languages.java
+@@ -18,7 +18,11 @@
+         final String tag;
+         final int nameRes;
+         Lang(String tag, int nameRes) { this.tag = tag; this.nameRes = nameRes; }
+-        String label() { return Tx.s(nameRes); }
++        String label() {
++            if (nameRes != 0) return Tx.s(nameRes);
++            Locale locale = Locale.forLanguageTag(tag);
++            return locale.getDisplayName(locale);
++        }
+     }
+ 
+     /** English first (the source and the fallback), then the others */
+@@ -44,7 +48,8 @@
+         if (m == null) return null;
+         LocaleList l = m.getApplicationLocales();
+         if (l.isEmpty()) return null;
+-        return find(l.get(0));
++        Lang known = find(l.get(0));
++        return known != null ? known : new Lang(l.get(0).toLanguageTag(), 0);
+     }
+ 
+     /** Picks a language (null: System default); the screens are rebuilt by the system, which recreates the activities */
+--- a/main/java/dev/nxnative/android/Overlay.java
++++ b/main/java/dev/nxnative/android/Overlay.java
+@@ -54,7 +54,7 @@
+  */
+ final class Overlay {
+     /** The items: the Prefs key and the switch's label */
+-    static final String[][] ITEMS = {
++    static String[][] items() { return new String[][] {
+             {"fps", Tx.s(R.string.game_frame_rate_and_frame_time)},
+             {"throttle", Tx.s(R.string.game_throttle_dot_green_yellow_red)},
+             {"gpu", Tx.s(R.string.game_gpu_time_a_frame)},
+@@ -62,7 +62,7 @@
+             {"battery", Tx.s(R.string.game_battery_temperature_and_level)},
+             {"tag", Tx.s(R.string.game_build_tag)},
+             {"memory", Tx.s(R.string.game_memory_the_game_s_and)},
+-    };
++    }; }
+ 
+     /** The three choices of the "Building shaders" label (Prefs.layerLabel, LayerStatus.LABEL_*), in that order */
+     static String[] labelChoices() { return Tx.arr(R.array.arr_layer_label); }
+@@ -75,7 +75,7 @@
+         box.addView(master);
+         List<CheckBox> items = new ArrayList<>();
+         int indent = Math.round(24 * c.getResources().getDisplayMetrics().density);
+-        for (String[] it : ITEMS) {
++        for (String[] it : items()) {
+             CheckBox b = new CheckBox(c);
+             b.setText(it[1]);
+             b.setChecked(Prefs.overlayItem(c, it[0], titleId));

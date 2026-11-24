@@ -88,6 +88,7 @@
     <string name="common_stop">Stop</string>
     <string name="common_system">System</string>
     <string name="common_time_of_day">Time of day</string>
+    <string name="common_game_upscaler">Game upscaler (DLSS)</string>
     <string name="common_upscaler">Upscaler</string>
     <string name="common_use_fast_cores">Use fast cores</string>
     <string name="common_users">Users</string>
@@ -193,8 +194,33 @@
     <string name="settings_on_the_controller_or_the">On the controller, or the phone without one</string>
     <string name="settings_overlay">Overlay</string>
     <string name="settings_picture_from_the_release_notes">Picture from the release notes</string>
-    <string name="settings_small_fix_updates">Small fix updates</string>
-    <string name="settings_small_fix_updates_help">Offer small fix releases when the app starts. Off: only big updates are offered; Check for updates still shows the newest. The next big update carries every fix.</string>
+    <string name="settings_update_channel">Update channel</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">Weekly releases and critical fixes. Each weekly release carries every small fix before it.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">Every release, also the small fixes between the weekly ones.</string>
+    <string name="settings_channel_preview">Preview</string>
+    <string name="settings_channel_preview_help">Early builds of bigger changes, such as a new shader version, about a week before Stable. They may break games; for testers.</string>
+    <string name="settings_backup_before_update">Back up saves before updating</string>
+    <string name="settings_backup_before_update_note">Before an update installs, changed saves are copied to save-backups beside your games, outside the app\'s storage.</string>
+    <string name="settings_update_backing_up">Backing up saves…</string>
+    <string name="settings_update_backing_up_game">Backing up saves: %1$s (%2$d of %3$d)</string>
+    <string name="settings_update_game_user">%1$s (user %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="one">Saves backed up: %1$d game</item>
+        <item quantity="other">Saves backed up: %1$d games</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">Saves unchanged since their last backup</string>
+    <string name="settings_update_skipped_running">Not backed up while the game runs: %1$s</string>
+    <string name="settings_update_no_backup_title">Saves not backed up</string>
+    <string name="settings_update_no_backup_message">These saves cannot be backed up outside the app\'s storage, and uninstalling the app deletes that storage:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: All files access is off</string>
+    <string name="settings_update_reason_in_app">%1$s: its backups folder is in the app\'s storage</string>
+    <string name="settings_update_without_backup">Update without backup</string>
+    <string name="settings_update_backup_failed_title">Save backup failed</string>
+    <string name="settings_update_backup_failed_message">These saves could not be backed up. Your saves are unchanged.</string>
+    <string name="settings_update_anyway">Update anyway</string>
+    <string name="settings_up_to_date_on_stable">You\'re up to date on Stable (v%1$s). A small fix, v%2$s, is out on the Hotfix channel.</string>
     <string name="settings_player_wiki">Player wiki</string>
     <string name="settings_remove_leftovers_and_old_files">Remove leftovers and old files; never saves</string>
     <string name="settings_sample_games">Sample games</string>
@@ -218,6 +244,9 @@
     <string name="settings_updates">Updates</string>
     <string name="settings_what_s_new">What\'s new</string>
     <string name="settings_while_home_shows_a_game">While Home shows a game being prepared</string>
+    <string name="settings_update_shaders_automatically">Update shaders automatically</string>
+    <string name="settings_auto_shader_update_on">A game whose shaders are out of date updates them in the background</string>
+    <string name="settings_auto_shader_update_off">Off: the game\'s page updates them when you ask</string>
     <string name="settings_xbox_button_label_swap">Xbox button label swap</string>
 
     <!-- The game page, the in-game panel, pickers and sliders -->
@@ -232,13 +261,11 @@
     <string name="game_aspect_ratio">Aspect ratio</string>
     <string name="game_back_from_the_background_paused">Back from the background: paused until a tap</string>
     <string name="game_back_from_the_background_runs">Back from the background: runs at once</string>
-    <string name="game_back_to_the_game">Back to the game</string>
     <string name="game_background_pipelines">Background pipelines</string>
     <string name="game_busy_threads_off_the_small">Busy threads off the small cores</string>
     <string name="game_centre">Centre</string>
     <string name="game_classic_render_passes">Classic render passes</string>
     <string name="game_clear">Clear</string>
-    <string name="game_close_the_panel_back_to">Close the panel, back to the game</string>
     <string name="game_controller_panel">Controller panel</string>
     <string name="game_could_not_save_link_play">Could not save Link Play settings.</string>
     <string name="game_details">Details</string>
@@ -288,7 +315,9 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">Looking at the app\'s storage…</string>
     <string name="game_made_when_first_drawn_may">Made when first drawn: may stutter</string>
-    <string name="game_mode_performance_the_only_shader">Mode: performance (the only shader set Eden\'s LSFG uses)</string>
+    <string name="game_lsfg_quality">Quality</string>
+    <string name="game_lsfg_shaders">Shaders (Quality: more detail in the generated frames, about four times the GPU time)</string>
+    <string name="game_lsfg_screen_limit">The screen runs at up to %1$d Hz (Android\'s display settings): faster targets and more frames per game frame are left out</string>
     <string name="game_motion_clarity">Motion clarity</string>
     <string name="game_motion_estimation_resolution_lower_i">Motion estimation resolution (lower is faster)</string>
     <string name="game_motion_sensitivity">Motion sensitivity</string>
@@ -299,6 +328,8 @@
     <string name="game_building_shaders_label">Building shaders label</string>
     <string name="settings_building_shaders_label">Building shaders label</string>
     <string name="settings_building_shaders_label_note">A game that builds the shaders it lacks while you play shows a small see-through count at the top of the screen. A build that waits for a cool phone or more battery is always said. Hiding the label does not stop the build.</string>
+    <string name="settings_startup_log">Show startup log</string>
+    <string name="settings_startup_log_note">Show the boot log over the black screen until the game draws its first frame. Crashes still show, and the log is always saved to disk.</string>
     <string-array name="arr_layer_label">
         <item>Off</item>
         <item>Number only</item>
@@ -320,6 +351,7 @@
     <string name="game_open_the_in_game_panel">Open the in-game panel</string>
     <string name="game_pause_on_return">Pause on return</string>
     <string name="game_pause_the_game">Pause the game</string>
+    <string name="game_resume_the_game">Resume the game</string>
     <string name="game_hide_everything_clean_picture">Hide everything (clean picture)</string>
     <string name="game_show_everything">Show everything</string>
     <string name="game_pause_when_the_game_comes">Pause when the game comes back from the background</string>
@@ -497,6 +529,15 @@
     <string name="prepare_pack_not_imported">Pack not imported</string>
     <string name="prepare_pack_imported">Pack imported</string>
     <string name="ready_readiness_check">Readiness check</string>
+    <string name="settings_update_ready">v%1$s is ready to install</string>
+    <string name="settings_update_elsewhere">v%1$s is out on the %2$s channel</string>
+    <string name="settings_channel_next">Next update: v%1$s</string>
+    <string name="settings_channel_none">Nothing newer than this version</string>
+    <string name="settings_channel_preview_confirm">Previews are early builds of bigger changes. They may break a game or need its shaders built again. Your saves stay as they are, and the app backs them up before every update. Switch to Preview?</string>
+    <string name="settings_channel_preview_switch">Switch to Preview</string>
+    <string name="settings_update_hotfix">Small fix between weekly releases (Hotfix channel).</string>
+    <string name="settings_update_important">Important fix: everyone should install this update.</string>
+    <string name="settings_update_preview">Preview build: may have bugs. Your saves stay as they are.</string>
     <string name="settings_update_available">Update available</string>
     <string name="game_no_backup_made">No backup made</string>
     <string name="game_the_save_could_not_be">The save could not be backed up. It was only read, never changed.</string>
@@ -600,12 +641,14 @@
     <string name="game_save_copy_failed">Your save could not be copied into the app\'s storage (%1$s). This start plays it where it is, %2$s.</string>
     <string name="game_name_checking_gpu">%1$s: checking this phone\'s GPU…</string>
     <string name="game_details_also_in_readiness">Details are also in Settings › Readiness check.</string>
+    <string name="game_name_starting">%1$s: starting…</string>
     <string name="game_name_starting_log">%1$s: starting. Log: %2$s</string>
     <string name="err_cannot_start_name">Cannot start %1$s</string>
     <string name="err_name_is_running">%1$s is running</string>
     <string name="err_stop_it_first_then_start">Stop it first (the in-game panel › Stop the game), then start %1$s. One game runs at a time.</string>
-    <string name="game_menu_hint">Menu: swipe in from the right edge, or press Back</string>
-    <string name="game_tab_n_of_m">%1$s tab, %2$d of %3$d</string>
+    <string name="game_menu_hint">Menu: press Back\nSettings: swipe in from the right edge</string>
+    <string name="game_menu_gpu_driver">GPU driver: %1$s</string>
+    <string name="game_menu_system_driver">System</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">Size %1$d %%</string>
     <string name="game_button_mapping_applies">Button mapping: %1$s, applies at the next start</string>
@@ -798,6 +841,9 @@
     <string name="game_experimental">Experimental</string>
     <string name="game_never_drops_to_30_less">Never drops to 30; less even under 60</string>
     <string name="game_drops_to_30_when_60">Drops to 30 when 60 does not hold</string>
+    <string name="game_keep_gpu_clock_up">Keep GPU clock up</string>
+    <string name="game_keep_gpu_clock_up_on">Also after menus: can fix a game stuck at a low frame rate; the phone runs warmer</string>
+    <string name="game_keep_gpu_clock_up_off">The system may lower the GPU clock in menus; the phone stays cooler</string>
     <string name="game_normal_speed_when_the_frame">Normal speed when the frame rate drops</string>
     <string name="game_slows_down_with_the_frame">Slows down with the frame rate</string>
     <string name="game_all_grass_and_foliage">All grass and foliage</string>
@@ -811,6 +857,9 @@
     <string name="home_lossless_dll_missing">" · Lossless.dll missing"</string>
     <string name="home_why">Why?</string>
     <string name="home_shaders_need_one_update">Shaders need one update</string>
+    <string name="home_other_pack_has_shaders">Another pack has the shaders</string>
+    <string name="home_other_pack_has_shaders_message">The pack this card uses has no shaders for this version of the app. Another pack of %1$s has them. Use that pack for this card?</string>
+    <string name="home_use_that_pack">Use that pack</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">Applies from the next frame, kept for this game (the same setting as Game settings › Upscaler).</string>
     <string name="game_applies_from_the_next_frame_2">Applies from the next frame, kept for this game (the same setting as Game settings › Screen scaling).</string>
@@ -834,6 +883,10 @@
     <string name="prepare_the_ones_it_has_stay">"The ones it has stay as they were made; Update shaders makes them all again with this version. "</string>
     <string name="prepare_shaders_older_built_while_playing">Shaders: older, built while playing</string>
     <string name="prepare_also_build_all_shaders_now">Also build all shaders now</string>
+    <string name="prepare_recommended_build_all_shaders">Recommended: build all shaders now for smoother play (%1$s, best on the charger).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">You can play now; missing shaders are built as you play.</string>
+    <string name="prepare_you_can_play_now_older">You can play now on the older shaders.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" It plays on its older shaders."</string>
     <string name="prepare_or_finish_with_the_game">Or finish with the game\'s code only: the game then plays and builds its shaders while you play; Build all on its page makes the whole set later.</string>
     <string name="prepare_finish_without_shaders">Finish without shaders</string>
     <string name="prepare_ready_to_play_it_builds">Ready to play. It builds shaders while you play.</string>
@@ -1027,6 +1080,7 @@
     <string name="game_throttle_dot_green_yellow_red">Throttle dot (green / yellow / red)</string>
     <string name="game_frame_rate_and_frame_time">Frame rate and frame time</string>
     <string name="game_drag_a_control_or_the">Drag a control or the picture; pinch a control to resize it</string>
+    <string name="game_tap_a_control_to_hide_or_show">Tap a control to hide or show it</string>
     <string name="game_picture_drag_into_the_black">picture: drag into the black bars</string>
     <string name="game_temporal_sharpness">Temporal sharpness</string>
     <string name="game_sharpness">Sharpness</string>
@@ -1193,8 +1247,6 @@
     <string name="err_or_word">" or "</string>
 
     <!-- sentences and clauses of the long messages (Prepare, readiness, shaders ...) -->
-    <string name="prepare_in_the_background_best_on">, in the background, best on the charger). You can pause any time.</string>
-    <string name="prepare_the_game_plays_now_and">The game plays now and builds shaders while you play; this builds the whole set now (</string>
     <string name="prepare_build_them_there_scripts_pack">build them there (scripts/pack_android.py) and add the library with Import a library.</string>
     <string name="prepare_the_game_plays_now_on">"The game plays now on its older shaders; those it needs and the library lacks are built while you play. "</string>
     <string name="prepare_build_all_on_the_game_2">Build all on the game\'s page makes the whole set now, and Import a library there takes one built on a computer.</string>
@@ -1404,9 +1456,10 @@
         <item>List</item>
     </string-array>
     <string name="home_move_game">Move</string>
+    <string name="home_rename_game">Rename game</string>
+    <string name="home_reset_name">Reset name</string>
     <string name="hint_open">Open</string>
     <string name="hint_options_hold">Options (hold)</string>
-    <string name="hint_hold_for_options">Hold a game for options</string>
     <string name="hint_move">Move</string>
     <string name="hint_place">Place</string>
     <string name="hint_cancel">Cancel</string>
@@ -1441,4 +1494,15 @@
     <string name="game_fast_fp16_shader_math">Fast FP16 shader math</string>
     <string name="game_fp16_on_turnip_faster">16-bit half precision on Turnip: faster shader math, lower heat</string>
     <string name="game_fp16_default_precision">Default precision</string>
+    <string name="settings_build_preview">You\'re running a preview build (v%1$s). Previews may break games. The stable v%2$s replaces it when it\'s out.</string>
+    <string name="settings_build_preview_channel">Your channel is %1$s: the app moves you to the stable v%2$s when it ships.</string>
+    <string name="settings_build_hotfix">You\'re running a hotfix (v%1$s): a small fix between weekly releases. The next weekly release includes it.</string>
+    <string name="common_picture_size">Picture size</string>
+    <string name="game_lsfg_on_target">On · %1$d fps</string>
+    <string name="game_own_follows_settings">This game follows Settings (%1$s). A change here becomes this game\'s own.</string>
+    <string name="game_own_settings_note">These are this game\'s own settings. Use Settings\' default to follow Settings again.</string>
+    <string name="game_use_settings_default">Use Settings\' default</string>
+    <string name="settings_touch_look">Touch controls look</string>
+    <string name="settings_panel_look">In-game panel look</string>
+    <string name="settings_player_one_away">The chosen controller (not connected)</string>
 </resources>

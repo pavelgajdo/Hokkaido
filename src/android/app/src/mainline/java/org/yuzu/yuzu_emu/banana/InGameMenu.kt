@@ -4,6 +4,7 @@
 package org.yuzu.yuzu_emu.banana
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
@@ -25,11 +26,16 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import dev.nxnative.android.HokkaidoInGame
+import dev.nxnative.android.HokkaidoSettings
+import org.yuzu.yuzu_emu.HomeNavigationDirections
 import org.yuzu.yuzu_emu.R
+import org.yuzu.yuzu_emu.features.settings.model.Settings
+import org.yuzu.yuzu_emu.features.settings.ui.SettingsActivity
+import org.yuzu.yuzu_emu.model.Game
 
 /**
  * Hokkaido's in-game menu over a Banana Native game, in the game process: the menu (Pause, the on-screen
- * controller, Quick settings, Overlay options, Exit) from the start edge and the quick settings from the end edge,
+ * controller, Settings, Quick settings, Overlay options, Exit) from the start edge and quick settings from the end edge,
  * as in Hokkaido's emulation screen. The quick settings show Banana Native's panel tabs (PanelRows). Hidden while
  * closed, so every touch reaches the game; Back or the controller's menu combination opens it.
  */
@@ -37,7 +43,17 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
     private val activity = screen.activity()
     private val context: Context = themed()
     private val handler = Handler(Looper.getMainLooper())
-    private val drawer = DrawerLayout(context)
+    private var padNav = false
+    private val padMade = mutableListOf<View>()
+    private val drawer = object : DrawerLayout(context) {
+        override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                padNav = false
+                restoreTouchFocus()
+            }
+            return super.dispatchTouchEvent(event)
+        }
+    }
     private val menu = NavigationView(context)
     private val sheet = NavigationView(context)
     private val tabs = TabLayout(context)
@@ -67,9 +83,13 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
         menu.menu.apply {
             add(Menu.NONE, ID_PAUSE, 0, R.string.emulation_pause).setIcon(R.drawable.ic_pause)
             add(Menu.NONE, ID_CONTROLS, 1, R.string.emulation_show_overlay).setIcon(R.drawable.ic_controller)
-            add(Menu.NONE, ID_QUICK, 2, R.string.quick_settings).setIcon(R.drawable.ic_settings)
-            add(Menu.NONE, ID_OVERLAY, 3, R.string.emulation_input_overlay).setIcon(R.drawable.ic_overlay)
-            add(Menu.NONE, ID_EXIT, 4, R.string.emulation_exit).setIcon(R.drawable.ic_exit)
+            add(Menu.NONE, ID_SETTINGS, 2, R.string.fusion_hokkaido_settings).setIcon(R.drawable.ic_settings)
+            add(Menu.NONE, ID_GAME_SETTINGS, 3, R.string.fusion_hokkaido_game_settings).setIcon(R.drawable.ic_settings)
+            add(Menu.NONE, ID_NATIVE_SETTINGS, 4, R.string.banana_settings).setIcon(R.drawable.ic_graphics)
+            add(Menu.NONE, ID_QUICK, 5, R.string.quick_settings).setIcon(R.drawable.ic_settings)
+            add(Menu.NONE, ID_INPUT_SETTINGS, 6, R.string.fusion_hokkaido_controls).setIcon(R.drawable.ic_controller)
+            add(Menu.NONE, ID_OVERLAY, 7, R.string.emulation_input_overlay).setIcon(R.drawable.ic_overlay)
+            add(Menu.NONE, ID_EXIT, 8, R.string.emulation_exit).setIcon(R.drawable.ic_exit)
         }
         menu.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
@@ -82,6 +102,19 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
                     refreshMenu()
                 }
                 ID_QUICK -> openSheet(TAB_PERFORMANCE)
+                ID_SETTINGS -> openHokkaidoSettings(null, Settings.MenuTag.SECTION_ROOT)
+                ID_GAME_SETTINGS -> openHokkaidoSettings(game(), Settings.MenuTag.SECTION_ROOT)
+                ID_INPUT_SETTINGS -> openHokkaidoSettings(null, Settings.MenuTag.SECTION_INPUT)
+                ID_NATIVE_SETTINGS -> {
+                    screen.pause()
+                    close()
+                    HokkaidoSettings.open(
+                        activity,
+                        activity.intent.getStringExtra("title_id"),
+                        screen.name(),
+                        activity.intent.getStringExtra("game")
+                    )
+                }
                 ID_OVERLAY -> openSheet(TAB_CONTROLS)
                 ID_EXIT -> screen.stop()
             }
@@ -110,6 +143,7 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
 
         drawer.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
             override fun onDrawerOpened(view: View) {
+                if (padNav) focusFirst()
                 if (view === sheet) {
                     handler.removeCallbacks(tick)
                     handler.postDelayed(tick, SYNC_MS)
@@ -127,31 +161,53 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
 
     override fun view(): View = drawer
 
+    private fun game(): Game = Game(
+        title = screen.name(),
+        path = activity.intent.getStringExtra("game").orEmpty(),
+        programId = activity.intent.getStringExtra("title_id")?.toLongOrNull(16)?.toString().orEmpty()
+    )
+
+    private fun openHokkaidoSettings(game: Game?, menuTag: Settings.MenuTag) {
+        screen.pause()
+        close()
+        val arguments = HomeNavigationDirections.actionGlobalSettingsActivity(game, menuTag).arguments
+        activity.startActivity(Intent(activity, SettingsActivity::class.java).putExtras(arguments))
+    }
+
     override fun open() {
+        heldDir = NONE
         refreshMenu()
         drawer.visibility = View.VISIBLE
         drawer.openDrawer(GravityCompat.START)
     }
 
     override fun close() {
+        heldDir = NONE
+        restoreTouchFocus()
         handler.removeCallbacks(tick)
         if (drawer.visibility == View.VISIBLE) drawer.closeDrawers()
     }
 
     override fun focus() {
+        useController()
         handler.post { focusFirst() }
     }
 
     override fun built(tab: Int, rows: LinearLayout) {
         val y = if (tab == shownTab) scroll.scrollY else 0
         shownTab = tab
+        restoreTouchFocus()
         this.rows.render(rows)
-        scroll.post { scroll.scrollTo(0, y) }
+        scroll.post {
+            scroll.scrollTo(0, y)
+            if (padNav && sheetShown()) focusFirst()
+        }
     }
 
     override fun padKey(e: KeyEvent, confirm: Int, back: Int): Boolean {
         val k = e.keyCode
         if (k == KeyEvent.KEYCODE_BACK) return false
+        useController()
         val dir = dirOf(k)
         if (e.action == KeyEvent.ACTION_UP) {
             if (dir != NONE && dir == heldDir) heldDir = NONE
@@ -181,6 +237,7 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
     /** The hat or the left stick as a D-pad, while the menu is open; the game gets none. */
     override fun padMotion(e: MotionEvent): Boolean {
         if (e.action != MotionEvent.ACTION_MOVE) return true
+        useController()
         var x = e.getAxisValue(MotionEvent.AXIS_HAT_X)
         var y = e.getAxisValue(MotionEvent.AXIS_HAT_Y)
         if (x == 0f && y == 0f) {
@@ -209,8 +266,9 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
         drawer.openDrawer(GravityCompat.END)
     }
 
-    /** Back on a controller: from the quick settings to the menu, from the menu to the game. */
-    private fun back() {
+    /** Phone Back and a controller's back button share the same drawer navigation. */
+    override fun back() {
+        heldDir = NONE
         if (sheetShown()) {
             drawer.closeDrawer(GravityCompat.END)
             refreshMenu()
@@ -222,13 +280,13 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
     }
 
     private fun press() {
-        val f = drawer.findFocus()
-        if (f == null || drawer.isInTouchMode) focusFirst() else f.performClick()
+        val f = currentFocus()
+        if (f == null || touchNavigation()) focusFirst() else f.performClick()
     }
 
     private fun move(dir: Int) {
-        val f = drawer.findFocus()
-        if (f == null || drawer.isInTouchMode) {
+        val f = currentFocus()
+        if (f == null || touchNavigation()) {
             focusFirst()
             return
         }
@@ -247,9 +305,38 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
         if (inside(next, if (sheetShown()) sheet else menu)) next.requestFocus()
     }
 
-    /** Out of touch mode, the focus on the first item of what shows (the quick settings, else the menu). */
+    /** Controller axes may leave Android in touch mode; make the visible rows focusable there too. */
+    private fun useController() {
+        padNav = true
+        if (drawer.isInTouchMode) controllerRows(if (sheetShown()) sheet else menu)
+    }
+
+    private fun controllerRows(view: View) {
+        if (view.isFocusable && !view.isFocusableInTouchMode) {
+            view.isFocusableInTouchMode = true
+            padMade.add(view)
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) controllerRows(view.getChildAt(i))
+        }
+    }
+
+    private fun restoreTouchFocus() {
+        padMade.forEach { it.isFocusableInTouchMode = false }
+        padMade.clear()
+    }
+
+    private fun touchNavigation() = drawer.isInTouchMode && !padNav
+
+    private fun currentFocus(): View? {
+        val root = if (sheetShown()) sheet else menu
+        return drawer.findFocus()?.takeIf { it.isShown && inside(it, root) }
+    }
+
+    /** The first visible item of the active drawer, including controller navigation in touch mode. */
     private fun focusFirst() {
         val root = if (sheetShown()) sheet else menu
+        if (padNav && drawer.isInTouchMode) controllerRows(root)
         root.getFocusables(View.FOCUS_FORWARD).firstOrNull { it.isShown }?.requestFocusFromTouch()
     }
 
@@ -308,6 +395,10 @@ internal class InGameMenu(private val screen: HokkaidoInGame.Screen) : HokkaidoI
         const val ID_QUICK = 3
         const val ID_OVERLAY = 4
         const val ID_EXIT = 5
+        const val ID_SETTINGS = 6
+        const val ID_GAME_SETTINGS = 7
+        const val ID_INPUT_SETTINGS = 8
+        const val ID_NATIVE_SETTINGS = 9
 
         // Banana Native's panel tabs (SidePanel.TAB_NAMES)
         const val TAB_PERFORMANCE = 0

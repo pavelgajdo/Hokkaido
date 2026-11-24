@@ -40,6 +40,7 @@ import org.yuzu.yuzu_emu.features.settings.model.view.SpinBoxSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.StringInputSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.StringSingleChoiceSetting
 import org.yuzu.yuzu_emu.utils.ParamPackage
+import org.yuzu.yuzu_emu.utils.AppLanguage
 import org.yuzu.yuzu_emu.utils.collect
 
 class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener {
@@ -112,6 +113,10 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                             else -> {
                                 item.setting.reset()
                                 settingsViewModel.setAdapterItemChanged(position)
+                                if (item.setting == IntSetting.APP_LANGUAGE && !AppLanguage.usesPlatformLocales) {
+                                    settingsViewModel.setShouldRecreateForLanguageChange(true)
+                                    requireActivity().recreate()
+                                }
                             }
                         }
                     }
@@ -388,7 +393,7 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                     settingsViewModel.setShouldReloadSettingsList(true)
                 }
 
-                if (scSetting.setting.key == "app_language") {
+                if (scSetting.setting == IntSetting.APP_LANGUAGE && !AppLanguage.usesPlatformLocales) {
                     settingsViewModel.setShouldRecreateForLanguageChange(true)
                     // recreate page apply language change instantly
                     requireActivity().recreate()

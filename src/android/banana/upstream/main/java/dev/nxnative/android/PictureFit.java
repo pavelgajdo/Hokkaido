@@ -18,6 +18,9 @@ final class PictureFit {
     static int steps() { return (SIZE_MAX - SIZE_MIN) / SIZE_STEP; }
     static int sizeOfStep(int step) { return size(SIZE_MIN + Math.max(0, Math.min(steps(), step)) * SIZE_STEP); }
     static int stepOfSize(int pct) { return Math.round((size(pct) - SIZE_MIN) / (float) SIZE_STEP); }
+    /** The Picture size choices of Settings and Game settings, largest first (100 % at 0 … SIZE_MIN at steps()), and the choice of a size */
+    static int sizeOfChoice(int i) { return sizeOfStep(steps() - i); }
+    static int choiceOfSize(int pct) { return steps() - stepOfSize(pct); }
 
     /** {x, y, w, h} of the picture in a w x h view, normalized to it */
     static float[] rect(int w, int h, float px, float py, boolean stretch, int sizePct) { return rect(w, h, px, py, stretch, sizePct, 16f / 9f); }

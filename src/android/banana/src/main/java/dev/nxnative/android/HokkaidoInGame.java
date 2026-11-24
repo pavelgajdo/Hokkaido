@@ -40,6 +40,9 @@ public final class HokkaidoInGame {
         /** Closed (the game's layout editor, a controller): everything hides. */
         void close();
 
+        /** Phone Back or a controller's back button: a settings page goes to the menu, then back to the game. */
+        void back();
+
         /** Opened with a controller: the focus on its first item. */
         void focus();
 
@@ -115,9 +118,9 @@ public final class HokkaidoInGame {
             return d == null || d.equals(GpuDriver.SYSTEM) ? null : d;
         }
 
-        /** The panel's tabs (SidePanel.TAB_NAMES). */
+        /** The panel's tabs in the current app language. */
         public String[] tabs() {
-            return SidePanel.TAB_NAMES.clone();
+            return Tx.arr(R.array.arr_panel_tabs);
         }
 
         /** Builds a tab's rows for the menu (Menu.built). */
@@ -144,14 +147,14 @@ public final class HokkaidoInGame {
 
         /** Whether the on-screen controls show (On, or Auto without a gamepad). */
         public boolean controlsShown() {
-            int m = TouchControls.mode(act);
+            int m = TouchControls.mode(act, act.getIntent().getStringExtra("title_id"));
             return m == TouchControls.MODE_ON || m == TouchControls.MODE_AUTO && !act.gamepadConnected();
         }
 
-        /** The on-screen controls On or Off, kept for every game (the panel's On-screen controls). */
+        /** The on-screen controls On or Off, kept for this game, as in the panel's On-screen controls. */
         public void showControls(boolean on) {
             int m = on ? TouchControls.MODE_ON : TouchControls.MODE_OFF;
-            TouchControls.mode(act, m);
+            TouchControls.mode(act, act.getIntent().getStringExtra("title_id"), m);
             act.touchControls().setMode(m);
         }
 
@@ -161,11 +164,7 @@ public final class HokkaidoInGame {
          * The process ends once the screen has gone.
          */
         public void stop() {
-            Native.note("stopped by the user");
-            ExitWatch.stopped();
-            act.finish();
-            new android.os.Handler(android.os.Looper.getMainLooper())
-                    .postDelayed(() -> android.os.Process.killProcess(android.os.Process.myPid()), 300);
+            act.stop();   // GameActivity.end keeps Hokkaido's shared task and ends only the game process
         }
     }
 }

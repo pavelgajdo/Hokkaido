@@ -57,7 +57,7 @@ final class PrepareText {
     static Failure toolStopped(String step, int code, String lastRed, String log) {
         String red = lastRed == null ? "" : lastRed.replaceFirst("^\\[RED\\]\\s*", "").trim();
         String detail = step + ": exit code " + code + (red.isEmpty() ? "" : "\n" + red) + (log == null ? "" : "\nLog: " + log);
-        String what = step + " stopped.";
+        String what = Words.s("fusion_runtime_step_stopped", "%1$s stopped.", step);
         if (red.startsWith(XLATE_MISMATCH))
             return new Failure(what + " " + XLATE_MISMATCH_TEXT(), detail, FIX_UPDATE);
         if (red.contains("MemoryError") || red.contains("out of memory") || code == 137)
@@ -128,14 +128,15 @@ final class PrepareText {
     static String progressLine(long percent, boolean during, long done, long total, String eta, long kept) {
         StringBuilder s = new StringBuilder(String.format(Locale.getDefault(), "%d %%", percent));
         if (total > 0) {
-            if (during) s.append(String.format(Locale.getDefault(), "  ·  %,d shaders left", Math.max(0, total - done)));
-            else if (done > 0) s.append(String.format(Locale.getDefault(), "  ·  %,d of %,d shaders", done, total));
-            else s.append(String.format(Locale.getDefault(), "  ·  %,d shaders to make", total));
+            s.append("  ·  ");
+            if (during) s.append(Words.s("fusion_runtime_shaders_left", "%1$,d shaders left", Math.max(0, total - done)));
+            else if (done > 0) s.append(Words.s("fusion_runtime_shader_progress", "%1$,d of %2$,d shaders", done, total));
+            else s.append(Words.s("fusion_runtime_shaders_to_make", "%1$,d shaders to make", total));
         } else if (kept > 0) {
             s.append(Words.s("prepare_shaders_up_to_date_nothing", "  ·  shaders up to date: nothing to translate"));
         }
         if (during && eta != null && !eta.isEmpty()) s.append("  ·  ").append(eta);
-        if (kept > 0 && total > 0) s.append(String.format(Locale.getDefault(), "  ·  the other %,d are reused", kept));
+        if (kept > 0 && total > 0) s.append("  ·  ").append(Words.s("fusion_runtime_shaders_reused", "the other %1$,d are reused", kept));
         return s.toString();
     }
 
@@ -154,8 +155,8 @@ final class PrepareText {
     static String quietText(long seconds) {
         if (seconds < 60) return "";
         long m = seconds / 60;
-        return m < 60 ? Words.s("prepare_still_working_last_update", " · still working, last update ") + m + " min ago"
-                : String.format(Locale.getDefault(), " · still working, last update %d h %02d min ago", m / 60, m % 60);
+        return m < 60 ? Words.s("fusion_runtime_quiet_minutes", " · still working, last update %1$d min ago", m)
+                : Words.s("fusion_runtime_quiet_hours", " · still working, last update %1$d h %2$02d min ago", m / 60, m % 60);
     }
 
     /**
@@ -163,7 +164,8 @@ final class PrepareText {
      * others): "Keeping the shaders already translated: 12,000 of 42,800"
      */
     static String keepText(long done, long total) {
-        return Words.s("prepare_keeping_the_shaders_already_transl", "Keeping the shaders already translated") + (total > 0 ? String.format(Locale.getDefault(), ": %,d of %,d", Math.min(done, total), total) : "");
+        return Words.s("prepare_keeping_the_shaders_already_transl", "Keeping the shaders already translated")
+                + (total > 0 ? ": " + Words.s("fusion_runtime_progress_count", "%1$,d of %2$,d", Math.min(done, total), total) : "");
     }
 
     /**
@@ -173,15 +175,20 @@ final class PrepareText {
      */
     /** A step's count alone, for after its stage text (withNote): "203 of 1,442 files", "40 % of a large file"; "" while it has none */
     static String countText(boolean files, long done, long total, String part) {
-        String c = total > 0 ? String.format(Locale.getDefault(), files ? "%,d of %,d " + (total == 1 ? "file" : "files") : "%,d / %,d", done, total) : "";
-        String p = part != null && part.matches("\\d+%") ? part.replace("%", " %") + " of a large file" : "";
+        String c = total > 0 ? files ? fileCount(done, total) : String.format(Locale.getDefault(), "%,d / %,d", done, total) : "";
+        String p = part != null && part.matches("\\d+%") ? Words.s("fusion_runtime_large_file_progress", "%1$s of a large file", part.replace("%", " %")) : "";
         return c.isEmpty() ? p : p.isEmpty() ? c : c + " (" + p + ")";
     }
 
     static String stepCountText(String step, boolean files, long done, long total, String part) {
-        String count = files ? (total > 0 ? String.format(Locale.getDefault(), ": %,d of %,d %s", done, total, total == 1 ? "file" : "files") : "")
+        String count = files ? (total > 0 ? ": " + fileCount(done, total) : "")
                 : total > 1 ? String.format(Locale.getDefault(), " %,d / %,d", done, total) : total == 1 || done == 0 ? "" : String.format(Locale.getDefault(), " %,d", done);
-        return step + count + (part != null && part.matches("\\d+%") ? " (" + part.replace("%", " %") + " of a large file)" : "");
+        return step + count + (part != null && part.matches("\\d+%") ? " (" + Words.s("fusion_runtime_large_file_progress", "%1$s of a large file", part.replace("%", " %")) + ")" : "");
+    }
+
+    private static String fileCount(long done, long total) {
+        return total == 1 ? Words.s("fusion_runtime_file_progress", "%1$,d of %2$,d file", done, total)
+                : Words.s("fusion_runtime_files_progress", "%1$,d of %2$,d files", done, total);
     }
 
     /**
@@ -206,7 +213,7 @@ final class PrepareText {
 
     /** One sentence for the player after a Try anyway whose game version lacks some of the profile's shaders; supported: Profile.supportedShort */
     static String missingShadersText(long n, long of, String supported) {
-        return String.format(Locale.US, "%,d of its %,d shaders are not in this game version, so some things may not draw. All of them are in %s.", n, of, supported);
+        return Words.s("fusion_runtime_missing_shaders", "%1$,d of its %2$,d shaders are not in this game version, so some things may not draw. All of them are in %3$s.", n, of, supported);
     }
 
     // ---- Prepare without shaders (a game the shader layer covers, ShaderLibs.layerCovers; android/SHADERS.md "Prepare without shaders") ----
@@ -234,7 +241,7 @@ final class PrepareText {
             + Words.s("prepare_build_all_on_the_game_2", "Build all on the game's page makes the whole set now, and Import a library there takes one built on a computer."); }
 
     /** The game page's shaders row for a game that builds its shaders as it plays (GameSettings): its title, with the count built so far (LayerPending.built) */
-    static String layerRowTitle(int built) { return String.format(Locale.US, "Shaders: built while playing (%,d built)", built); }
+    static String layerRowTitle(int built) { return Words.s("fusion_runtime_shaders_built", "Shaders: built while playing (%1$,d built)", built); }
 
     /** The game page's row title for a game on an older library that the layer fills (Pack.shaderLayerFills) */
     static String OLDER_LAYER_TITLE() { return Words.s("prepare_shaders_older_built_while_playing", "Shaders: older, built while playing"); }
@@ -251,7 +258,7 @@ final class PrepareText {
     }
 
     /** Its Build all button; minutes: ShaderLibs.minutes of the game's shader count */
-    static String buildAllLabel(int[] minutes) { return String.format(Locale.US, "Build all (about %d-%d min)", minutes[0], minutes[1]); }
+    static String buildAllLabel(int[] minutes) { return Words.s("fusion_runtime_build_all_minutes", "Build all (about %1$d-%2$d min)", minutes[0], minutes[1]); }
 
     /** The game page's row for a game the phone cannot prepare that plays on an older shader library (GameSettings.olderShadersRow) */
     static String OLDER_NO_DUMP() { return Words.s("prepare_the_game_plays_with_the_shader", "The game plays with the shaders it has, of an older version. This game's file is not one the phone can prepare, so the new ones come from a computer: ")
@@ -263,8 +270,13 @@ final class PrepareText {
     static String CHECKING_SHADERS() { return Words.s("prepare_ready_u00b7_checking_shaders_u2026", "Ready \u00b7 checking shaders\u2026"); }
     static String SHADERS_UP_TO_DATE() { return Words.s("prepare_shaders_up_to_date", "Shaders up to date"); }
 
-    /** The dialog of the optional shaders step (Prepare shaders for a pack that has code only); minutes: ShaderLibs.minutesText */
-    static String optionalShadersText(String minutes) {
-        return Words.s("prepare_the_game_plays_now_and", "The game plays now and builds shaders while you play; this builds the whole set now (") + minutes + Words.s("prepare_in_the_background_best_on", ", in the background, best on the charger). You can pause any time.");
+    /**
+     * The recommendation of an optional shader build (ShaderState.need: the game plays without it): minutes: ShaderLibs.minutesText of what it translates; layer: the shader
+     * layer builds the missing shaders while the game runs (else the game plays on its older shaders)
+     */
+    static String recommendText(String minutes, boolean layer) {
+        return Words.s("prepare_recommended_build_all_shaders", "Recommended: build all shaders now for smoother play (%1$s, best on the charger).", minutes) + " "
+                + (layer ? Words.s("prepare_you_can_play_now_built_as_you_play", "You can play now; missing shaders are built as you play.")
+                        : Words.s("prepare_you_can_play_now_older", "You can play now on the older shaders."));
     }
 }

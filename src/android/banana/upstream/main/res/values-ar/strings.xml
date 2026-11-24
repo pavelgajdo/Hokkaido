@@ -77,6 +77,7 @@
     <string name="common_stop">إيقاف</string>
     <string name="common_system">النظام</string>
     <string name="common_time_of_day">وقت اليوم</string>
+    <string name="common_game_upscaler">مُكبِّر اللعبة (DLSS)</string>
     <string name="common_upscaler">مكبّر الدقة</string>
     <string name="common_use_fast_cores">استخدام الأنوية السريعة</string>
     <string name="common_users">المستخدمون</string>
@@ -178,8 +179,37 @@
     <string name="settings_on_the_controller_or_the">على ذراع التحكم، أو على الهاتف بدونها</string>
     <string name="settings_overlay">الطبقة العلوية</string>
     <string name="settings_picture_from_the_release_notes">صورة من ملاحظات الإصدار</string>
-    <string name="settings_small_fix_updates">تحديثات الإصلاحات الصغيرة</string>
-    <string name="settings_small_fix_updates_help">اعرض إصدارات الإصلاحات الصغيرة عند بدء التطبيق. عند الإيقاف: تُعرض التحديثات الكبيرة فقط؛ ويظل «التحقق من التحديثات» يعرض الأحدث. التحديث الكبير التالي يتضمن كل الإصلاحات.</string>
+    <string name="settings_update_channel">قناة التحديث</string>
+    <string name="settings_channel_stable">Stable</string>
+    <string name="settings_channel_stable_help">الإصدارات الأسبوعية والإصلاحات الحرجة. يتضمن كل إصدار أسبوعي كل إصلاح صغير قبله.</string>
+    <string name="settings_channel_hotfix">Hotfix</string>
+    <string name="settings_channel_hotfix_help">كل إصدار، ومعه الإصلاحات الصغيرة بين الإصدارات الأسبوعية.</string>
+    <string name="settings_channel_preview">معاينة</string>
+    <string name="settings_channel_preview_help">إصدارات مبكرة لتغييرات أكبر، مثل إصدار جديد للمظللات، قبل الإصدار المستقر بنحو أسبوع. قد تُعطّل بعض الألعاب؛ للمختبرين.</string>
+    <string name="settings_backup_before_update">نسخ الحفظ احتياطيًا قبل التحديث</string>
+    <string name="settings_backup_before_update_note">قبل تثبيت التحديث، تُنسخ ملفات الحفظ المتغيرة إلى save-backups بجانب ألعابك، خارج مساحة تخزين التطبيق.</string>
+    <string name="settings_update_backing_up">جارٍ نسخ ملفات الحفظ…</string>
+    <string name="settings_update_backing_up_game">جارٍ نسخ ملفات الحفظ: %1$s (%2$d من %3$d)</string>
+    <string name="settings_update_game_user">%1$s (المستخدم %2$s)</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="zero">نُسخت ملفات الحفظ: %1$d لعبة</item>
+        <item quantity="one">نُسخت ملفات الحفظ: لعبة واحدة (%1$d)</item>
+        <item quantity="two">نُسخت ملفات الحفظ: لعبتان (%1$d)</item>
+        <item quantity="few">نُسخت ملفات الحفظ: %1$d ألعاب</item>
+        <item quantity="many">نُسخت ملفات الحفظ: %1$d لعبة</item>
+        <item quantity="other">نُسخت ملفات الحفظ: %1$d لعبة</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">لم تتغير ملفات الحفظ منذ آخر نسخة</string>
+    <string name="settings_update_skipped_running">لم يُنسخ أثناء تشغيل اللعبة: %1$s</string>
+    <string name="settings_update_no_backup_title">لم تُنسخ ملفات الحفظ</string>
+    <string name="settings_update_no_backup_message">لا يمكن نسخ ملفات الحفظ هذه خارج مساحة تخزين التطبيق، وإلغاء تثبيت التطبيق يحذف تلك المساحة:\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s: الوصول إلى كل الملفات متوقف</string>
+    <string name="settings_update_reason_in_app">%1$s: مجلد النسخ الخاص بها داخل مساحة تخزين التطبيق</string>
+    <string name="settings_update_without_backup">التحديث دون نسخ</string>
+    <string name="settings_update_backup_failed_title">فشل نسخ ملفات الحفظ</string>
+    <string name="settings_update_backup_failed_message">تعذر نسخ ملفات الحفظ هذه. ملفات الحفظ لم تتغير.</string>
+    <string name="settings_update_anyway">التحديث على أي حال</string>
+    <string name="settings_up_to_date_on_stable">لديك أحدث إصدار على Stable (v%1$s). يتوفر إصلاح صغير، v%2$s، على قناة Hotfix.</string>
     <string name="settings_player_wiki">ويكي اللاعبين</string>
     <string name="settings_remove_leftovers_and_old_files">إزالة البقايا والملفات القديمة؛ لا يحذف الحفظ أبدًا</string>
     <string name="settings_sample_games">ألعاب تجريبية</string>
@@ -203,6 +233,9 @@
     <string name="settings_updates">التحديثات</string>
     <string name="settings_what_s_new">الجديد</string>
     <string name="settings_while_home_shows_a_game">عندما تعرض الرئيسية لعبة قيد التجهيز</string>
+    <string name="settings_update_shaders_automatically">تحديث المظللات تلقائيًا</string>
+    <string name="settings_auto_shader_update_on">اللعبة ذات المظللات القديمة تحدّثها في الخلفية</string>
+    <string name="settings_auto_shader_update_off">متوقف: صفحة اللعبة تحدّثها عندما تطلب ذلك</string>
     <string name="settings_xbox_button_label_swap">تبديل تسميات أزرار Xbox</string>
     <string name="game_1_player">لاعب واحد</string>
     <string name="game_3d_scene">المشهد ثلاثي الأبعاد</string>
@@ -215,13 +248,11 @@
     <string name="game_aspect_ratio">نسبة العرض إلى الارتفاع</string>
     <string name="game_back_from_the_background_paused">العودة من الخلفية: متوقفة مؤقتًا حتى اللمس</string>
     <string name="game_back_from_the_background_runs">العودة من الخلفية: تعمل فورًا</string>
-    <string name="game_back_to_the_game">العودة إلى اللعبة</string>
     <string name="game_background_pipelines">خطوط المعالجة في الخلفية</string>
     <string name="game_busy_threads_off_the_small">إبعاد الخيوط المشغولة عن الأنوية الصغيرة</string>
     <string name="game_centre">المنتصف</string>
     <string name="game_classic_render_passes">تمريرات العرض الكلاسيكية</string>
     <string name="game_clear">مسح</string>
-    <string name="game_close_the_panel_back_to">إغلاق اللوحة والعودة إلى اللعبة</string>
     <string name="game_controller_panel">لوحة ذراع التحكم</string>
     <string name="game_could_not_save_link_play">تعذّر حفظ إعدادات Link Play.</string>
     <string name="game_details">التفاصيل</string>
@@ -271,7 +302,9 @@
     <string name="game_link_play">Link Play</string>
     <string name="game_looking_at_the_app_s">جارٍ فحص تخزين التطبيق…</string>
     <string name="game_made_when_first_drawn_may">يُنشأ عند أول رسم: قد يسبب تقطّعًا</string>
-    <string name="game_mode_performance_the_only_shader">الوضع: الأداء (مجموعة المُظلِّلات الوحيدة التي يستخدمها LSFG في Eden)</string>
+    <string name="game_lsfg_quality">الجودة</string>
+    <string name="game_lsfg_shaders">المُظلِّلات (الجودة: تفاصيل أكثر في الإطارات المولَّدة، نحو أربعة أضعاف وقت وحدة المعالجة الرسومية)</string>
+    <string name="game_lsfg_screen_limit">تعمل الشاشة بما يصل إلى %1$d هرتز (إعدادات العرض في Android): لا تُعرض الأهداف الأسرع ولا مزيد من الإطارات لكل إطار لعبة</string>
     <string name="game_motion_clarity">وضوح الحركة</string>
     <string name="game_motion_estimation_resolution_lower_i">دقة تقدير الحركة (الأقل أسرع)</string>
     <string name="game_motion_sensitivity">حساسية الحركة</string>
@@ -282,6 +315,8 @@
     <string name="game_building_shaders_label">تسمية «جارٍ بناء المظلّلات»</string>
     <string name="settings_building_shaders_label">تسمية «جارٍ بناء المظلّلات»</string>
     <string name="settings_building_shaders_label_note">تعرض اللعبة التي تبني المظلّلات الناقصة أثناء اللعب عدّاداً صغيراً شبه شفاف أعلى الشاشة. يُعلَن دائماً عن البناء الذي ينتظر برودة الهاتف أو مزيداً من البطارية. إخفاء التسمية لا يوقف البناء.</string>
+    <string name="settings_startup_log">إظهار سجل بدء التشغيل</string>
+    <string name="settings_startup_log_note">إظهار سجل الإقلاع فوق الشاشة السوداء حتى ترسم اللعبة إطارها الأول. لا تزال الأعطال تظهر، ويتم حفظ السجل دائمًا على القرص.</string>
     <string-array name="arr_layer_label">
         <item>إيقاف</item>
         <item>الرقم فقط</item>
@@ -303,6 +338,7 @@
     <string name="game_open_the_in_game_panel">فتح لوحة اللعبة</string>
     <string name="game_pause_on_return">إيقاف مؤقت عند العودة</string>
     <string name="game_pause_the_game">إيقاف اللعبة مؤقتًا</string>
+    <string name="game_resume_the_game">استئناف اللعبة</string>
     <string name="game_hide_everything_clean_picture">إخفاء كل شيء (صورة نظيفة)</string>
     <string name="game_show_everything">إظهار كل شيء</string>
     <string name="game_pause_when_the_game_comes">إيقاف مؤقت عندما تعود اللعبة من الخلفية</string>
@@ -470,6 +506,15 @@
     <string name="prepare_pack_not_imported">لم تُستورد الحزمة</string>
     <string name="prepare_pack_imported">تم استيراد الحزمة</string>
     <string name="ready_readiness_check">فحص الجاهزية</string>
+    <string name="settings_update_ready">الإصدار v%1$s جاهز للتثبيت</string>
+    <string name="settings_update_elsewhere">الإصدار v%1$s متاح في قناة %2$s</string>
+    <string name="settings_channel_next">التحديث التالي: v%1$s</string>
+    <string name="settings_channel_none">لا يوجد أحدث من هذا الإصدار</string>
+    <string name="settings_channel_preview_confirm">المعاينات إصدارات مبكرة لتغييرات أكبر. قد تعطّل لعبة أو تتطلب إعادة بناء مظلّلاتها. تبقى حفظاتك كما هي، ويحتفظ التطبيق بنسخة احتياطية منها قبل كل تحديث. هل تريد التبديل إلى المعاينة؟</string>
+    <string name="settings_channel_preview_switch">التبديل إلى المعاينة</string>
+    <string name="settings_update_hotfix">إصلاح صغير بين الإصدارات الأسبوعية (قناة الإصلاحات).</string>
+    <string name="settings_update_important">إصلاح مهم: يُنصح الجميع بتثبيت هذا التحديث.</string>
+    <string name="settings_update_preview">إصدار معاينة: قد يحتوي على أخطاء. تبقى ملفات الحفظ كما هي.</string>
     <string name="settings_update_available">يتوفر تحديث</string>
     <string name="game_no_backup_made">لم تُنشأ نسخة احتياطية</string>
     <string name="game_the_save_could_not_be">تعذّر نسخ الحفظ احتياطيًا. تمت قراءته فقط ولم يتغير.</string>
@@ -499,6 +544,7 @@
     <string name="home_copied_into_the_app">تم النسخ إلى التطبيق: %1$s</string>
     <string name="home_game_now_uses">%1$s يستخدم الآن %2$s.</string>
     <string name="home_lossless_dll_not_installed">لم يُثبَّت Lossless.dll: %1$s</string>
+    <string name="home_tile_details">التفاصيل ›</string>
     <string name="home_checking_name">جارٍ فحص %1$s…</string>
     <plurals name="home_checking_games">
         <item quantity="zero">جارٍ فحص %1$d لعبة…</item>
@@ -568,12 +614,14 @@
     <string name="game_save_copy_failed">تعذّر نسخ الحفظ لديك إلى تخزين التطبيق (%1$s). سيُستخدم في هذا التشغيل من مكانه، %2$s.</string>
     <string name="game_name_checking_gpu">%1$s: جارٍ فحص GPU في هذا الهاتف…</string>
     <string name="game_details_also_in_readiness">التفاصيل متوفرة أيضًا في الإعدادات › فحص الجاهزية.</string>
+    <string name="game_name_starting">%1$s: جارٍ البدء…</string>
     <string name="game_name_starting_log">%1$s: جارٍ البدء. السجل: %2$s</string>
     <string name="err_cannot_start_name">تعذّر تشغيل %1$s</string>
     <string name="err_name_is_running">%1$s قيد التشغيل</string>
     <string name="err_stop_it_first_then_start">أوقفها أولًا (لوحة اللعبة › إيقاف اللعبة)، ثم شغّل %1$s. تعمل لعبة واحدة في كل مرة.</string>
-    <string name="game_menu_hint">القائمة: اسحب من الحافة اليمنى، أو اضغط رجوع</string>
-    <string name="game_tab_n_of_m">علامة التبويب %1$s، %2$d من %3$d</string>
+    <string name="game_menu_hint">القائمة: اضغط رجوع\nالإعدادات: اسحب من الحافة اليمنى</string>
+    <string name="game_menu_gpu_driver">برنامج تشغيل GPU: %1$s</string>
+    <string name="game_menu_system_driver">النظام</string>
     <string name="game_n_fps">%1$d fps</string>
     <string name="game_size_percent">الحجم %1$d %%</string>
     <string name="game_button_mapping_applies">تعيين الأزرار: %1$s، يسري عند التشغيل التالي</string>
@@ -762,6 +810,9 @@
     <string name="game_experimental">تجريبي</string>
     <string name="game_never_drops_to_30_less">لا يهبط إلى 30؛ وأقل انتظامًا تحت 60</string>
     <string name="game_drops_to_30_when_60">يهبط إلى 30 عندما لا يثبت 60</string>
+    <string name="game_keep_gpu_clock_up">إبقاء تردد GPU مرتفعًا</string>
+    <string name="game_keep_gpu_clock_up_on">بعد القوائم أيضًا: قد يصلح لعبة عالقة بمعدل إطارات منخفض؛ يسخن الهاتف أكثر</string>
+    <string name="game_keep_gpu_clock_up_off">قد يخفض النظام تردد GPU في القوائم؛ يبقى الهاتف أبرد</string>
     <string name="game_normal_speed_when_the_frame">سرعة عادية عند انخفاض معدل الإطارات</string>
     <string name="game_slows_down_with_the_frame">يبطؤ مع انخفاض معدل الإطارات</string>
     <string name="game_all_grass_and_foliage">كل العشب والأوراق</string>
@@ -775,6 +826,9 @@
     <string name="home_lossless_dll_missing">" · Lossless.dll مفقود"</string>
     <string name="home_why">لماذا؟</string>
     <string name="home_shaders_need_one_update">المُظلِّلات تحتاج إلى تحديث واحد</string>
+    <string name="home_other_pack_has_shaders">حزمة أخرى تحتوي على المُظلِّلات</string>
+    <string name="home_other_pack_has_shaders_message">الحزمة التي تستخدمها هذه البطاقة لا تحتوي على مُظلِّلات لهذا الإصدار من التطبيق. حزمة أخرى من %1$s تحتوي عليها. هل تريد استخدام تلك الحزمة لهذه البطاقة؟</string>
+    <string name="home_use_that_pack">استخدام تلك الحزمة</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">يسري من الإطار التالي ويُحفظ لهذه اللعبة (هو نفس إعداد إعدادات اللعبة › مكبّر الدقة).</string>
     <string name="game_applies_from_the_next_frame_2">يسري من الإطار التالي ويُحفظ لهذه اللعبة (هو نفس إعداد إعدادات اللعبة › تحجيم الشاشة).</string>
@@ -796,6 +850,10 @@
     <string name="prepare_the_ones_it_has_stay">"الموجودة منها تبقى كما صُنعت؛ «تحديث المُظلِّلات» يصنعها كلها من جديد بهذا الإصدار. "</string>
     <string name="prepare_shaders_older_built_while_playing">المُظلِّلات: أقدم، وتُبنى أثناء اللعب</string>
     <string name="prepare_also_build_all_shaders_now">ابنِ كل المُظلِّلات الآن أيضًا</string>
+    <string name="prepare_recommended_build_all_shaders">يُنصح ببناء كل المظلّلات الآن لتشغيل أسلس (%1$s، والأفضل أثناء الشحن).</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">يمكنك اللعب الآن؛ تُبنى المظلّلات الناقصة أثناء اللعب.</string>
+    <string name="prepare_you_can_play_now_older">يمكنك اللعب الآن على المظلّلات الأقدم.</string>
+    <string name="prepare_it_plays_on_its_older_shaders">" تعمل على مظلّلاتها الأقدم."</string>
     <string name="prepare_or_finish_with_the_game">أو اكتفِ برمز اللعبة: تُلعب اللعبة حينها وتبني مُظلِّلاتها أثناء اللعب؛ و«بناء الكل» في صفحتها يصنع المجموعة كاملة لاحقًا.</string>
     <string name="prepare_finish_without_shaders">إنهاء بدون مُظلِّلات</string>
     <string name="prepare_ready_to_play_it_builds">جاهزة للعب. تبني المُظلِّلات أثناء اللعب.</string>
@@ -989,6 +1047,7 @@
     <string name="game_throttle_dot_green_yellow_red">نقطة التقييد (أخضر / أصفر / أحمر)</string>
     <string name="game_frame_rate_and_frame_time">معدل الإطارات وزمن الإطار</string>
     <string name="game_drag_a_control_or_the">اسحب عنصر تحكم أو الصورة؛ واقرص عنصر تحكم لتغيير حجمه</string>
+    <string name="game_tap_a_control_to_hide_or_show">انقر على عنصر تحكم لإخفائه أو إظهاره</string>
     <string name="game_picture_drag_into_the_black">الصورة: اسحبها إلى الأشرطة السوداء</string>
     <string name="game_temporal_sharpness">الحدة الزمنية</string>
     <string name="game_sharpness">الحدة</string>
@@ -1145,8 +1204,6 @@
     <string name="err_this_game">هذه اللعبة</string>
     <string name="err_app_supports_only">هذا التطبيق يدعم %1$s (%2$s) %3$s فقط.</string>
     <string name="err_or_word">" أو "</string>
-    <string name="prepare_in_the_background_best_on">، في الخلفية، والأفضل مع الشاحن). يمكنك الإيقاف المؤقت في أي وقت.</string>
-    <string name="prepare_the_game_plays_now_and">تعمل اللعبة الآن وتبني المُظلِّلات أثناء اللعب؛ وهذا يبني المجموعة كاملة الآن (</string>
     <string name="prepare_build_them_there_scripts_pack">ابنِها هناك (scripts/pack_android.py) وأضف المكتبة بـ «استيراد مكتبة».</string>
     <string name="prepare_the_game_plays_now_on">"تعمل اللعبة الآن بمُظلِّلاتها الأقدم؛ وما تحتاج إليه ولا تحويه المكتبة يُبنى أثناء اللعب. "</string>
     <string name="prepare_build_all_on_the_game_2">«بناء الكل» في صفحة اللعبة يصنع المجموعة كاملة الآن، و«استيراد مكتبة» هناك يأخذ مكتبة بُنيت على حاسوب.</string>
@@ -1328,7 +1385,6 @@
     <string name="settings_player_id">معرّف اللاعب</string>
     <string name="settings_player_id_hint">الأسماء مجرد تسميات: تتبع الحفظات المعرّف، لذا لا يؤدي تغيير الاسم إلى نقل الحفظات أو خلطها.</string>
     <string name="settings_that_picture_could_not_be_read">تعذّرت قراءة هذه الصورة</string>
-    <string name="home_tile_details">التفاصيل ›</string>
     <string name="home_move_left">نقل إلى اليسار</string>
     <string name="home_move_right">نقل إلى اليمين</string>
     <string name="home_delete_game_menu">إزالة اللعبة…</string>
@@ -1349,9 +1405,10 @@
         <item>قائمة</item>
     </string-array>
     <string name="home_move_game">نقل</string>
+    <string name="home_rename_game">إعادة تسمية اللعبة</string>
+    <string name="home_reset_name">إعادة الاسم الأصلي</string>
     <string name="hint_open">فتح</string>
     <string name="hint_options_hold">خيارات (اضغط مطولاً)</string>
-    <string name="hint_hold_for_options">اضغط مطولاً على لعبة للخيارات</string>
     <string name="hint_move">تحريك</string>
     <string name="hint_place">وضع</string>
     <string name="hint_cancel">إلغاء</string>
@@ -1386,4 +1443,15 @@
     <string name="game_fast_fp16_shader_math">حسابات تظليل FP16 سريعة</string>
     <string name="game_fp16_on_turnip_faster">نصف دقة 16 بت على Turnip: تظليل أسرع وحرارة أقل</string>
     <string name="game_fp16_default_precision">الدقة الافتراضية</string>
+    <string name="settings_build_preview">أنت تستخدم نسخة معاينة (v%1$s). قد تعطّل النسخ التجريبية الألعاب. تحل محلها النسخة المستقرة v%2$s عند صدورها.</string>
+    <string name="settings_build_preview_channel">قناتك هي %1$s: ينقلك التطبيق إلى النسخة المستقرة v%2$s عند صدورها.</string>
+    <string name="settings_build_hotfix">أنت تستخدم إصلاحًا سريعًا (v%1$s): إصلاح صغير بين الإصدارات الأسبوعية. يتضمنه الإصدار الأسبوعي التالي.</string>
+    <string name="common_picture_size">حجم الصورة</string>
+    <string name="game_lsfg_on_target">مفعّل · %1$d إطار/ث</string>
+    <string name="game_own_follows_settings">هذه اللعبة تتبع الإعدادات (%1$s). أي تغيير هنا يصبح خاصًا بهذه اللعبة.</string>
+    <string name="game_own_settings_note">هذه إعدادات هذه اللعبة الخاصة. استخدم الافتراضي من الإعدادات لتتبع الإعدادات مجددًا.</string>
+    <string name="game_use_settings_default">استخدام الافتراضي من الإعدادات</string>
+    <string name="settings_touch_look">مظهر عناصر التحكم على الشاشة</string>
+    <string name="settings_panel_look">مظهر اللوحة داخل اللعبة</string>
+    <string name="settings_player_one_away">وحدة التحكم المختارة (غير متصلة)</string>
 </resources>

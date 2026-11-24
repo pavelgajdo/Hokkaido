@@ -42,6 +42,7 @@ import org.yuzu.yuzu_emu.model.HomeSetting
 import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.ui.main.MainActivity
 import org.yuzu.yuzu_emu.utils.FileUtil
+import org.yuzu.yuzu_emu.utils.GameEngine
 import org.yuzu.yuzu_emu.utils.GpuDriverHelper
 import org.yuzu.yuzu_emu.utils.Log
 import org.yuzu.yuzu_emu.utils.LosslessScalingHelper
@@ -80,6 +81,16 @@ class HomeSettingsFragment : Fragment() {
         binding.toolbarHomeSettings.title = getString(R.string.preferences_settings)
 
         val optionsList: MutableList<HomeSetting> = mutableListOf<HomeSetting>().apply {
+            if (GameEngine.isBananaAvailable) {
+                add(
+                    HomeSetting(
+                        R.string.banana_settings,
+                        R.string.banana_settings_description,
+                        R.drawable.ic_graphics,
+                        { GameEngine.openNativeSettings(requireContext()) }
+                    )
+                )
+            }
             add(
                 HomeSetting(
                     R.string.advanced_settings,

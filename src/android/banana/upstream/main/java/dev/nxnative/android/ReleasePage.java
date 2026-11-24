@@ -50,9 +50,12 @@ final class ReleasePage {
         LinearLayout content = Ui.page(a, pageFrame, 640, true);
         Runnable close = () -> host.removeView(overlay);
 
-        content.addView(Ui.header(a, Ui.back(a, v -> close.run()), Tx.s(R.string.settings_update_available), Tx.s(R.string.settings_banana_native_version, UpdateCheck.text(u.version)), null));
+        content.addView(Ui.header(a, Ui.back(a, v -> close.run()), Tx.s(R.string.settings_update_available), Tx.s(R.string.settings_banana_native_version, u.label()), null));
         LinearLayout head = Ui.add(content, Ui.card(a), 8);
-        head.addView(Ui.heading(a, Tx.s(R.string.settings_version_is_available, UpdateCheck.text(u.version))));
+        head.addView(Ui.heading(a, Tx.s(R.string.settings_version_is_available, u.label())));
+        if ("critical".equals(UpdateCheck.kind(u.release))) Ui.add(head, Ui.chip(a, Tx.s(R.string.settings_update_important)), 6);
+        else if ("preview".equals(UpdateCheck.kind(u.release))) Ui.add(head, Ui.chip(a, Tx.s(R.string.settings_update_preview)), 6);
+        else if ("hotfix".equals(UpdateCheck.kind(u.release))) Ui.add(head, Ui.chip(a, Tx.s(R.string.settings_update_hotfix)), 6);   // a small fix between weekly releases   // a vX.Y.Z-preview tag   // "Update type: critical": a fix everyone should take
         Ui.add(head, Ui.body(a, Tx.s(R.string.settings_you_have_install_over, have)), 4);
         Ui.add(head, Ui.small(a, Tx.s(R.string.settings_apk_size_from, u.apk.name, UpdateCheck.mb(u.apk.size), u.release.source.name)), 8);
 

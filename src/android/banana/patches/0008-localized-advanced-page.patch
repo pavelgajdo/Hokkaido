@@ -1,0 +1,201 @@
+--- a/main/java/dev/nxnative/android/AdvancedPage.java
++++ b/main/java/dev/nxnative/android/AdvancedPage.java
+@@ -36,13 +36,12 @@
+         LinearLayout list = new LinearLayout(a);
+         list.setOrientation(LinearLayout.VERTICAL);
+         Runnable[] fill = new Runnable[1];
+-        TextView reset = pill(a, "Reset all", v -> Ui.confirmDanger(a, "Reset all", titleId == null ? "Every row you set under Advanced goes back to Auto, for every game." : "Every row you set for " + name + " goes back to Auto.",
+-                "Reset all", () -> { AdvancedSettings.resetAll(a, titleId); fill[0].run(); }));
+-        content.addView(Ui.header(a, Ui.back(a, v -> back.run()), "Advanced", name, reset));
+-        Ui.add(content, Ui.small(a, titleId == null ? "Every switch starts at Auto: nothing is written and the app decides. A change applies at the next start; a line in env.txt or Extra environment wins."
+-                : "For " + name + " only; these win over Settings > Advanced. Auto writes nothing. A change applies at the next start."), 6);
++        TextView reset = pill(a, Words.s("fusion_adv_reset_all", "Reset all"), v -> Ui.confirmDanger(a, Words.s("fusion_adv_reset_all", "Reset all"), titleId == null ? Words.s("fusion_adv_reset_global", "Every row you set under Advanced goes back to Auto, for every game.") : Words.s("fusion_adv_reset_game", "Every row you set for %1$s goes back to Auto.", name),
++                Words.s("fusion_adv_reset_all", "Reset all"), () -> { AdvancedSettings.resetAll(a, titleId); fill[0].run(); }));
++        content.addView(Ui.header(a, Ui.back(a, v -> back.run()), Words.s("fusion_adv_advanced", "Advanced"), name, reset));
++        Ui.add(content, Ui.small(a, titleId == null ? Words.s("fusion_adv_global_note", "Every switch starts at Auto: nothing is written and the app decides. A change applies at the next start; a line in env.txt or Extra environment wins.") : Words.s("fusion_adv_game_note", "For %1$s only; these win over Settings > Advanced. Auto writes nothing. A change applies at the next start.", name)), 6);
+         EditText q = new EditText(a);
+-        q.setHint("Search a name, a symptom or DM_...");
++        q.setHint(Words.s("fusion_adv_search", "Search a name, a symptom or DM_..."));
+         q.setTextSize(15);
+         q.setSingleLine(true);
+         q.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+@@ -50,8 +49,8 @@
+         LinearLayout sw = new LinearLayout(a);
+         sw.setOrientation(LinearLayout.HORIZONTAL);
+         Switch exp = new Switch(a), dv = new Switch(a);
+-        exp.setText("Experimental  ");
+-        dv.setText("Developer  ");
++        exp.setText(Words.s("fusion_adv_experimental", "Experimental") + "  ");
++        dv.setText(Words.s("fusion_adv_developer", "Developer") + "  ");
+         exp.setChecked(experimental);
+         dv.setChecked(dev);
+         sw.addView(exp, Ui.wrap());
+@@ -63,7 +62,7 @@
+             String query = q.getText().toString().trim();
+             if (!query.isEmpty()) {
+                 List<AdvancedTable.Row> hits = AdvancedTable.visible(rows, titleId, dev, query);
+-                if (hits.isEmpty()) list.addView(note(a, "Nothing matches" + (dev ? "." : ". Turn on Developer to search every switch.")));
++                if (hits.isEmpty()) list.addView(note(a, dev ? Words.s("fusion_adv_no_match", "Nothing matches.") : Words.s("fusion_adv_no_match_more", "Nothing matches. Turn on Developer to search every switch.")));
+                 for (AdvancedTable.Row r : hits) list.addView(row(a, r, titleId));
+             } else if (dev) areas(a, list, rows, titleId, fill[0]);
+             else common(a, list, rows, titleId);
+@@ -99,8 +98,8 @@
+         for (String tier : new String[] {"friendly", "advanced"})
+             for (AdvancedTable.Row r : AdvancedTable.visible(rows, titleId, false, ""))
+                 if (r.editable() && r.tier.equals(tier) && (experimental || !r.experimental())) { list.addView(row(a, r, titleId)); n++; }
+-        if (n == 0) list.addView(note(a, "Nothing to set here" + (experimental ? "." : ". Experimental shows the rest.")));
+-        list.addView(note(a, "Search finds more switches."));
++        if (n == 0) list.addView(note(a, experimental ? Words.s("fusion_adv_nothing", "Nothing to set here.") : Words.s("fusion_adv_nothing_more", "Nothing to set here. Experimental shows the rest.")));
++        list.addView(note(a, Words.s("fusion_adv_search_more", "Search finds more switches.")));
+     }
+ 
+     /** Developer on: every shown row by area, an area built when opened */
+@@ -110,7 +109,7 @@
+             for (AdvancedTable.Row r : AdvancedTable.visible(rows, titleId, true, "")) if (r.area.equals(area)) mine.add(r);
+             if (mine.isEmpty()) continue;
+             boolean isOpen = open.contains(area);
+-            TextView h = Ui.section(a, (isOpen ? "▾ " : "▸ ") + area + " (" + mine.size() + ")");
++            TextView h = Ui.section(a, (isOpen ? "▾ " : "▸ ") + AdvancedTable.areaLabel(area) + " (" + mine.size() + ")");
+             h.setOnClickListener(v -> { if (!open.remove(area)) open.add(area); refresh.run(); });
+             list.addView(h);
+             if (!isOpen) continue;
+@@ -123,7 +122,7 @@
+     private static List<String[]> chipsOf(AdvancedTable.Row r) {
+         if (r.owned() || r.developer()) return null;
+         List<String[]> out = new ArrayList<>();
+-        out.add(new String[] {"Auto", ""});
++        out.add(new String[] {Words.s("fusion_adv_auto", "Auto"), ""});
+         if (r.type.equals("number")) { for (String v : r.presets()) out.add(new String[] {r.unit().isEmpty() ? v : v + " " + r.unit(), v}); }
+         else out.addAll(r.options());
+         return out.size() > 1 && out.size() <= 6 ? out : null;
+@@ -143,13 +142,13 @@
+         if (r.experimental()) {
+             LinearLayout.LayoutParams bp = Ui.wrap();
+             bp.setMarginStart(Ui.dp(a, 8));
+-            t.addView(Ui.tag(a, "Experimental", true), bp);
++            t.addView(Ui.tag(a, Words.s("fusion_adv_experimental", "Experimental"), true), bp);
+         }
+         box.addView(t, Ui.fill());
+-        if (!r.tryIf.isEmpty()) box.addView(Ui.small(a, "Try this if " + r.tryIf + "."), Ui.fill());
+-        box.addView(Ui.small(a, "Auto: " + r.deflt + (glob != null ? ". Settings: " + r.optionLabel(glob) + "." : ".")), Ui.fill());
++        if (!r.tryIf.isEmpty()) box.addView(Ui.small(a, Words.s("fusion_adv_try_if", "Try this if %1$s.", r.tryText())), Ui.fill());
++        box.addView(Ui.small(a, Words.s("fusion_adv_auto_value", "Auto: %1$s", r.defaultText()) + (glob != null ? " · " + Words.s("fusion_adv_global_value", "Settings: %1$s", r.optionLabel(glob)) : "")), Ui.fill());
+         if (r.experimental() && !r.warn.isEmpty()) {
+-            TextView w = Ui.small(a, r.warn);
++            TextView w = Ui.small(a, r.warningText());
+             w.setTextColor(Ui.col(a, R.color.bn_danger));
+             box.addView(w, Ui.fill());
+         }
+@@ -218,19 +217,19 @@
+     private static View tapRow(MainActivity a, AdvancedTable.Row r, String titleId) {
+         String own = AdvancedSettings.own(a, r.name, titleId), glob = titleId == null ? null : AdvancedSettings.own(a, r.name, null);
+         Ui.Setting s = new Ui.Setting(a, r.developer() ? "🛠" : "⚙", r.developer() ? r.name : r.title(), null);
+-        String shown = own != null ? r.optionLabel(own) : glob != null ? r.optionLabel(glob) + " (from Settings)" : "Auto" + (r.deflt.isEmpty() ? "" : ": " + r.deflt);
++        String shown = own != null ? r.optionLabel(own) : glob != null ? Words.s("fusion_adv_from_global", "%1$s (from Settings)", r.optionLabel(glob)) : r.deflt.isEmpty() ? Words.s("fusion_adv_auto", "Auto") : Words.s("fusion_adv_auto_value", "Auto: %1$s", r.defaultText());
+         if (r.owned()) {
+-            s.value("Set in " + r.owner + ".");
+-            s.view.setOnClickListener(v -> new PadFocus.Builder(a).setTitle(r.title()).setMessage("This one has its own control: " + r.owner + ".").setPositiveButton(android.R.string.ok, null).show());
++            s.value(Words.s("fusion_adv_set_in", "Set in %1$s.", r.ownerText()));
++            s.view.setOnClickListener(v -> new PadFocus.Builder(a).setTitle(r.title()).setMessage(Words.s("fusion_adv_own_control", "This one has its own control: %1$s.", r.ownerText())).setPositiveButton(android.R.string.ok, null).show());
+         } else {
+             s.value(shown).chevron(a);
+             s.view.setOnClickListener(v -> edit(a, r, titleId, s));
+         }
+-        s.note(r.developer() ? AdvancedSettings.meaning(a, r.name) : r.tryIf.isEmpty() || r.owned() ? null : "Try this if " + r.tryIf + ".");
++        s.note(r.developer() ? AdvancedSettings.meaning(a, r.name) : r.tryIf.isEmpty() || r.owned() ? null : Words.s("fusion_adv_try_if", "Try this if %1$s.", r.tryText()));
+         s.note.setMaxLines(8);
+         s.value.setMaxLines(6);
+-        if (r.experimental()) s.badge("Experimental");
+-        if (own != null) s.tag(a, "Changed", false);
++        if (r.experimental()) s.badge(Words.s("fusion_adv_experimental", "Experimental"));
++        if (own != null) s.tag(a, Words.s("fusion_adv_changed", "Changed"), false);
+         return s.view;
+     }
+ 
+@@ -243,22 +242,22 @@
+         if (cur != null) t.setText(cur);
+         LinearLayout box = new LinearLayout(a);
+         box.setOrientation(LinearLayout.VERTICAL);
+-        String hint = (r.type.equals("number") && range != null ? "A number from " + trim(range[0]) + " to " + trim(range[1]) + (r.unit().isEmpty() ? "" : " " + r.unit()) + ". " : "The value after " + r.name + "=. ")
+-                + "Empty or Auto writes nothing." + (r.experimental() ? "\n" + r.warn : "");
++        String hint = (r.type.equals("number") && range != null ? Words.s("fusion_adv_number_range", "A number from %1$s to %2$s%3$s. ", trim(range[0]), trim(range[1]), r.unit().isEmpty() ? "" : " " + r.unit()) : Words.s("fusion_adv_value_after", "The value after %1$s=. ", r.name))
++                + Words.s("fusion_adv_empty_auto", "Empty or Auto writes nothing.") + (r.experimental() ? "\n" + r.warningText() : "");
+         Ui.add(box, Ui.small(a, hint), 4);
+         Ui.add(box, t, 8);
+         Runnable after = () -> {
+             String own = AdvancedSettings.own(a, r.name, titleId);
+-            s.value(own != null ? r.optionLabel(own) : "Auto" + (r.deflt.isEmpty() ? "" : ": " + r.deflt));
+-            s.tag(a, own != null ? "Changed" : null, false);
++            s.value(own != null ? r.optionLabel(own) : r.deflt.isEmpty() ? Words.s("fusion_adv_auto", "Auto") : Words.s("fusion_adv_auto_value", "Auto: %1$s", r.defaultText()));
++            s.tag(a, own != null ? Words.s("fusion_adv_changed", "Changed") : null, false);
+         };
+-        Ui.sheet(a, r.developer() ? r.name : r.title(), box).setPositiveButton("Save", (x, w) -> {
++        Ui.sheet(a, r.developer() ? r.name : r.title(), box).setPositiveButton(Words.s("fusion_adv_save", "Save"), (x, w) -> {
+             String v = t.getText().toString().trim();
+             if (v.isEmpty()) AdvancedSettings.set(a, r.name, titleId, null);
+             else if (r.accepts(v)) AdvancedSettings.set(a, r.name, titleId, v);
+-            else android.widget.Toast.makeText(a, "Not a value this row takes", android.widget.Toast.LENGTH_SHORT).show();
++            else android.widget.Toast.makeText(a, Words.s("fusion_adv_invalid_value", "Not a value this row takes"), android.widget.Toast.LENGTH_SHORT).show();
+             after.run();
+-        }).setNeutralButton("Auto", (x, w) -> { AdvancedSettings.set(a, r.name, titleId, null); after.run(); }).setNegativeButton("Cancel", null).show();
++        }).setNeutralButton(Words.s("fusion_adv_auto", "Auto"), (x, w) -> { AdvancedSettings.set(a, r.name, titleId, null); after.run(); }).setNegativeButton(Words.s("fusion_adv_cancel", "Cancel"), null).show();
+     }
+ 
+     private static String trim(double d) { return d == Math.rint(d) ? Long.toString((long) d) : Double.toString(d); }
+--- a/main/java/dev/nxnative/android/AdvancedTable.java
++++ b/main/java/dev/nxnative/android/AdvancedTable.java
+@@ -27,7 +27,14 @@
+         boolean live() { return live.equals("live") && type.equals("choice") && editable(); }
+         /** Whether the page lets the player set it: a launcher control owns the others */
+         boolean editable() { return shown() && !owned(); }
+-        String title() { return label.isEmpty() ? name : label; }
++        String text(String field, String value) {
++            return value.isEmpty() ? value : Words.s("fusion_adv_" + name.toLowerCase(Locale.ROOT) + "_" + field, value);
++        }
++        String title() { return label.isEmpty() ? name : text("label", label); }
++        String tryText() { return text("try_if", tryIf); }
++        String defaultText() { return text("default", deflt); }
++        String warningText() { return text("warn", warn); }
++        String ownerText() { return text("owner", owner); }
+ 
+         /** toggle and choice: {label, value} pairs, Auto not included */
+         List<String[]> options() {
+@@ -35,7 +42,7 @@
+             if (!type.equals("toggle") && !type.equals("choice")) return out;
+             for (String c : choices.split(";")) {
+                 int i = c.indexOf('=');
+-                if (i > 0) out.add(new String[] {c.substring(0, i).trim(), c.substring(i + 1).trim()});
++                if (i > 0) out.add(new String[] {text("option_" + out.size(), c.substring(0, i).trim()), c.substring(i + 1).trim()});
+             }
+             return out;
+         }
+@@ -52,7 +59,8 @@
+             if (!type.equals("number")) return "";
+             String c = choices.split("\\|")[0].trim();
+             int i = c.indexOf(' ');
+-            return i > 0 ? c.substring(i + 1).trim() : "";
++            String unit = i > 0 ? c.substring(i + 1).trim() : "";
++            return unit.equals("fps") ? Words.s("fusion_adv_unit_fps", "fps") : unit;
+         }
+ 
+         /** number: the preset values (chips), empty when the row has none */
+@@ -144,7 +152,7 @@
+             boolean exact = q.equals(r.name.toLowerCase(Locale.ROOT));
+             if (r.developer() && !dev && !exact) continue;
+             if (r.owned() && !dev) continue;   // a launcher control already sets it: listed only for developers
+-            String hay = (r.name + " " + r.label + " " + r.tryIf + " " + r.fixes.replace(';', ' ') + " " + r.area).toLowerCase(Locale.ROOT);
++            String hay = (r.name + " " + r.label + " " + r.title() + " " + r.tryIf + " " + r.tryText() + " " + r.fixes.replace(';', ' ') + " " + r.area + " " + areaLabel(r.area)).toLowerCase(Locale.ROOT);
+             boolean all = true;
+             for (String w : words) if (!hay.contains(w)) { all = false; break; }
+             if (!all) continue;
+@@ -154,6 +162,10 @@
+         return out;
+     }
+ 
++    static String areaLabel(String area) {
++        return Words.s("fusion_adv_area_" + area.toLowerCase(Locale.ROOT), area);
++    }
++
+     /** A value for a log or a report: the folder and file switches (names ending _DIR, _PATH, _FILE, _ROOT) keep their path to themselves */
+     static String redact(String name, String value) {
+         return name.matches(".*_(DIR|PATH|FILE|ROOT)$") || name.equals("HOME") || value.startsWith("/") ? "<path>" : value;

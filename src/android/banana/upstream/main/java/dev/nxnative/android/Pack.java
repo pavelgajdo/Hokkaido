@@ -118,11 +118,21 @@ final class Pack {
     }
 
     /**
-     * An optional shader update: this APK's shader library is missing, an older one plays (ShaderLibs.playable) and no delta manifest says how to update it in the background
-     * (deltaShaders &lt; 0), so nothing starts by itself: the card says an update is available and the game's page offers it. The game plays as before until the player asks
+     * An optional shader update: this APK's shader library is missing, an older one plays (ShaderLibs.playable) and no small delta update starts by itself
+     * ({@link #deltaAutomatic}: no manifest row for it, or one that translates more than a quarter of the set), so the card says an update is available and the game's page
+     * offers it. The game plays as before until the player asks
      */
     static boolean shaderUpdateAvailable(File dir, String titleId) {
-        return libraryProblem(dir, titleId) != null && playableLibrary(dir, titleId) != null && deltaShaders(dir, titleId) < 0;
+        return libraryProblem(dir, titleId) != null && playableLibrary(dir, titleId) != null && !deltaAutomatic(dir, titleId);
+    }
+
+    /**
+     * Whether the delta update of this pack starts by itself (ShaderLibs.autoDelta): the profile's manifest knows its older library, and either nothing plays meanwhile or the
+     * update is small. Otherwise the game's page offers it (shaderUpdateAvailable) and nothing starts
+     */
+    static boolean deltaAutomatic(File dir, String titleId) {
+        Profile p = Profile.of(titleId);
+        return p != null && ShaderLibs.autoDelta(deltaShaders(dir, titleId), p.shaderTotal, playableLibrary(dir, titleId) != null || legacyLibrary(dir, titleId) != null);
     }
 
     /**

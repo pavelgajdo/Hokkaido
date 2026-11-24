@@ -77,6 +77,7 @@
     <string name="common_stop">停止</string>
     <string name="common_system">系统</string>
     <string name="common_time_of_day">时间</string>
+    <string name="common_game_upscaler">游戏超分 (DLSS)</string>
     <string name="common_upscaler">放大器</string>
     <string name="common_use_fast_cores">使用高性能核心</string>
     <string name="common_users">用户</string>
@@ -178,8 +179,32 @@
     <string name="settings_on_the_controller_or_the">使用手柄，或不带手柄时使用手机</string>
     <string name="settings_overlay">浮层</string>
     <string name="settings_picture_from_the_release_notes">来自更新说明的图片</string>
-    <string name="settings_small_fix_updates">小修复更新</string>
-    <string name="settings_small_fix_updates_help">启动时提供小修复版本。关闭后只提供大更新；“检查更新”仍会显示最新版本。下一个大更新包含所有修复。</string>
+    <string name="settings_update_channel">更新渠道</string>
+    <string name="settings_channel_stable">稳定版</string>
+    <string name="settings_channel_stable_help">每周版本和关键修复。每个每周版本都包含之前的所有小修复。</string>
+    <string name="settings_channel_hotfix">热修复版</string>
+    <string name="settings_channel_hotfix_help">所有版本，也包括每周版本之间的小修复。</string>
+    <string name="settings_channel_preview">预览</string>
+    <string name="settings_channel_preview_help">较大改动（例如新的着色器版本）的早期版本，比稳定版早约一周发布。可能导致游戏出错，适合测试者。</string>
+    <string name="settings_backup_before_update">更新前备份存档</string>
+    <string name="settings_backup_before_update_note">安装更新前，有变化的存档会复制到游戏旁边的 save-backups 文件夹，位于应用存储之外。</string>
+    <string name="settings_update_backing_up">正在备份存档…</string>
+    <string name="settings_update_backing_up_game">正在备份存档：%1$s（%2$d/%3$d）</string>
+    <string name="settings_update_game_user">%1$s（用户 %2$s）</string>
+    <plurals name="settings_update_saves_backed_up">
+        <item quantity="other">已备份存档：%1$d 个游戏</item>
+    </plurals>
+    <string name="settings_update_saves_unchanged">存档自上次备份后没有变化</string>
+    <string name="settings_update_skipped_running">游戏运行中，未备份：%1$s</string>
+    <string name="settings_update_no_backup_title">存档未备份</string>
+    <string name="settings_update_no_backup_message">这些存档无法备份到应用存储之外，而卸载应用会删除应用存储：\n%1$s</string>
+    <string name="settings_update_reason_no_access">%1$s：未开启所有文件访问权限</string>
+    <string name="settings_update_reason_in_app">%1$s：其备份文件夹在应用存储内</string>
+    <string name="settings_update_without_backup">不备份直接更新</string>
+    <string name="settings_update_backup_failed_title">存档备份失败</string>
+    <string name="settings_update_backup_failed_message">这些存档无法备份。你的存档没有改动。</string>
+    <string name="settings_update_anyway">仍然更新</string>
+    <string name="settings_up_to_date_on_stable">你在 Stable 上已是最新版本 (v%1$s)。一个小修复 v%2$s 已在 Hotfix 渠道发布。</string>
     <string name="settings_player_wiki">玩家 Wiki</string>
     <string name="settings_remove_leftovers_and_old_files">清除残留和旧文件；绝不会删除存档</string>
     <string name="settings_sample_games">示例游戏</string>
@@ -203,6 +228,9 @@
     <string name="settings_updates">更新</string>
     <string name="settings_what_s_new">新内容</string>
     <string name="settings_while_home_shows_a_game">在主页显示正在准备的游戏时</string>
+    <string name="settings_update_shaders_automatically">自动更新着色器</string>
+    <string name="settings_auto_shader_update_on">着色器过时的游戏会在后台更新</string>
+    <string name="settings_auto_shader_update_off">关闭：按需在游戏页面中更新</string>
     <string name="settings_xbox_button_label_swap">Xbox 按键标签互换</string>
     <string name="game_1_player">1 名玩家</string>
     <string name="game_3d_scene">3D 场景</string>
@@ -215,13 +243,11 @@
     <string name="game_aspect_ratio">宽高比</string>
     <string name="game_back_from_the_background_paused">从后台返回：保持暂停，点按后继续</string>
     <string name="game_back_from_the_background_runs">从后台返回：立即继续运行</string>
-    <string name="game_back_to_the_game">返回游戏</string>
     <string name="game_background_pipelines">后台管线</string>
     <string name="game_busy_threads_off_the_small">繁忙线程避开小核心</string>
     <string name="game_centre">居中</string>
     <string name="game_classic_render_passes">经典渲染通道</string>
     <string name="game_clear">清除</string>
-    <string name="game_close_the_panel_back_to">关闭面板，返回游戏</string>
     <string name="game_controller_panel">手柄面板</string>
     <string name="game_could_not_save_link_play">无法保存 Link Play 设置。</string>
     <string name="game_details">详情</string>
@@ -268,10 +294,12 @@
     <string name="game_join_a_world_hosted_in">加入在 PC 上的 Recompia 中创建的世界。输入主机的 IPv4 地址；如使用互联网 / Tailscale，还需输入其房间码。</string>
     <string name="game_keep_running">继续运行</string>
     <string name="game_less_cpu_a_pass_on">在 Qualcomm 驱动上每个通道减少 CPU 占用</string>
-    <string name="game_link_play">Link Play</string>
+    <string name="game_link_play">联机游玩</string>
     <string name="game_looking_at_the_app_s">正在查看应用存储…</string>
     <string name="game_made_when_first_drawn_may">首次绘制时生成：可能卡顿</string>
-    <string name="game_mode_performance_the_only_shader">模式：性能（Eden 的 LSFG 使用的唯一着色器集）</string>
+    <string name="game_lsfg_quality">质量</string>
+    <string name="game_lsfg_shaders">着色器（质量：生成帧细节更多，GPU 时间约为四倍）</string>
+    <string name="game_lsfg_screen_limit">屏幕最高以 %1$d Hz 运行（Android 显示设置）：不提供更快的目标和每个游戏帧更多的帧</string>
     <string name="game_motion_clarity">动态清晰度</string>
     <string name="game_motion_estimation_resolution_lower_i">运动估计分辨率（越低越快）</string>
     <string name="game_motion_sensitivity">体感灵敏度</string>
@@ -282,6 +310,8 @@
     <string name="game_building_shaders_label">“正在构建着色器”标签</string>
     <string name="settings_building_shaders_label">“正在构建着色器”标签</string>
     <string name="settings_building_shaders_label_note">边玩边构建所缺着色器的游戏,会在屏幕顶部显示一个小的半透明数字。等待手机降温或电量充足的构建总会提示。隐藏标签不会停止构建。</string>
+    <string name="settings_startup_log">显示启动日志</string>
+    <string name="settings_startup_log_note">在游戏绘制第一帧之前，在黑屏上显示启动日志。崩溃信息仍会显示，且日志始终会保存到磁盘。</string>
     <string-array name="arr_layer_label">
         <item>关闭</item>
         <item>仅数字</item>
@@ -303,6 +333,7 @@
     <string name="game_open_the_in_game_panel">打开游戏内面板</string>
     <string name="game_pause_on_return">返回时暂停</string>
     <string name="game_pause_the_game">暂停游戏</string>
+    <string name="game_resume_the_game">继续游戏</string>
     <string name="game_hide_everything_clean_picture">隐藏所有内容(纯净画面)</string>
     <string name="game_show_everything">显示所有内容</string>
     <string name="game_pause_when_the_game_comes">游戏从后台返回时暂停</string>
@@ -344,7 +375,7 @@
     <string name="game_skips_layers_drawn_over_later">跳过之后被覆盖的层</string>
     <string name="game_stop_the_game">停止游戏</string>
     <string name="game_stop_the_game_2">停止游戏？</string>
-    <string name="game_switch_2_edition">Switch 2 Edition</string>
+    <string name="game_switch_2_edition">Switch 2 增强版</string>
     <string name="game_target_frame_rate">目标帧率</string>
     <string name="game_texture_data_in_a_file">纹理数据存放在文件中（需要数 GB 可用空间）、纹理缓存更小、近处纹理略模糊</string>
     <string name="game_texture_data_in_compressed_ram">纹理数据存放在压缩内存中</string>
@@ -470,6 +501,15 @@
     <string name="prepare_pack_not_imported">游戏包未导入</string>
     <string name="prepare_pack_imported">游戏包已导入</string>
     <string name="ready_readiness_check">就绪检查</string>
+    <string name="settings_update_ready">v%1$s 可以安装了</string>
+    <string name="settings_update_elsewhere">v%1$s 已在%2$s渠道发布</string>
+    <string name="settings_channel_next">下一个更新：v%1$s</string>
+    <string name="settings_channel_none">没有比此版本更新的版本</string>
+    <string name="settings_channel_preview_confirm">预览版是较大改动的早期构建。它可能导致游戏出错，或需要重新构建着色器。你的存档保持不变，且应用会在每次更新前备份。切换到预览版？</string>
+    <string name="settings_channel_preview_switch">切换到预览版</string>
+    <string name="settings_update_hotfix">每周版本之间的小修复（热修复渠道）。</string>
+    <string name="settings_update_important">重要修复：建议所有人安装此更新。</string>
+    <string name="settings_update_preview">预览版：可能有问题。你的存档保持不变。</string>
     <string name="settings_update_available">有可用更新</string>
     <string name="game_no_backup_made">未创建备份</string>
     <string name="game_the_save_could_not_be">无法备份存档。存档仅被读取，从未被更改。</string>
@@ -499,6 +539,7 @@
     <string name="home_copied_into_the_app">已复制到应用中：%1$s</string>
     <string name="home_game_now_uses">%1$s 现在使用 %2$s。</string>
     <string name="home_lossless_dll_not_installed">未安装 Lossless.dll：%1$s</string>
+    <string name="home_tile_details">详情 ›</string>
     <string name="home_checking_name">正在检查 %1$s…</string>
     <plurals name="home_checking_games">
         <item quantity="other">正在检查 %1$d 个游戏…</item>
@@ -558,13 +599,15 @@
     <string name="game_save_copy_failed">无法将你的存档复制到应用存储（%1$s）。本次启动将在原位置 %2$s 使用它。</string>
     <string name="game_name_checking_gpu">%1$s：正在检查这部手机的 GPU…</string>
     <string name="game_details_also_in_readiness">详情也可在设置 › 就绪检查中查看。</string>
+    <string name="game_name_starting">%1$s：正在启动…</string>
     <string name="game_name_starting_log">%1$s：正在启动。日志：%2$s</string>
     <string name="err_cannot_start_name">无法启动 %1$s</string>
     <string name="err_name_is_running">%1$s 正在运行</string>
     <string name="err_stop_it_first_then_start">请先停止它（游戏内面板 › 停止游戏），然后再启动 %1$s。同一时间只能运行一个游戏。</string>
-    <string name="game_menu_hint">菜单：从右边缘向内滑动，或按返回键</string>
-    <string name="game_tab_n_of_m">%1$s 标签页，第 %2$d 个，共 %3$d 个</string>
-    <string name="game_n_fps">%1$d fps</string>
+    <string name="game_menu_hint">菜单：按返回键\n设置：从右边缘向内滑动</string>
+    <string name="game_menu_gpu_driver">GPU 驱动：%1$s</string>
+    <string name="game_menu_system_driver">系统</string>
+    <string name="game_n_fps">%1$d 帧/秒</string>
     <string name="game_size_percent">大小 %1$d %%</string>
     <string name="game_button_mapping_applies">按键映射：%1$s，下次启动生效</string>
     <string name="game_whole_frames">此游戏以整帧运行：%1$d fps 将以 %2$d fps 运行，保持完整游戏速度。</string>
@@ -742,6 +785,9 @@
     <string name="game_experimental">实验性</string>
     <string name="game_never_drops_to_30_less">不会降到 30；60 以下时更不均匀</string>
     <string name="game_drops_to_30_when_60">无法稳定 60 时降到 30</string>
+    <string name="game_keep_gpu_clock_up">保持 GPU 高频</string>
+    <string name="game_keep_gpu_clock_up_on">菜单之后也保持：可修复卡在低帧率的游戏；手机会更热</string>
+    <string name="game_keep_gpu_clock_up_off">系统可在菜单中降低 GPU 频率；手机更凉</string>
     <string name="game_normal_speed_when_the_frame">帧率下降时保持正常速度</string>
     <string name="game_slows_down_with_the_frame">随帧率下降而变慢</string>
     <string name="game_all_grass_and_foliage">全部草木</string>
@@ -755,6 +801,9 @@
     <string name="home_lossless_dll_missing">" · 缺少 Lossless.dll"</string>
     <string name="home_why">为什么？</string>
     <string name="home_shaders_need_one_update">着色器需要更新一次</string>
+    <string name="home_other_pack_has_shaders">另一个游戏包有着色器</string>
+    <string name="home_other_pack_has_shaders_message">此卡片使用的游戏包没有适用于此版本应用的着色器。%1$s 的另一个游戏包有。为此卡片使用那个游戏包？</string>
+    <string name="home_use_that_pack">使用那个游戏包</string>
     <string name="home_nup">" (.nup)"</string>
     <string name="game_applies_from_the_next_frame">从下一帧起生效，并为此游戏保留（与游戏设置 › 放大器相同的设置）。</string>
     <string name="game_applies_from_the_next_frame_2">从下一帧起生效，并为此游戏保留（与游戏设置 › 屏幕缩放相同的设置）。</string>
@@ -776,6 +825,10 @@
     <string name="prepare_the_ones_it_has_stay">已有的着色器保持原样；“更新着色器”会用此版本重新生成全部。</string>
     <string name="prepare_shaders_older_built_while_playing">着色器：版本较旧，游玩时生成</string>
     <string name="prepare_also_build_all_shaders_now">同时现在生成所有着色器</string>
+    <string name="prepare_recommended_build_all_shaders">推荐：现在构建所有着色器，游玩更流畅（%1$s，最好在充电时）。</string>
+    <string name="prepare_you_can_play_now_built_as_you_play">现在就可以玩；缺少的着色器会在游玩时构建。</string>
+    <string name="prepare_you_can_play_now_older">现在可以用旧的着色器游玩。</string>
+    <string name="prepare_it_plays_on_its_older_shaders">它使用旧的着色器运行。</string>
     <string name="prepare_or_finish_with_the_game">或者只完成游戏代码：游戏随后可以直接游玩，并在游玩时生成着色器；之后可在其页面用“全部生成”生成整套。</string>
     <string name="prepare_finish_without_shaders">不含着色器直接完成</string>
     <string name="prepare_ready_to_play_it_builds">可以开始游戏。游玩时会生成着色器。</string>
@@ -959,6 +1012,7 @@
     <string name="game_throttle_dot_green_yellow_red">降频指示点（绿 / 黄 / 红）</string>
     <string name="game_frame_rate_and_frame_time">帧率和帧时间</string>
     <string name="game_drag_a_control_or_the">拖动控件或画面；捏合控件可调整大小</string>
+    <string name="game_tap_a_control_to_hide_or_show">轻点控件可隐藏或显示</string>
     <string name="game_picture_drag_into_the_black">画面：拖入黑边区域</string>
     <string name="game_temporal_sharpness">时域锐度</string>
     <string name="game_sharpness">锐度</string>
@@ -1110,8 +1164,6 @@
     <string name="err_this_game">此游戏</string>
     <string name="err_app_supports_only">此应用仅支持 %1$s（%2$s）%3$s。</string>
     <string name="err_or_word">" 或 "</string>
-    <string name="prepare_in_the_background_best_on">，在后台进行，最好接通充电器）。你可以随时暂停。</string>
-    <string name="prepare_the_game_plays_now_and">游戏现在即可游玩，并在游玩时生成着色器；此项则现在生成整套着色器（</string>
     <string name="prepare_build_them_there_scripts_pack">在那里生成（scripts/pack_android.py），再用“导入库”添加该库。</string>
     <string name="prepare_the_game_plays_now_on">"游戏现在使用旧版着色器即可游玩；所需但库中缺少的着色器会在游玩时生成。 "</string>
     <string name="prepare_build_all_on_the_game_2">游戏页面上的“全部生成”会现在生成整套着色器，“导入库”可导入在电脑上生成的库。</string>
@@ -1293,7 +1345,6 @@
     <string name="settings_player_id">玩家 ID</string>
     <string name="settings_player_id_hint">名称只是标签：存档跟随 ID，所以改名不会移动或混淆存档。</string>
     <string name="settings_that_picture_could_not_be_read">无法读取该图片</string>
-    <string name="home_tile_details">详情 ›</string>
     <string name="home_move_left">向左移动</string>
     <string name="home_move_right">向右移动</string>
     <string name="home_delete_game_menu">移除游戏…</string>
@@ -1314,9 +1365,10 @@
         <item>列表</item>
     </string-array>
     <string name="home_move_game">移动</string>
+    <string name="home_rename_game">重命名游戏</string>
+    <string name="home_reset_name">重置名称</string>
     <string name="hint_open">打开</string>
     <string name="hint_options_hold">选项（长按）</string>
-    <string name="hint_hold_for_options">长按游戏查看选项</string>
     <string name="hint_move">移动</string>
     <string name="hint_place">放下</string>
     <string name="hint_cancel">取消</string>
@@ -1351,4 +1403,15 @@
     <string name="game_fast_fp16_shader_math">快速 FP16 着色器运算</string>
     <string name="game_fp16_on_turnip_faster">Turnip 上的 16 位半精度：着色器更快，发热更少</string>
     <string name="game_fp16_default_precision">默认精度</string>
+    <string name="settings_build_preview">你正在使用预览版（v%1$s）。预览版可能导致游戏出问题。稳定版 v%2$s 发布后会替换它。</string>
+    <string name="settings_build_preview_channel">你的更新渠道是%1$s：稳定版 v%2$s 发布后，应用会将你切换到该版本。</string>
+    <string name="settings_build_hotfix">你正在使用热修复版（v%1$s）：两次每周版本之间的小修复。下一个每周版本已包含它。</string>
+    <string name="common_picture_size">画面大小</string>
+    <string name="game_lsfg_on_target">开 · %1$d fps</string>
+    <string name="game_own_follows_settings">此游戏沿用设置（%1$s）。在此更改后将成为此游戏自己的设置。</string>
+    <string name="game_own_settings_note">这是此游戏自己的设置。使用设置默认值即可重新沿用设置。</string>
+    <string name="game_use_settings_default">使用设置默认值</string>
+    <string name="settings_touch_look">屏幕控制外观</string>
+    <string name="settings_panel_look">游戏内面板外观</string>
+    <string name="settings_player_one_away">所选手柄（未连接）</string>
 </resources>

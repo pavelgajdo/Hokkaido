@@ -59,6 +59,33 @@ final class GameOrder {
         return out;
     }
 
+    /**
+     * Home is a recency list, as a console's home: the order after a game was played (or added), that game first and the others as shown; the list given is
+     * not changed. The player's moves (Move) stay until a game is played or added
+     */
+    static List<String> front(List<String> shown, String id) {
+        List<String> out = new ArrayList<>(shown.size() + 1);
+        out.add(id);
+        for (String x : shown) if (!x.equals(id)) out.add(x);
+        return out;
+    }
+
+    /**
+     * The stored order with the games Home has not had before in front, newest first; null when nothing changes. ids: the games now, in the order they were added
+     * (the list's order: a new entry is appended). A game is new when its title has no id in the order (an entry whose pack changed, Prepare's, keeps its place:
+     * {@link #sort}). Games already on Home do not move: the first time, MainActivity.orderRecent stores the order Home shows (the player's order, else the
+     * order the games were added in), so only games added from then on count as new
+     */
+    static List<String> recent(List<String> order, List<String> ids) {
+        Set<String> titles = new HashSet<>();
+        for (String x : order) titles.add(title(x));
+        List<String> fresh = new ArrayList<>();
+        for (String x : ids) if (!order.contains(x) && !titles.contains(title(x))) fresh.add(0, x);   // newest (last added) first
+        if (fresh.isEmpty()) return null;
+        fresh.addAll(order);
+        return fresh;
+    }
+
     /** What is stored after a move: the shown order (the games now). Ids of games that are gone are not kept */
     static List<String> write(List<String> shown) { return new ArrayList<>(shown); }
 

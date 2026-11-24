@@ -55,6 +55,13 @@ final class Ondevice {
     /** Prepare the dump (MainActivity's Add game, a game card's Prepare again): checked off the main thread, then asked before anything is written */
     static void prepare(MainActivity a, File dump, boolean again) { if (panel != null && panel.a == a) panel.picked(dump, false, null, again); }
 
+    /** Prepare asked for the shaders (the game page's Update shaders, Build all): as {@link #prepare}, with "Also build all shaders now" ticked when a code update comes first */
+    static void prepareShaders(MainActivity a, File dump, boolean again) {
+        if (panel == null || panel.a != a) return;
+        panel.wantShaders = true;
+        panel.picked(dump, false, null, again);
+    }
+
     /** Shaders a delta update of this pack translates (the profile's manifest rows for the pack's older libraries, ShaderLibs.toTranslate), -1 when the manifest has none of them */
     static int deltaShaders(File packDir, String titleId) { return Pack.deltaShaders(packDir, titleId); }
 
@@ -72,14 +79,19 @@ final class Ondevice {
 
     /**
      * A shader update the user need not ask for: a dump whose pack has an older library the profile's delta manifest knows (deltaShaders) is updated in the background
-     * with no question, once per app process (a failed or paused job is resumed once). The game card then shows it, and Play stays on when that library is playable
-     * (Pack.playableLibrary); otherwise Play waits for it as before. Only the card's own pack is updated (card = true): never the pack Folders.packFor would pick
-     * (a game added with another pack, e.g. the play app's beside the dump), never a whole job, never a job for another pack folder
+     * with no question, once per app process (a failed job, or one paused by anything but the player, is resumed once). The game card then shows it, and Play stays on
+     * when that library is playable (Pack.playableLibrary); otherwise Play waits for it as before. When the game plays meanwhile only a small delta starts by itself
+     * (Pack.deltaAutomatic, ShaderLibs.autoDelta): a larger one is an offer on the game's page, like an update with no manifest. Only the card's own pack is updated (card = true): never the pack Folders.packFor would pick
+     * (a game added with another pack, e.g. the play app's beside the dump), never a whole job, never a job for another pack folder. Nothing starts, not even the quick
+     * check, when Settings › System › Update shaders automatically is off (Prefs.autoShaderUpdate): the card says "Ready · update", the game's page updates them
      */
-    static void autoUpdate(MainActivity a, File dump, File packDir, String titleId) {
+    static void autoUpdate(MainActivity a, File dump, File packDir, String titleId) { autoUpdate(a, dump, packDir, titleId, isDump(dump)); }
+    /** isDump: whether dump is a dump Prepare can start from (isDump), worked out by the caller off the main thread (a .nup is opened to say: Home's check) */
+    static void autoUpdate(MainActivity a, File dump, File packDir, String titleId, boolean isDump) {
+        if (!Prefs.autoShaderUpdate(a)) return;
         if (panel == null || panel.a != a || panel.alive()) return;
-        if (sampledKeep(a, dump, packDir, titleId)) return;   // the quick check first (below): the older library may stand as this version's; a difference goes on to the update as before
-        if (deltaShaders(packDir, titleId) < 0 || !autoTried.add(dump.getPath())) return;
+        if (sampledKeep(a, dump, packDir, titleId, isDump)) return;   // the quick check first (below): the older library may stand as this version's; a difference goes on to the update as before
+        if (!Pack.deltaAutomatic(packDir, titleId) || !autoTried.add(dump.getPath())) return;
         // the update is optional when the layer builds what the older library lacks (Pack.shaderUpdateOptional): the game's page offers it, nothing starts by itself
         if (Pack.shaderUpdateOptional(packDir, titleId, Prefs.layerEnv(a, titleId))) return;
         panel.picked(dump, true, packDir, false, true);
@@ -163,9 +175,10 @@ final class Ondevice {
      * runs, only while the phone is calm and not in the app's first seconds; Play never waits for it. → true while the pack's check runs or waits (the other update waits for its
      * verdict), false when there is none to make (done, skipped, or given up)
      */
-    static boolean sampledKeep(Context c, File dump, File packDir, String titleId) {
+    static boolean sampledKeep(Context c, File dump, File packDir, String titleId) { return sampledKeep(c, dump, packDir, titleId, isDump(dump)); }
+    static boolean sampledKeep(Context c, File dump, File packDir, String titleId, boolean isDump) {
         Profile p = Profile.of(titleId);
-        if (p == null || !isDump(dump)) return false;
+        if (p == null || !isDump) return false;
         if (new File(packDir, "shaders/" + ShaderLibs.KNOWN_DIR + BuildConfig.NX_DMSH_VK_CHAIN).isDirectory())   // a known-transition move a crash left half done: finished, or put back
             android.util.Log.i("nxnative", "sampled keep: known transition: " + (ShaderLibs.knownRecover(packDir, BuildConfig.NX_DMSH_VK_CHAIN, System.currentTimeMillis()) ? "a move left by a stop is finished" : ShaderLibs.knownWhy));
         File old = Pack.sampledKeepCandidate(packDir, titleId, Prefs.layerEnv(c, titleId));
@@ -798,9 +811,14 @@ final class Ondevice {
             }
         }
 
-        /** A job of a game the layer covers that stopped in its shader translation: it may finish without it (Job.canSkipShaders) unless its pack already plays */
+        /**
+         * A job that stopped in its shader translation (Job.canSkipShaders) may finish without it (ShaderState.canSkipShaders) when the game plays without the set: the layer
+         * covers it, or the pack has an older library the host plays (kept by the code-only pack step). A shaders-only update of a pack that plays already is just paused
+         */
         boolean canSkip(Job j) {
-            return j != null && j.canSkipShaders() && !alive() && ShaderLibs.layerCovers(j.titleId(), Prefs.layerEnv(a, j.titleId())) && !playsOld(j);
+            if (j == null || !j.canSkipShaders() || alive()) return false;
+            boolean older = Pack.playableLibrary(j.pack(), j.titleId()) != null || Pack.legacyLibrary(j.pack(), j.titleId()) != null;
+            return ShaderState.canSkipShaders(ShaderLibs.layerCovers(j.titleId(), Prefs.layerEnv(a, j.titleId())), older, j.redoesCode(), playsOld(j));
         }
 
         /** Finish without the shader set: the job goes on with its pack step, packing with no library (Job.codeOnly); the game then builds its shaders as it plays */
@@ -841,7 +859,7 @@ final class Ondevice {
             a.refresh();
             long[] miss = j.shadersMissing();   // Try anyway on a game version the profile was not made from: say briefly what it lacks and which version has it all
             Profile prof = Profile.of(j.titleId());
-            android.widget.Toast.makeText(a, Tx.s(R.string.prepare_name_is_ready, g.name) + (j.codeOnly() ? Tx.s(R.string.prepare_it_builds_shaders_while_you) : "") + (miss[0] > 0 && prof != null ? " " + PrepareText.missingShadersText(miss[0], miss[1], prof.supportedShort()) : ""),
+            android.widget.Toast.makeText(a, Tx.s(R.string.prepare_name_is_ready, g.name) + (!j.codeOnly() ? "" : ShaderLibs.layerCovers(j.titleId(), Prefs.layerEnv(a, j.titleId())) ? Tx.s(R.string.prepare_it_builds_shaders_while_you) : Tx.s(R.string.prepare_it_plays_on_its_older_shaders)) + (miss[0] > 0 && prof != null ? " " + PrepareText.missingShadersText(miss[0], miss[1], prof.supportedShort()) : ""),
                     android.widget.Toast.LENGTH_LONG).show();
         }
 
@@ -864,6 +882,7 @@ final class Ondevice {
             Pack pack;       // that pack, when it reads as this game's pack
             String build;    // PackCheck.blocking: why its code cannot run with this dump (unfinished, another game build), null when it fits
             Boolean code;    // PackCheck.code: its code is this APK's rewriter's (null: cannot tell)
+            boolean wantShaders;   // the player asked for the shaders (Ondevice.prepareShaders)
         }
 
         /**
@@ -880,11 +899,14 @@ final class Ondevice {
 
         /** anyBuild: Try anyway for a dump of a build this app does not list (asked first: untested); a job beside the dump that was tried anyway keeps it */
         void picked(File dump, boolean start, File packOverride, boolean again, boolean card, boolean anyBuild) {
+            boolean want = wantShaders && !card;
+            wantShaders = false;
             if (a.needAccess(dump)) return;
             userAsked = !card;
             android.widget.Toast.makeText(a, Tx.s(R.string.home_checking_name, dump.getName()), android.widget.Toast.LENGTH_SHORT).show();
             new Thread(() -> {
                 Found f = new Found();
+                f.wantShaders = want;
                 boolean any = anyBuild;
                 try {
                     String id = Pack.titleIdOf(dump);   // a .nup, a folder's base, or an update-only dump's newest update
@@ -931,6 +953,7 @@ final class Ondevice {
                     String s = j.state();
                     if (same && (s.equals("running") || s.equals("paused") || s.equals("failed") || s.equals("pending"))) {
                         Job.remember(a, f.existing);
+                        if (card && s.equals("paused") && "user".equals(j.reason())) return;   // the player paused it: an automatic update never starts it again (the sheet's Resume does)
                         job = j;
                         show();
                         if (start) startService(j);
@@ -964,21 +987,30 @@ final class Ondevice {
             if (f.pack != null) {
                 File pd = f.packDir;
                 String lp = PackCheck.shaders(pd, r.titleId);
-                boolean covered = ShaderLibs.layerCovers(r.titleId, Prefs.layerEnv(a, r.titleId));   // the layer builds the shaders while the game plays: the whole set is optional
+                String env = Prefs.layerEnv(a, r.titleId);
                 boolean code = f.build != null || again && !Boolean.TRUE.equals(f.code), shaders = lp != null;
-                if (!code && !shaders) { adopt(r, pd, false, false); return; }
+                // Shaders are the player's choice whenever the game plays without them (ShaderState.need): the layer builds them all as it runs (Pack.shadersOnDemand), or
+                // the host plays an older library of the pack meanwhile (the layer filling what it lacks when it covers the game). A code update keeps that library: the
+                // shaders depend on the profile's shader inputs, not on the code. Only a pack nothing can play needs the shaders
+                boolean onLayer = Pack.shadersOnDemand(pd, r.titleId, env);
+                boolean older = Pack.libraryOf(pd) == null && (Pack.playableLibrary(pd, r.titleId) != null || Pack.legacyLibrary(pd, r.titleId) != null);
+                boolean builds = onLayer || Pack.shaderLayerFills(pd, r.titleId, env);   // what is missing is built while the game runs (else it plays on the older shaders as they are)
+                ShaderState.Need need = ShaderState.need(onLayer, older, code, shaders);
+                if (need == ShaderState.Need.NOTHING) { adopt(r, pd, false, false); return; }
+                if (card && need == ShaderState.Need.CODE_AND_SHADERS) return;   // an automatic update never starts a whole Prepare: the card says what is needed
                 String why = (f.build != null ? f.build + "\n\n" : again && code ? Tx.s(R.string.prepare_the_pack_s_game_code_2) : "") + (lp != null ? lp + "\n\n" : "");
-                if (covered && code && shaders && Pack.libraryOf(pd) == null) {
-                    // a code update of a pack that has no library: code only, unless the player ticks the whole set
+                int delta = shaders ? deltaShaders(pd, r.titleId) : -1;
+                String minutes = ShaderLibs.minutesText(delta >= 0 ? delta : Profile.of(r.titleId).shaderTotal);
+                if (need == ShaderState.Need.CODE_SHADERS_OPTIONAL) {
+                    // a code update of a pack that plays without new shaders: the code only, keeping the pack's older library; the shaders are recommended, not forced
                     if (start) { adopt(r, pd, true, false); return; }
-                    askCode(r, pd, why, Profile.of(r.titleId));
+                    askCode(r, pd, why, PrepareText.recommendText(minutes, builds), f.wantShaders);
                     return;
                 }
                 Runnable redo = () -> adopt(r, pd, code, shaders);
                 if (start) { redo.run(); return; }
-                int delta = shaders ? deltaShaders(pd, r.titleId) : -1;
-                boolean optional = covered && shaders && !code;   // Prepare shaders for a pack with code only (or one whose older library plays): optional
-                String what = optional ? PrepareText.optionalShadersText(ShaderLibs.minutesText(delta >= 0 ? delta : Profile.of(r.titleId).shaderTotal))
+                boolean optional = need == ShaderState.Need.SHADERS_OPTIONAL;   // Prepare shaders for a pack that plays without them (code only, an older library): offered, recommended
+                String what = optional ? (delta > 0 ? shadersText(pd, r.titleId) + " " : "") + PrepareText.recommendText(minutes, builds)
                         : code && shaders ? (delta >= 0 ? Tx.s(R.string.prepare_rewriting_the_game_s_code_3) + shadersText(pd, r.titleId)
                                 : Tx.s(R.string.prepare_rewriting_the_game_s_code_2) + ShaderLibs.jobMinutesText(Profile.of(r.titleId).shaderTotal) + Tx.s(R.string.prepare_in_the_background))
                         : code ? Tx.s(R.string.prepare_rewriting_the_game_s_code)
@@ -1028,7 +1060,7 @@ final class Ondevice {
             LinearLayout box = new LinearLayout(a);
             box.setOrientation(LinearLayout.VERTICAL);
             Ui.add(box, Ui.body(a, text), 0);
-            Ui.Setting all = alsoShaders(covered);
+            Ui.Setting all = alsoShaders(covered, false);
             if (all != null) Ui.add(box, all.view, 8);
             Ui.add(box, Ui.details(a, where), 8);
             Ui.add(box, Ui.small(a, Tx.s(R.string.prepare_have_a_pack_made_elsewhere)), 16);
@@ -1038,18 +1070,22 @@ final class Ondevice {
             d[0] = Ui.sheet(a, Tx.s(R.string.prepare_prepare_name, prof.name), box).setPositiveButton(Tx.s(R.string.common_prepare), (x, w) -> go.accept(all != null && all.toggle.isChecked())).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
         }
 
-        /** Prepare's "Also build all shaders now" box (PrepareText.ALSO_SHADERS()), unticked; null for a game the layer does not cover (its Prepare has the shaders in it) */
-        Ui.Setting alsoShaders(boolean covered) {
-            if (!covered) return null;
-            return new Ui.Setting(a, "\uD83D\uDD28", PrepareText.ALSO_SHADERS(), null).toggle(a, false, null);   // the launcher's switch row (ring, pad focus), not a stock check box
+        /** Prepare's "Also build all shaders now" box (PrepareText.ALSO_SHADERS()), ticked when on is; null when the shaders are not optional (that Prepare has them in it) */
+        Ui.Setting alsoShaders(boolean optional, boolean on) {
+            if (!optional) return null;
+            return new Ui.Setting(a, "\uD83D\uDD28", PrepareText.ALSO_SHADERS(), null).toggle(a, on, null);   // the launcher's switch row (ring, pad focus), not a stock check box
         }
 
-        /** A code update of a pack with no shader library (a game the layer covers): code only, or with the whole shader set when the box is ticked */
-        void askCode(DumpCheck.Result r, File pd, String why, Profile prof) {
+        /**
+         * A code update of a pack that plays without new shaders (ShaderState.Need.CODE_SHADERS_OPTIONAL: the layer covers the game, or an older library plays): the code only,
+         * keeping the pack's library, or with the shader build when the box is ticked. recommend: PrepareText.recommendText; tick: the player asked for the shaders (Update
+         * shaders), so the box starts ticked
+         */
+        void askCode(DumpCheck.Result r, File pd, String why, String recommend, boolean tick) {
             LinearLayout box = new LinearLayout(a);
             box.setOrientation(LinearLayout.VERTICAL);
-            Ui.add(box, Ui.body(a, Tx.s(R.string.prepare_rewriting_code_few_minutes) + " " + PrepareText.optionalShadersText(ShaderLibs.minutesText(prof.shaderTotal))), 0);
-            Ui.Setting all = alsoShaders(true);
+            Ui.add(box, Ui.body(a, Tx.s(R.string.prepare_rewriting_code_few_minutes) + " " + recommend), 0);
+            Ui.Setting all = alsoShaders(true, tick);
             Ui.add(box, all.view, 8);
             Ui.add(box, Ui.details(a, why + "Pack: " + pd), 8);
             Ui.sheet(a, Tx.s(R.string.prepare_update_the_pack), box)
@@ -1094,6 +1130,7 @@ final class Ondevice {
             new PadFocus.Builder(a).setTitle(t).setMessage(msg).setPositiveButton(yes, (d, w) -> r.run()).setNegativeButton(Tx.s(R.string.common_cancel), null).show();
         }
 
+        boolean wantShaders;         // the next picked() comes from a button that asks for the shaders (prepareShaders)
         private boolean userAsked;   // the player started this Prepare (Add game, Prepare again): its sheet opens when the job starts, an automatic update never opens it
 
         void startService(Job j) {

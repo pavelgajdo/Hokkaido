@@ -46,7 +46,7 @@ final class Signer {
     }
 
     /**
-     * Which build this is, without the app's name: play app "0.1 · 6a6448d" (the version up to its "-", the commit); test app "int@6a6448d" (the branch without
+     * Which build this is, without the app's name: play app "0.1 · 6a6448d" (the version up to its "-", but "0.3.51-preview" stays whole; the commit); test app "int@6a6448d" (the branch without
      * "android-", the commit). "+dirty" follows the commit when the tree had changes. No build time: the commit and the signer's fingerprint identify a build. Home
      * shows it under the title; {@link #buildTag} is it with the app's name, so the two never disagree
      */
@@ -55,8 +55,7 @@ final class Signer {
         if (c.length() > 7 && !c.equals("unknown")) c = c.substring(0, 7);
         c += dirty;
         if (play) {
-            int d = versionName.indexOf('-');
-            return (d > 0 ? versionName.substring(0, d) : versionName) + " · " + c;
+            return (versionName.endsWith("-preview") ? versionName : BuildKind.base(versionName)) + " · " + c;   // a preview keeps its mark
         }
         String b = branch.startsWith("android-") ? branch.substring(8) : branch;
         return b + "@" + c;
